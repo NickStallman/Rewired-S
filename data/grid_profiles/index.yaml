@@ -1,0 +1,29 @@
+# data/grid_profiles/index.yaml - the settings families and how a device selects one
+# (docs/data_format.md). Read by tools/gen_grid_profiles.py and tools/gen_installer_settings.py.
+# families     in sungrow_modbus::XmlFamily enum order; a family with a file has
+#              data/grid_profiles/<family>.yaml (profiles + installer catalogue)
+# descriptors  (inverter type, protocol type) -> family and the registers the setup commit
+#              writes: country, grid code (0 = none) and the power switch; lookup order
+# setup_countries  the countries the Setup view offers
+# unit_*_register  the unit family with W32B5: the real company / grid-type registers
+
+families:
+  none: {title: "no settings family (protocol 4)", file: false}
+  str_pv: {title: "string inverters on the SG public map (protocol 1)", file: true}
+  res_es: {title: "residential hybrid inverters (protocol 5)", file: true}
+  res_new_pv: {title: "residential string inverters, new generation", file: true}
+  unit: {title: "inverters on the private map (protocols 2 and 3)", file: true}
+  unit_nodesc: {title: "unit family without a descriptor entry", file: false}
+descriptors:
+- {inverter_type: 0, protocol: 1, family: str_pv, country_register: 30500, grid_code_register: 30502, power_switch_register: 5006}
+- {inverter_type: 0, protocol: 5, family: res_es, country_register: 30643, grid_code_register: 0, power_switch_register: 13000}
+- {inverter_type: 1, protocol: 1, family: res_new_pv, country_register: 30643, grid_code_register: 0, power_switch_register: 5006}
+- {inverter_type: 0, protocol: 4, family: none, country_register: 30643, grid_code_register: 30644, power_switch_register: 30045}
+- {inverter_type: 0, protocol: 2, family: unit, country_register: 32310, grid_code_register: 32311, power_switch_register: 5006}
+- {inverter_type: 0, protocol: 3, family: unit, country_register: 32310, grid_code_register: 32311, power_switch_register: 5006}
+- {inverter_type: 1, protocol: 2, family: unit, country_register: 32310, grid_code_register: 32311, power_switch_register: 5006}
+- {inverter_type: 1, protocol: 3, family: unit, country_register: 32310, grid_code_register: 32311, power_switch_register: 5006}
+setup_countries:
+- {code: 6, label: Australia}
+unit_company_register: 30036
+unit_grid_type_register: 30037

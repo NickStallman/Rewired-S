@@ -1,0 +1,40 @@
+# WiNet-S (V200, ESP32), Wi-Fi.
+# Pre-built image (docs/prebuilt.md): the production package set of the compiled entry, with
+# everything a user would otherwise put in secrets.yaml or a site file provisioned at runtime:
+# Wi-Fi from the captive portal or Improv over the UART console, the web login and the MQTT broker
+# from the Settings page, the API key from Home Assistant at adoption, the cloud version detected
+# from the stock image in the other OTA slot. No !secret is reachable from this file
+# (tests/test_prebuilt_no_secrets.py).
+substitutions:
+  name: rewired-s
+  friendly_name: Rewired-S
+  prebuilt_entry: winet-s-prebuilt
+
+packages:
+  board: !include boards/winet_s.yaml
+  base: !include common/base.yaml
+  provisioning: !include common/provisioning.yaml
+  network: !include common/wifi_provisioned.yaml
+  # Improv Wi-Fi over the UART0 console pads (the serial route of the first install).
+  improv: !include common/improv_serial.yaml
+  board_io: !include common/board_io.yaml
+  rs485: !include common/rs485.yaml
+  identity: !include common/identity.yaml
+  cloud: !include common/cloud.yaml
+  modbus_tcp: !include common/modbus_tcp.yaml
+  # Register writes, off until the "Inverter writes enabled" switch is turned on (docs/control.md).
+  control: !include common/control.yaml
+  # Every connected device as its own Home Assistant device over MQTT discovery; broker from Settings.
+  mqtt_ha: !include common/mqtt_ha_provisioned.yaml
+  web_ui: !include common/web_ui.yaml
+  # I-V scan and grid-waveform captures (web UI Captures page).
+  capture: !include common/capture.yaml
+  # Reset journal, log tail, panic hook, task-watchdog panics, "Last reset" (common/diagnostics.yaml).
+  diagnostics: !include common/diagnostics.yaml
+  # Daily anonymous usage report and diagnostics uploads; the "Usage reporting" switch turns it off.
+  analytics: !include common/analytics.yaml
+
+external_components:
+  - source:
+      type: local
+      path: components

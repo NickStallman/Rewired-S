@@ -1,0 +1,40 @@
+# WiNet-S (V200, ESP32) DEBUG build, ETHERNET variant, for the first hardware tests. Guide: docs/debug_build.md.
+# Same as winet-s.yaml minus the iSolarCloud uplink (no common/cloud.yaml: no MQTT/TLS client)
+# and minus register writes (no common/control.yaml / *_control.yaml), plus common/debug.yaml.
+# RS485 writes are additionally blocked at the transport (sungrow_debug block_rtu_writes).
+substitutions:
+  name: winet-s-debug-eth
+  friendly_name: WiNet-S debug eth
+  debug_log_port: "0"   # e.g. "2323": plain-TCP log stream (`nc <ip> 2323`), LAN only, no auth
+
+packages:
+  board: !include boards/winet_s.yaml
+  base: !include common/base.yaml
+  # API key and web login from secrets.yaml (the prebuilt entries use common/provisioning.yaml).
+  access: !include common/access_secrets.yaml
+  # Network: internal EMAC + DP83848 (instead of Wi-Fi). Wi-Fi variant: winet-s-debug.yaml.
+  network: !include boards/winet_s_ethernet.yaml
+  board_io: !include common/board_io.yaml
+  rs485: !include common/rs485.yaml
+  identity: !include common/identity.yaml
+  modbus_tcp: !include common/modbus_tcp.yaml
+  # Autodetect the inverter type: union of string + hybrid entities. The RS485 master picks the
+  # poll table at runtime from the devinfo block (table: auto); entities whose signal the connected
+  # inverter does not report stay unavailable. Pin a single package below for a tidy list.
+  inverter: !include { file: devices/auto_inverter.yaml, vars: { device: 0 } }
+  #   inverter: !include { file: devices/hybrid_inverter.yaml, vars: { device: 0 } }
+  #   inverter: !include { file: devices/string_inverter.yaml, vars: { device: 0 } }
+  # SBR battery / meter: find their addresses first with the "Debug scan RS485 bus" button, then
+  # add the blocks exactly as in winet-s.yaml (sbr_battery + sbr_link, meter + meter_link).
+  debug: !include common/debug.yaml
+
+# The stock-OTA install path runs with the dongle's ON-FLASH partition table; this CSV (the
+# device's own table) sets the build-time size check and the factory.bin layout.
+esp32:
+  flash_size: 16MB   # mandatory: IDF sizes usable flash from the app header
+  partitions: boards/partitions_winet_s.stock.csv
+
+external_components:
+  - source:
+      type: local
+      path: components

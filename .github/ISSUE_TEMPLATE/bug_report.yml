@@ -1,0 +1,57 @@
+name: Bug report
+description: Something does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Rewired-S is alpha software. Thanks for taking the time to report a problem.
+        Please do not paste serial numbers, Wi-Fi names or addresses; the diagnostics report has them removed already.
+  - type: input
+    id: version
+    attributes:
+      label: Rewired-S version
+      description: Settings page of the web UI, or the `Rewired-S version` sensor.
+      placeholder: "0.9.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: dongle
+    attributes:
+      label: Dongle
+      options:
+        - WiNet-S (Wi-Fi)
+        - WiNet-S (Ethernet)
+        - WiNet-S2 (Wi-Fi)
+        - WiNet-S2 (Ethernet)
+    validations:
+      required: true
+  - type: dropdown
+    id: image
+    attributes:
+      label: Image
+      options:
+        - Pre-built release image
+        - Compiled from this repository
+    validations:
+      required: true
+  - type: input
+    id: devices
+    attributes:
+      label: Inverter and batteries
+      placeholder: "SH10RS, 2 x SBR192"
+    validations:
+      required: true
+  - type: input
+    id: diag
+    attributes:
+      label: Diagnostics reference
+      description: Settings → Diagnostics → **Send diagnostics** shows a short reference like `k7Qx2mVb`. It lets the report be found without posting it here. Or attach the file from **Download report**.
+      placeholder: "k7Qx2mVb"
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what happened instead. Log lines from the Logs page are welcome.
+    validations:
+      required: true

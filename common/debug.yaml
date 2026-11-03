@@ -1,0 +1,247 @@
+# DEBUG build package (winet-s-debug.yaml / winet-s-debug-ethernet.yaml). Guide: docs/debug_build.md.
+#
+# What it adds on top of the normal packages (no cloud, no register writes):
+#  - logger: VERY_VERBOSE compiled in, per-tag levels (runtime-changeable), a log-level select,
+#    UART0 115200, API log streaming, optional plain-TCP log server.
+#  - sungrow_debug: RS485 raw-frame trace (hex + timing + CRC/exception/timeout), per-row decode
+#    trace, discovery decisions, :502 frame trace, on-demand reads / bus scan / store + plan dumps,
+#    per-device bus stats, system / partition / otadata / bootloader diagnostics,
+#    READ-ONLY flash dumps over HTTP (/dump/<region>, behind the web server's auth).
+#  - SAFETY: block_rtu_writes = only fn 3/4 frames reach the RS485 bus; the external flash stays
+#    read-only (sungrow_extflash); no factory reset. The ONLY flash write possible is the
+#    explicit, switch-gated "boot the other OTA slot" (rollback to the stock app).
+#
+# Log tags: sgdbg.rtu (TX/RX summaries), sgdbg.hex (raw hex lines), sgdbg.decode (rows),
+#           sgdbg.disc (discovery + scan), sgdbg.tcp (:502), sgdbg.dump (dumps), sgdbg.flash.
+substitutions:
+  log_level: VERY_VERBOSE
+
+esphome:
+  # Shown in the ESPHome dashboard / app_desc; keeps the debug image recognisable in a dump.
+  comment: "DEBUG build: no cloud, RS485 writes blocked"
+
+esp32:
+  framework:
+    sdkconfig_options:
+      # uxTaskGetSystemState() for the task stack watermarks in dump_system (cheap).
+      CONFIG_FREERTOS_USE_TRACE_FACILITY: y
+
+logger:
+  baud_rate: 115200        # UART0 (hardware_uart from boards/winet_s.yaml)
+  tx_buffer_size: 768
+  runtime_tag_levels: true  # set_log_level action can change any tag at runtime
+  logs:
+    # Quiet the noisy core tags; raise them again with the set_log_level action if needed.
+    api: DEBUG
+    api.connection: DEBUG
+    api.service: DEBUG
+    scheduler: DEBUG
+    component: DEBUG
+    app: DEBUG
+    wifi: DEBUG
+    sensor: DEBUG
+    text_sensor: DEBUG
+    binary_sensor: DEBUG
+    switch: DEBUG
+    json: INFO
+    web_server: DEBUG
+    web_server_idf: DEBUG
+    socket: DEBUG
+    esp-idf: DEBUG
+    # Our components: everything.
+    sungrow_modbus: VERY_VERBOSE
+    sungrow_modbus_tcp: VERY_VERBOSE
+    sungrow_extflash: VERY_VERBOSE
+    sungrow_datamodel: VERBOSE
+    sungrow_debug: VERY_VERBOSE
+    sgdbg.rtu: VERY_VERBOSE
+    sgdbg.hex: VERBOSE       # raw RX hex lines; DEBUG hides them, keeps the summaries
+    sgdbg.decode: VERY_VERBOSE
+    sgdbg.disc: VERY_VERBOSE
+    sgdbg.tcp: VERY_VERBOSE
+    sgdbg.dump: VERY_VERBOSE
+    sgdbg.flash: VERY_VERBOSE
+
+select:
+  - platform: logger
+    name: Log level
+
+debug:
+  update_interval: 30s
+
+sensor:
+  - platform: debug
+    free:
+      name: Heap free
+    block:
+      name: Heap largest block
+    min_free:
+      name: Heap min free
+    loop_time:
+      name: Loop time
+    psram:
+      name: PSRAM free
+
+text_sensor:
+  - platform: debug
+    device:
+      name: Device info
+    reset_reason:
+      name: Reset reason
+
+# No cloud package in this build: the LED lambdas of common/board_io.yaml must not reference
+# id(cloud). Blue LED = link only (solid for 60 s, then the "no cloud" flash pattern).
+sungrow_board:
+  io:
+    cloud_connected: !lambda return false;
+    cloud_enabled: !lambda return false;
+    cloud_error: !lambda return false;
+
+sungrow_debug:
+  id: dbg
+  sungrow_modbus_id: rs485_hub
+  sungrow_datamodel_id: sungrow_dm
+  sungrow_modbus_tcp_id: modbus_tcp_server
+  sungrow_extflash_id: extflash
+  # SAFETY for first hardware tests: only fn 3/4 (reads) reach the RS485 bus. Do not change
+  # this in the debug build. (The register-write package common/control.yaml is not included
+  # either; if you ever add it here, force its switch off:
+  #   switch:
+  #     - id: !extend sungrow_writes_enabled
+  #       restore_mode: ALWAYS_OFF          # debug build: writes always off, never restored
+  # )
+  block_rtu_writes: true
+  rtu_trace: true
+  decode_trace: true
+  only_changed: true        # decode trace prints a row only when its raw words change
+  tcp_trace: true
+  trace_addresses: ""       # e.g. "1" or "1,3-5"
+  trace_registers: ""       # e.g. "5000-5100,13000+50"
+  trace_min_interval: 0ms
+  lines_per_loop: 6
+  stats_interval: 10s
+  log_server_port: ${debug_log_port}
+  flash_dump: true          # GET http://<ip>/dump/index, /dump/<region> (web server auth)
+  last_result:
+    name: Debug last result
+  scan_result:
+    name: Debug scan result
+  partition:
+    name: Running partition
+  idf_version:
+    name: Firmware versions
+  trace_filter:
+    name: Debug trace filter
+  switches:
+    rtu_trace:
+      name: Debug RS485 frame trace
+    decode_trace:
+      name: Debug decode trace
+    only_changed:
+      name: Debug decode only changed
+    tcp_trace:
+      name: Debug Modbus-TCP trace
+    allow_boot_switch:
+      name: Allow boot switch to other slot   # arms boot_other_slot once; never restored
+  devices:
+    - address: 1
+      requests: {name: Inverter RS485 requests}
+      responses: {name: Inverter RS485 responses}
+      timeouts: {name: Inverter RS485 timeouts}
+      crc_errors: {name: Inverter RS485 CRC errors}
+      exceptions: {name: Inverter RS485 exceptions}
+      latency_avg: {name: Inverter RS485 latency avg}
+      latency_max: {name: Inverter RS485 latency max}
+      data_age: {name: Inverter RS485 data age}
+
+button:
+  - platform: template
+    name: Debug dump signal store
+    entity_category: diagnostic
+    on_press:
+      - lambda: id(dbg).dump_signal_store(-1);
+  - platform: template
+    name: Debug dump poll plan
+    entity_category: diagnostic
+    on_press:
+      - lambda: id(dbg).dump_poll_plan(-1);
+  - platform: template
+    name: Debug dump system
+    entity_category: diagnostic
+    on_press:
+      - lambda: |-
+          id(dbg).dump_flash_layout();
+          id(dbg).dump_system();
+          id(dbg).dump_stats();
+  - platform: template
+    name: Debug scan RS485 bus
+    entity_category: diagnostic
+    on_press:
+      - lambda: id(dbg).debug_scan(1, 247, 5000, 1, 300, 0);
+  - platform: template
+    name: Debug stop scan
+    entity_category: diagnostic
+    on_press:
+      - lambda: id(dbg).stop_scan();
+  - platform: template
+    name: Boot other slot (stock app)
+    entity_category: config
+    icon: mdi:backup-restore
+    on_press:
+      - lambda: id(dbg).boot_other_slot();
+
+# Home Assistant: Developer Tools -> Actions -> "ESPHome: <node>_debug_read" etc.
+api:
+  actions:
+    - action: debug_read
+      variables: {address: int, fn: int, start: int, count: int, table: string}
+      then:
+        - lambda: id(dbg).debug_read(address, fn, start, count, table.str());
+    - action: debug_scan
+      variables: {first: int, last: int, start: int, count: int, interval_ms: int, timeout_ms: int}
+      then:
+        - lambda: id(dbg).debug_scan(first, last, start, count, interval_ms, timeout_ms);
+    - action: debug_scan_stop
+      then:
+        - lambda: id(dbg).stop_scan();
+    - action: debug_trace
+      variables: {rtu: bool, decode: bool, only_changed: bool, tcp: bool}
+      then:
+        - lambda: |-
+            id(dbg).set_rtu_trace(rtu);
+            id(dbg).set_decode_trace(decode);
+            id(dbg).set_only_changed(only_changed);
+            id(dbg).set_tcp_trace(tcp);
+    - action: debug_trace_filter
+      variables: {addresses: string, registers: string}
+      then:
+        - lambda: id(dbg).set_trace_filter(addresses.str(), registers.str());
+    - action: set_log_level
+      variables: {tag: string, level: string}
+      then:
+        - lambda: id(dbg).set_tag_level(tag.str(), level.str());
+    - action: dump_signal_store
+      variables: {device: int}
+      then:
+        - lambda: id(dbg).dump_signal_store(device);
+    - action: dump_poll_plan
+      variables: {device: int}
+      then:
+        - lambda: id(dbg).dump_poll_plan(device);
+    - action: dump_system
+      then:
+        - lambda: |-
+            id(dbg).dump_flash_layout();
+            id(dbg).dump_system();
+            id(dbg).dump_stats();
+    - action: dump_file
+      variables: {path: string}
+      then:
+        - lambda: id(dbg).dump_file(path.str());
+    - action: list_files
+      variables: {path: string}
+      then:
+        - lambda: id(dbg).list_files(path.str());
+    - action: dump_identity
+      then:
+        - lambda: id(dbg).dump_identity();

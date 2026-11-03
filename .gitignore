@@ -1,0 +1,31 @@
+# Local toolchain and build output
+.venv/
+.esphome/
+build/
+/dist/
+.scratch/
+__pycache__/
+*.pyc
+node_modules/
+components/sungrow_web/web/dist/
+tests/*/build/
+
+# Firmware images, packages and keys never belong in the repository
+*.bin
+*.elf
+*.map
+*.sgu
+*.zip
+/keys/
+
+# Your own secrets and site files
+secrets.yaml
+/sites/*
+!/sites/README.md
+!/sites/boards
+!/sites/components
+# tests/config/secrets.yaml links to ../../secrets.yaml (site files read secrets from their own directory).
+!/tests/config/secrets.yaml
+
+# Downloads made by the extraction tools
+/data/fetched/

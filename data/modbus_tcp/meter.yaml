@@ -1,0 +1,45 @@
+# data/modbus_tcp/meter.yaml - the Modbus-TCP (:502) export map served for a meter (dev_type 18)
+# (docs/data_format.md). Read by tools/gen_tables.py.
+# rows: {id, address, fn, count, type} = the public register a signal is served at; cycle is
+# carried for the few rows that are also polled. shared: public addresses two rows of the same
+# id legitimately share.
+
+table: tcpslave_dev18
+family: meter
+device_types: [18]
+title: "Modbus-TCP export map of the meter (dev_type 18)"
+rows:
+- {id: 0x2000, address: 4097, fn: 4, count: 2, type: f32}  # phase_a_voltage
+- {id: 0x2001, address: 4099, fn: 4, count: 2, type: f32}  # phase_b_voltage
+- {id: 0x2002, address: 4101, fn: 4, count: 2, type: f32}  # phase_c_voltage
+- {id: 0x2003, address: 4103, fn: 4, count: 2, type: f32}  # line_ab_voltage
+- {id: 0x2004, address: 4105, fn: 4, count: 2, type: f32}  # line_bc_voltage
+- {id: 0x2005, address: 4107, fn: 4, count: 2, type: f32}  # line_ca_voltage
+- {id: 0x2006, address: 4109, fn: 4, count: 2, type: f32}  # phase_a_current
+- {id: 0x2007, address: 4111, fn: 4, count: 2, type: f32}  # phase_b_current
+- {id: 0x2008, address: 4113, fn: 4, count: 2, type: f32}  # phase_c_current
+- {id: 0x2023, address: 4115, fn: 4, count: 2, type: f32}  # phase_a_active_power
+- {id: 0x2024, address: 4117, fn: 4, count: 2, type: f32}  # phase_b_active_power
+- {id: 0x2025, address: 4119, fn: 4, count: 2, type: f32}  # phase_c_active_power
+- {id: 0x200A, address: 4121, fn: 4, count: 2, type: f32}  # active_power
+- {id: 0x200B, address: 4123, fn: 4, count: 2, type: f32}  # export_power
+- {id: 0x2026, address: 4125, fn: 4, count: 2, type: f32}  # phase_a_reactive_power
+- {id: 0x2027, address: 4127, fn: 4, count: 2, type: f32}  # phase_b_reactive_power
+- {id: 0x2028, address: 4129, fn: 4, count: 2, type: f32}  # phase_c_reactive_power
+- {id: 0x200C, address: 4131, fn: 4, count: 2, type: f32}  # reactive_power
+- {id: 0x2029, address: 4133, fn: 4, count: 2, type: f32}  # phase_a_apparent_power
+- {id: 0x202A, address: 4135, fn: 4, count: 2, type: f32}  # phase_b_apparent_power
+- {id: 0x202B, address: 4137, fn: 4, count: 2, type: f32}  # phase_c_apparent_power
+- {id: 0x200D, address: 4139, fn: 4, count: 2, type: f32}  # apparent_power
+- {id: 0x2009, address: 4141, fn: 4, count: 2, type: f32}  # power_factor
+- {id: 0x2022, address: 4143, fn: 4, count: 2, type: f32}  # grid_frequency
+- {id: 0x200E, address: 4145, fn: 4, count: 2, type: f32}  # forward_active_energy
+- {id: 0x200F, address: 4147, fn: 4, count: 2, type: f32}  # reverse_active_energy
+- {id: 0x2010, address: 4149, fn: 4, count: 2, type: f32}  # forward_reactive_energy
+- {id: 0x2011, address: 4151, fn: 4, count: 2, type: f32}  # reverse_reactive_energy
+- {id: 0x202C, address: 4153, fn: 4, count: 1, type: u16}
+- {id: 0x202E, address: 4154, fn: 4, count: 1, type: u16}
+- {id: 0x202F, address: 4155, fn: 4, count: 2, type: f32}  # load_power
+- {id: 0x210B, address: 4157, fn: 4, count: 2, type: f32}  # phase_a_power_factor
+- {id: 0x210C, address: 4159, fn: 4, count: 2, type: f32}  # phase_b_power_factor
+- {id: 0x210D, address: 4161, fn: 4, count: 2, type: f32}  # phase_c_power_factor

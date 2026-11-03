@@ -1,0 +1,23 @@
+# Default network: Wi-Fi with a fallback AP + captive portal.
+# ESPHome can't run Wi-Fi and Ethernet together; use boards/<board>_ethernet.yaml instead of this.
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  # Radio always on, as stock (WIFI_PS_NONE): no modem-sleep current steps on the inverter-powered supply, and no added latency on
+  # cloud commands and :502.
+  power_save_mode: none
+  ap:
+    ssid: "${friendly_name} Setup"
+    password: !secret fallback_ap_password
+
+captive_portal:
+
+sensor:
+  - platform: wifi_signal
+    name: WiFi signal
+    update_interval: 60s
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: IP address

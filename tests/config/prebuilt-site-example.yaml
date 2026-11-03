@@ -1,0 +1,12 @@
+# A site file on top of a PRE-BUILT entry: what someone who later compiles their own image from
+# the prebuilt layout would write (sites/README.md). The runtime provisioning stays (captive
+# portal, Settings-page login and broker, detected cloud version); the substitutions below only
+# change the defaults. Validated by `make config`.
+substitutions:
+  name: prebuilt-site
+  friendly_name: Prebuilt Site
+  ap_password: "my-setup-password"                     # the access point's password (8-64 characters)
+  # cloud_firmware_version: "WINET-SV300.001.03.P024"  # fixes the reported version instead of detecting it
+  # analytics: "false"                                 # usage reporting off by default (the switch still works)
+packages:
+  entry: !include ../../winet-s2-prebuilt.yaml

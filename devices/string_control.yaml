@@ -1,0 +1,48 @@
+# Writable SG string-inverter registers (sungrow_control, profile "string"): power limitation
+# (e.g. the SG5.0RS AC/PV limit the battery controller drives). Needs common/control.yaml.
+# Harmless while "Inverter writes enabled" is off. The SG limit is volatile: the inverter drops
+# it when it restarts (nightly shutdown), so the controller must re-assert it.
+# Order for a limit: switch Enabled (0xAA @5007), then the setting (0.1 % @5008). Stock writes
+# both in one fn 16 (sig 0x12A5); the action can do the same:
+#   sungrow_control.write_registers: {address: 5007, values: [0xAA, 500]}   # 50 %
+# Usage:
+#   packages:
+#     inverter_control: !include { file: devices/string_control.yaml, vars: { device: 0 } }
+defaults:
+  device: 0
+  prefix: "Inverter "
+
+sungrow_control:
+  devices:
+    - device: ${device}
+      profile: string
+
+select:
+  - platform: sungrow_control
+    device: ${device}
+    key: power_limit_switch
+    name: "${prefix}Power limitation switch"
+
+number:
+  - platform: sungrow_control
+    device: ${device}
+    key: power_limit_pct
+    name: "${prefix}Power limitation setting"
+  - platform: sungrow_control
+    device: ${device}
+    key: power_limit_kw
+    name: "${prefix}Power limitation adjustment"
+    disabled_by_default: true
+
+text_sensor:
+  - platform: sungrow_control
+    device: ${device}
+    key: power_limit_switch
+    name: "${prefix}Power limitation mode"
+
+sensor:
+  - platform: sungrow_control
+    device: ${device}
+    key: power_limit_pct
+    name: "${prefix}Power limitation setting readback"
+    accuracy_decimals: 1

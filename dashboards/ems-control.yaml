@@ -1,0 +1,120 @@
+# Rewired-S EMS control view: built-in cards only. Replace SH_SERIAL / SG_SERIAL / BAT_SERIAL
+# and <dongle> (the ESPHome node name of the dongle, e.g. house_inverter).
+# Writes only take effect while the dongle's "Inverter writes enabled" switch is on
+# (docs/control.md). Values shown by the number/select/switch entities are the inverter's own
+# read-backs, so a refused write snaps back to the real value.
+title: EMS control
+path: ems
+icon: mdi:solar-power
+cards:
+  - type: entities
+    title: Hybrid inverter · state
+    entities:
+      - entity: sensor.sh10rs_SH_SERIAL_operating_status
+        name: Operating status
+      - entity: binary_sensor.sh10rs_SH_SERIAL_problem
+        name: Fault
+      - entity: switch.<dongle>_inverter_writes_enabled
+        name: Inverter writes enabled (dongle)
+      - entity: switch.<dongle>_cloud_uplink
+        name: iSolarCloud uplink
+      - entity: switch.<dongle>_cloud_writes
+        name: iSolarCloud may write settings
+      - entity: binary_sensor.<dongle>_cloud_connected
+        name: iSolarCloud connected
+  - type: entities
+    title: Hybrid inverter · EMS and battery
+    entities:
+      - entity: select.sh10rs_SH_SERIAL_ems_mode
+        name: EMS mode
+      - entity: select.sh10rs_SH_SERIAL_battery_forced_charge_discharge_command
+        name: Forced charge / discharge
+      - entity: number.sh10rs_SH_SERIAL_battery_forced_charge_discharge_power
+        name: Forced power
+      - entity: number.sh10rs_SH_SERIAL_battery_min_soc
+        name: Min SOC
+      - entity: number.sh10rs_SH_SERIAL_battery_max_soc
+        name: Max SOC
+      - entity: number.sh10rs_SH_SERIAL_reserved_soc_for_backup
+        name: Reserved SOC for backup
+      - entity: number.sh10rs_SH_SERIAL_battery_max_charge_power
+        name: Max charge power
+      - entity: number.sh10rs_SH_SERIAL_battery_max_discharge_power
+        name: Max discharge power
+      - entity: number.sh10rs_SH_SERIAL_battery_charging_start_power
+        name: Charging start power
+      - entity: number.sh10rs_SH_SERIAL_battery_discharging_start_power
+        name: Discharging start power
+  - type: entities
+    title: Hybrid inverter · export limit
+    entities:
+      - entity: switch.sh10rs_SH_SERIAL_export_power_limit_mode
+        name: Export limit enabled
+      - entity: number.sh10rs_SH_SERIAL_export_power_limit
+        name: Export limit
+      - entity: sensor.sh10rs_SH_SERIAL_grid_export_power
+        name: Grid export now
+  - type: entities
+    title: String inverter · power limit
+    entities:
+      - entity: sensor.sg5_0rs_SG_SERIAL_operating_status
+        name: Operating status
+      - entity: sensor.sg5_0rs_SG_SERIAL_total_active_power
+        name: AC output
+      - entity: sensor.sg5_0rs_SG_SERIAL_active_power_limit_setpoint
+        name: Accepted power setpoint
+      - entity: switch.sg5_0rs_SG_SERIAL_power_limitation_switch
+        name: Power limit enabled
+      - entity: number.sg5_0rs_SG_SERIAL_power_limitation_setting
+        name: Power limit %
+      - entity: select.sg5_0rs_SG_SERIAL_start_stop
+        name: Start / stop
+      - entity: sensor.sg5_0rs_SG_SERIAL_internal_air_temperature
+        name: Temperature
+  - type: entities
+    title: Battery stack · cells
+    entities:
+      - entity: sensor.sbr192_BAT_SERIAL_battery_operating_status
+        name: Status
+      - entity: sensor.sbr192_BAT_SERIAL_battery_soc
+        name: SOC
+      - entity: sensor.sbr192_BAT_SERIAL_battery_voltage
+        name: Stack voltage
+      - entity: sensor.sbr192_BAT_SERIAL_battery_current
+        name: Stack current
+      - entity: sensor.sbr192_BAT_SERIAL_balancing_status
+        name: Balancing
+      - type: section
+        label: Cells
+      - entity: sensor.sbr192_BAT_SERIAL_cell_voltage_spread
+        name: Cell voltage spread
+      - entity: sensor.sbr192_BAT_SERIAL_cell_voltage_max
+        name: Highest cell
+      - entity: sensor.sbr192_BAT_SERIAL_cell_voltage_max_module
+        name: Highest cell · module
+      - entity: sensor.sbr192_BAT_SERIAL_cell_voltage_max_cell
+        name: Highest cell · cell
+      - entity: sensor.sbr192_BAT_SERIAL_cell_voltage_min
+        name: Lowest cell
+      - entity: sensor.sbr192_BAT_SERIAL_cell_voltage_min_module
+        name: Lowest cell · module
+      - entity: sensor.sbr192_BAT_SERIAL_cell_voltage_min_cell
+        name: Lowest cell · cell
+      - type: section
+        label: Module temperatures
+      - entity: sensor.sbr192_BAT_SERIAL_module_temperature_max
+        name: Warmest module
+      - entity: sensor.sbr192_BAT_SERIAL_module_temperature_max_module
+        name: Warmest · module
+      - entity: sensor.sbr192_BAT_SERIAL_module_temperature_min
+        name: Coolest module
+      - entity: sensor.sbr192_BAT_SERIAL_module_temperature_min_module
+        name: Coolest · module
+      - type: section
+        label: Protection
+      - entity: binary_sensor.sbr192_BAT_SERIAL_charging_not_allowed
+        name: Charging not allowed
+      - entity: binary_sensor.sbr192_BAT_SERIAL_discharging_not_allowed
+        name: Discharging not allowed
+      - entity: sensor.sbr192_BAT_SERIAL_active_fault_codes
+        name: Active fault codes

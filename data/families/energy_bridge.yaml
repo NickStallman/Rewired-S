@@ -1,0 +1,482 @@
+# data/families/energy_bridge.yaml - register tables and signal definitions of the energy_bridge family
+# (docs/data_format.md). Read by tools/gen_tables.py and tests/test_request_nodes.py.
+#
+# tables.<name>.rows   one entry per polled register block, in poll order:
+#   id          signal id (family-scoped, hex); 0 = a gap-filling read that stores nothing
+#   address     1-based register number (wire address = address - 1)
+#   fn          Modbus function: 4 input, 3 holding, 16 write-multiple, 119 proprietary
+#   count       registers read;  type  s16 u16 s32 u32 s64 u64 f32 str
+#   cycle       poll cycle in 100 ms units; a request node is polled at the cycle of its first row
+#   flags       end = the row closes its request node (nodes also split past 120 registers);
+#               clear_offline / priority / no_bulk_decode / keep_sentinel
+#   bits        {first, count}: a status word whose bits are published as signals first + bit
+#   capability  word.bit of the capability bitmap (signal 0x2181) that must be set for the row
+#   unit, scale only for rows without a signal definition (otherwise taken from the signal)
+# signals   one entry per signal id: key (stable entity key, unique per family), name, unit,
+#   scale (omitted = raw value), device_class / state_class (Home Assistant), category
+#   (core | core_hybrid | core_string | extra | hidden; omitted = placed explicitly by the
+#   device package definition), scope (hybrid = meaningless on a string inverter), priority
+#   (display sort rank, lower first), group (realtime | static | protection), accuracy
+#   (display decimals), enum (decode table name), absent (not-served conditions), confidence
+#   (confirmed | likely | guess) and evidence. Signal order = entity order of the packages.
+# fixes     rows whose address differs from the one the stock dongle polls (row carries the fix)
+# reads     non-polled holding registers surfaced read-only (inverter protection settings)
+#
+# Evidence abbreviations: p1_4 / p2 / p3 / p5 = rows of tables.inv_proto*, slaveNN = rows of
+# the data/modbus_tcp map of dev_type NN, battery / st6100 / ... = rows of that table, all as
+# <table>@<address>; mkaiser N = github.com/mkaiser/Sungrow-SHx-Inverter-Modbus-Home-Assistant
+# modbus_sungrow.yaml (register N); SunGather N = github.com/bohdan-s/SunGather
+# registers-sungrow.yaml; readings = values read from an SH10RS and an SG5.0RS (protocol 3);
+# SG-Docs = https://github.com/NickStallman/SG-Docs.
+
+family: energy_bridge
+title: "Sungrow energy bridge (two-channel)"
+device_types: [92]
+reference: "https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/ev-charger-and-energy-bridge.md"
+
+tables:
+  energy_bridge:
+    title: "Energy bridge (dev_type 92)"
+    rows:
+    - {id: 0x2001, address: 4096, fn: 4, count: 1, type: u16, cycle: 30}  # protocol_version
+    - {id: 0x0002, address: 4097, fn: 4, count: 10, type: str, cycle: 30}  # serial_number
+    - {id: 0x0005, address: 4107, fn: 4, count: 8, type: str, cycle: 30}  # device_model
+    - {id: 0x010A, address: 4117, fn: 4, count: 10, type: str, cycle: 30}  # manufacturer
+    - {id: 0x0004, address: 4127, fn: 4, count: 1, type: u16, cycle: 30}  # device_type_code
+    - {id: 0x2002, address: 4128, fn: 4, count: 10, type: str, cycle: 30}  # firmware_version
+    - {id: 0x2003, address: 4161, fn: 4, count: 1, type: u16, cycle: 1}  # switch_state
+    - {id: 0x2004, address: 4162, fn: 4, count: 1, type: u16, cycle: 1}  # register_4162
+    - {id: 0x2005, address: 4163, fn: 4, count: 1, type: u16, cycle: 1}  # phase_a_voltage
+    - {id: 0x2006, address: 4164, fn: 4, count: 1, type: u16, cycle: 1}  # phase_b_voltage
+    - {id: 0x2007, address: 4165, fn: 4, count: 1, type: u16, cycle: 1}  # phase_c_voltage
+    - {id: 0x2008, address: 4166, fn: 4, count: 1, type: s16, cycle: 1}  # grid_inverter_phase_diff_a
+    - {id: 0x2009, address: 4167, fn: 4, count: 1, type: s16, cycle: 1}  # grid_inverter_amplitude_diff_a
+    - {id: 0x200A, address: 4168, fn: 4, count: 1, type: s16, cycle: 1}  # grid_phase_diff_ba
+    - {id: 0x200B, address: 4169, fn: 4, count: 1, type: s16, cycle: 1}  # grid_phase_diff_ca
+    - {id: 0x200C, address: 4170, fn: 4, count: 1, type: u16, cycle: 1}  # grid_frequency
+    - {id: 0x200D, address: 4171, fn: 4, count: 2, type: s32, cycle: 1}  # ch1_active_power
+    - {id: 0x200E, address: 4173, fn: 4, count: 2, type: s32, cycle: 1}  # ch1_phase_a_active_power
+    - {id: 0x200F, address: 4175, fn: 4, count: 2, type: s32, cycle: 1}  # ch1_phase_b_active_power
+    - {id: 0x2010, address: 4177, fn: 4, count: 2, type: s32, cycle: 1}  # ch1_phase_c_active_power
+    - {id: 0x2011, address: 4179, fn: 4, count: 1, type: u16, cycle: 1}  # ch1_phase_a_current
+    - {id: 0x2012, address: 4180, fn: 4, count: 1, type: u16, cycle: 1}  # ch1_phase_b_current
+    - {id: 0x2013, address: 4181, fn: 4, count: 1, type: u16, cycle: 1}  # ch1_phase_c_current
+    - {id: 0x2014, address: 4182, fn: 4, count: 2, type: s32, cycle: 1}  # ch2_active_power
+    - {id: 0x2015, address: 4184, fn: 4, count: 2, type: s32, cycle: 1}  # ch2_phase_a_active_power
+    - {id: 0x2016, address: 4186, fn: 4, count: 2, type: s32, cycle: 1}  # ch2_phase_b_active_power
+    - {id: 0x2017, address: 4188, fn: 4, count: 2, type: s32, cycle: 1}  # ch2_phase_c_active_power
+    - {id: 0x2018, address: 4190, fn: 4, count: 1, type: u16, cycle: 1}  # ch2_phase_a_current
+    - {id: 0x2019, address: 4191, fn: 4, count: 1, type: u16, cycle: 1}  # ch2_phase_b_current
+    - {id: 0x201A, address: 4192, fn: 4, count: 1, type: u16, cycle: 1}  # ch2_phase_c_current
+    - {id: 0x201B, address: 4193, fn: 4, count: 2, type: s32, cycle: 1}  # ch1_reactive_power
+    - {id: 0x201C, address: 4195, fn: 4, count: 2, type: s32, cycle: 1}  # ch1_phase_a_reactive_power
+    - {id: 0x201D, address: 4197, fn: 4, count: 2, type: s32, cycle: 1}  # ch1_phase_b_reactive_power
+    - {id: 0x201E, address: 4199, fn: 4, count: 2, type: s32, cycle: 1}  # ch1_phase_c_reactive_power
+    - {id: 0x201F, address: 4201, fn: 4, count: 2, type: s32, cycle: 1}  # ch2_reactive_power
+    - {id: 0x2020, address: 4203, fn: 4, count: 2, type: s32, cycle: 1}  # ch2_phase_a_reactive_power
+    - {id: 0x2021, address: 4205, fn: 4, count: 2, type: s32, cycle: 1}  # ch2_phase_b_reactive_power
+    - {id: 0x2022, address: 4207, fn: 4, count: 2, type: s32, cycle: 1}  # ch2_phase_c_reactive_power
+    - {id: 0x2023, address: 4209, fn: 4, count: 2, type: u32, cycle: 1}  # ch1_forward_active_energy
+    - {id: 0x2024, address: 4211, fn: 4, count: 2, type: u32, cycle: 1}  # ch1_reverse_active_energy
+    - {id: 0x2025, address: 4213, fn: 4, count: 2, type: u32, cycle: 1}  # ch2_forward_active_energy
+    - {id: 0x2026, address: 4215, fn: 4, count: 2, type: u32, cycle: 1}  # ch2_reverse_active_energy
+    - {id: 0x2027, address: 4217, fn: 4, count: 1, type: u16, cycle: 1}  # breaker_trip_count
+    - {id: 0x2028, address: 4218, fn: 4, count: 1, type: u16, cycle: 1}
+    - {id: 0x2031, address: 4220, fn: 4, count: 1, type: u16, cycle: 1}
+    - {id: 0x2030, address: 4221, fn: 4, count: 1, type: u16, cycle: 1}
+
+signals:
+- id: 0x2001
+  key: protocol_version
+  name: "Protocol version"
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4096; stock UI label \"Protocol version No.\"; dev92 0x2001 protocal_version (u16 @4096)"
+- id: 0x0002
+  key: serial_number
+  name: "Serial number"
+  category: extra
+  group: static
+  confidence: likely
+  evidence: "energy_bridge@4097; stock UI label \"Device S/N\""
+- id: 0x0005
+  key: device_model
+  name: "Device model"
+  category: extra
+  group: static
+  confidence: likely
+  evidence: "energy_bridge@4107"
+- id: 0x010A
+  key: manufacturer
+  name: Manufacturer
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4117; stock UI label \"Device manufacturer\"; dev92 0x010a dev_vendor"
+- id: 0x0004
+  key: device_type_code
+  name: "Device type code"
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4127"
+- id: 0x2002
+  key: firmware_version
+  name: "Firmware version"
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4128; stock UI label \"Firmware version\""
+- id: 0x2003
+  key: switch_state
+  name: "Switch status"
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4161; stock UI label \"Switch status\""
+- id: 0x2004
+  key: register_4162
+  name: "Unknown register 4162"
+  category: hidden
+  confidence: guess
+  evidence: "energy_bridge@4162; sigid 0x2004 has no dev-92 point entry (the old CSV name \"B-C line voltage\" came from the wrong dev-18 join); meaning unknown"
+- id: 0x2005
+  key: phase_a_voltage
+  name: "Phase A voltage"
+  unit: V
+  scale: 0.1
+  device_class: voltage
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4163; stock UI label \"Phase A voltage\""
+- id: 0x2006
+  key: phase_b_voltage
+  name: "Phase B voltage"
+  unit: V
+  scale: 0.1
+  device_class: voltage
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4164; stock UI label \"Phase B voltage\""
+- id: 0x2007
+  key: phase_c_voltage
+  name: "Phase C voltage"
+  unit: V
+  scale: 0.1
+  device_class: voltage
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4165; stock UI label \"Phase C voltage\""
+- id: 0x2008
+  key: grid_inverter_phase_diff_a
+  name: "Grid/inverter A-N phase difference"
+  unit: "°"
+  scale: 0.1
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4166; stock UI label \"Grid/inverter A-N phase difference\""
+- id: 0x2009
+  key: grid_inverter_amplitude_diff_a
+  name: "Grid/inverter A-N magnitude difference"
+  unit: V
+  scale: 0.1
+  device_class: voltage
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4167; stock UI label \"Grid/inverter A-N magnitude difference\""
+- id: 0x200A
+  key: grid_phase_diff_ba
+  name: "Grid phase B-A difference"
+  unit: "°"
+  scale: 0.1
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4168; stock UI label \"Grid phase B-A difference\""
+- id: 0x200B
+  key: grid_phase_diff_ca
+  name: "Grid phase C-A difference"
+  unit: "°"
+  scale: 0.1
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4169; stock UI label \"Grid phase C-A difference\""
+- id: 0x200C
+  key: grid_frequency
+  name: "Grid frequency"
+  unit: Hz
+  scale: 0.01
+  device_class: frequency
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4170; stock UI label \"Grid frequency\""
+- id: 0x200D
+  key: ch1_active_power
+  name: "Channel 1 active power"
+  unit: kW
+  scale: 0.001
+  device_class: power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4171; stock UI label \"Channel 1 total active power\""
+- id: 0x200E
+  key: ch1_phase_a_active_power
+  name: "Channel 1 phase A active power"
+  unit: kW
+  scale: 0.001
+  device_class: power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4173; stock UI label \"Channel 1 phase A active power\""
+- id: 0x2011
+  key: ch1_phase_a_current
+  name: "Channel 1 phase A current"
+  unit: A
+  scale: 0.01
+  device_class: current
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4179; stock UI label \"Channel 1 phase A current\""
+- id: 0x200F
+  key: ch1_phase_b_active_power
+  name: "Channel 1 phase B active power"
+  unit: kW
+  scale: 0.001
+  device_class: power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4175; stock UI label \"Channel 1 phase B active power\""
+- id: 0x2012
+  key: ch1_phase_b_current
+  name: "Channel 1 phase B current"
+  unit: A
+  scale: 0.01
+  device_class: current
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4180; stock UI label \"Channel 1 phase B current\""
+- id: 0x2010
+  key: ch1_phase_c_active_power
+  name: "Channel 1 phase C active power"
+  unit: kW
+  scale: 0.001
+  device_class: power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4177; stock UI label \"Channel 1 phase C active power\""
+- id: 0x2013
+  key: ch1_phase_c_current
+  name: "Channel 1 phase C current"
+  unit: A
+  scale: 0.01
+  device_class: current
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4181; stock UI label \"Channel 1 phase C current\""
+- id: 0x201B
+  key: ch1_reactive_power
+  name: "Channel 1 reactive power"
+  unit: kvar
+  scale: 0.001
+  device_class: reactive_power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4193; stock UI label \"Channel 1 total reactive power\""
+- id: 0x201C
+  key: ch1_phase_a_reactive_power
+  name: "Channel 1 phase A reactive power"
+  unit: kvar
+  scale: 0.001
+  device_class: reactive_power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4195; stock UI label \"Channel 1 phase A reactive power\""
+- id: 0x201D
+  key: ch1_phase_b_reactive_power
+  name: "Channel 1 phase B reactive power"
+  unit: kvar
+  scale: 0.001
+  device_class: reactive_power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4197; stock UI label \"Channel 1 phase B reactive power\""
+- id: 0x201E
+  key: ch1_phase_c_reactive_power
+  name: "Channel 1 phase C reactive power"
+  unit: kvar
+  scale: 0.001
+  device_class: reactive_power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4199; stock UI label \"Channel 1 phase C reactive power\""
+- id: 0x2014
+  key: ch2_active_power
+  name: "Channel 2 active power"
+  unit: kW
+  scale: 0.001
+  device_class: power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4182; stock UI label \"Channel 2 total active power\""
+- id: 0x2015
+  key: ch2_phase_a_active_power
+  name: "Channel 2 phase A active power"
+  unit: kW
+  scale: 0.001
+  device_class: power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4184; stock UI label \"Channel 2 phase A active power\""
+- id: 0x2018
+  key: ch2_phase_a_current
+  name: "Channel 2 phase A current"
+  unit: A
+  scale: 0.01
+  device_class: current
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4190; stock UI label \"Channel 2 phase A current\""
+- id: 0x2016
+  key: ch2_phase_b_active_power
+  name: "Channel 2 phase B active power"
+  unit: kW
+  scale: 0.001
+  device_class: power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4186; stock UI label \"Channel 2 phase B active power\""
+- id: 0x2019
+  key: ch2_phase_b_current
+  name: "Channel 2 phase B current"
+  unit: A
+  scale: 0.01
+  device_class: current
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4191; stock UI label \"Channel 2 phase B current\""
+- id: 0x2017
+  key: ch2_phase_c_active_power
+  name: "Channel 2 phase C active power"
+  unit: kW
+  scale: 0.001
+  device_class: power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4188; stock UI label \"Channel 2 phase C active power\""
+- id: 0x201A
+  key: ch2_phase_c_current
+  name: "Channel 2 phase C current"
+  unit: A
+  scale: 0.01
+  device_class: current
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4192; stock UI label \"Channel 2 phase C current\""
+- id: 0x201F
+  key: ch2_reactive_power
+  name: "Channel 2 reactive power"
+  unit: kvar
+  scale: 0.001
+  device_class: reactive_power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4201; stock UI label \"Channel 2 total reactive power\""
+- id: 0x2020
+  key: ch2_phase_a_reactive_power
+  name: "Channel 2 phase A reactive power"
+  unit: kvar
+  scale: 0.001
+  device_class: reactive_power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4203; stock UI label \"Channel 2 phase A reactive power\""
+- id: 0x2021
+  key: ch2_phase_b_reactive_power
+  name: "Channel 2 phase B reactive power"
+  unit: kvar
+  scale: 0.001
+  device_class: reactive_power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4205; stock UI label \"Channel 2 phase B reactive power\""
+- id: 0x2022
+  key: ch2_phase_c_reactive_power
+  name: "Channel 2 phase C reactive power"
+  unit: kvar
+  scale: 0.001
+  device_class: reactive_power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4207; stock UI label \"Channel 2 phase C reactive power\""
+- id: 0x2023
+  key: ch1_forward_active_energy
+  name: "Channel 1 forward active energy"
+  unit: kWh
+  scale: 0.01
+  device_class: energy
+  state_class: total_increasing
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4209; stock UI label \"Channel 1 forward total active energy\""
+- id: 0x2024
+  key: ch1_reverse_active_energy
+  name: "Channel 1 reverse active energy"
+  unit: kWh
+  scale: 0.01
+  device_class: energy
+  state_class: total_increasing
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4211; stock UI label \"Channel 1 reverse total active energy\""
+- id: 0x2025
+  key: ch2_forward_active_energy
+  name: "Channel 2 forward active energy"
+  unit: kWh
+  scale: 0.01
+  device_class: energy
+  state_class: total_increasing
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4213; stock UI label \"Channel 2 total forward active energy\""
+- id: 0x2026
+  key: ch2_reverse_active_energy
+  name: "Channel 2 reverse active energy"
+  unit: kWh
+  scale: 0.01
+  device_class: energy
+  state_class: total_increasing
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4215; stock UI label \"Channel 2 total reverse active energy\""
+- id: 0x2027
+  key: breaker_trip_count
+  name: "Breaker trip count"
+  state_class: total_increasing
+  category: extra
+  confidence: likely
+  evidence: "energy_bridge@4217; stock UI label \"Tripping times\""

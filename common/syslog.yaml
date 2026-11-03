@@ -1,0 +1,27 @@
+# Optional remote logging, off by default: no node includes this package. To turn it on, add to the
+# node YAML
+#   substitutions:
+#     syslog_host: 192.0.2.20      # IPv4 address of the receiver
+#   packages:
+#     syslog: !include common/syslog.yaml
+#
+# Every log line at the configured log level then goes out as an RFC 3164-style syslog datagram to
+# ${syslog_host}:${syslog_port}, so the log up to the last second before a reset is kept on a host
+# without an API client being connected. Receiver: tools/syslog_receiver.py (per-host daily files
+# under dist/logs/). Lines are sent from the main loop, so a stalled loop stops the stream (the
+# reset journal covers that case).
+#
+# Required substitution: syslog_host (IPv4 address of the receiver).
+substitutions:
+  syslog_port: "5514"
+
+udp:
+  id: syslog_udp
+  addresses:
+    - ${syslog_host}
+
+syslog:
+  udp_id: syslog_udp
+  time_id: sntp_time
+  port: ${syslog_port}
+  level: DEBUG

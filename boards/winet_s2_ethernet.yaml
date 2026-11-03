@@ -1,0 +1,18 @@
+# Optional network package for the WiNet-S2: W5500 SPI Ethernet instead of Wi-Fi.
+# Use it in winet-s2.yaml in place of common/wifi.yaml (ESPHome can't run both).
+# Pin assignments: https://github.com/NickStallman/SG-Docs/blob/main/reference/hardware/winet-s2.md
+ethernet:
+  type: W5500
+  interface: spi3      # stock uses SPI3_HOST; SPI2 is the external NOR
+  clk_pin: GPIO39
+  mosi_pin: GPIO40
+  miso_pin: GPIO41
+  cs_pin: GPIO42
+  interrupt_pin: GPIO6
+  reset_pin: GPIO5     # the IDF default, as in the stock PHY config
+  clock_speed: 36MHz
+
+text_sensor:
+  - platform: ethernet_info
+    ip_address:
+      name: IP address

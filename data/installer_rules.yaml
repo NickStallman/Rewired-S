@@ -1,0 +1,615 @@
+# data/installer_rules.yaml - value rules the server enforces on Installer writes
+# (docs/data_format.md). Read by tools/gen_installer_rules.py (imported by
+# tools/gen_installer_settings.py) -> installer_rules.gen.h / installer_settings.gen.ts.
+#
+# families.<settings family>[]  one rule per holding register (1-based address):
+#   type        U16 | S16 | U32 (U32 = low word at address)
+#   scale       display = raw x scale;  unit  display unit
+#   range       intervals in display units, [lo, hi] each; the enforced raw range is the
+#               overall minimum .. maximum, raw = round(display / scale)
+#   regulation  ';'-separated relations that must all hold, @N = the value of register N
+#               (same scale on both sides); simple `@a op @b` rules are enforced by the
+#               server, the whole string is evaluated by the SPA for inline feedback
+# A register with a live range callback in the inverter keeps its static range here (the
+# live one can only be narrower).
+
+families:
+  str_pv:
+  - {address: 14600, label: "PV module total yield correction", type: S32, scale: 0.1, unit: Wh, range: [[-214748364.8, 214748364.6]]}
+  - {address: 14606, label: "Anti-hot spot voltage threshold", type: U16, scale: 0.1, unit: V, range: [[0, 90]]}
+  - {address: 14607, label: "Anti-hot spot current threshold", type: U16, scale: 0.01, unit: A, range: [[0, 18]]}
+  - {address: 31201, label: "Active power ramp-down rate", type: U16, scale: 1, unit: "%/min", range: [[8, 6000]]}
+  - {address: 31202, label: "Active power ramp-up rate", type: U16, scale: 1, unit: "%/min", range: [[8, 6000]]}
+  - {address: 31205, label: "Active power limit ratio", type: U16, scale: 0.1, unit: "%", range: [[0, 110]]}
+  - {address: 31208, label: "Power ramp-up rate after fault", type: U16, scale: 1, unit: "%/min", range: [[5, 100]]}
+  - {address: 31228, label: "Meter CT ratio", type: U16, scale: 1, range: [[0, 65534]]}
+  - {address: 31231, type: U16, scale: 0.1, unit: V, range: [[184, 322]], regulation: "@31231<=@31232"}
+  - {address: 31232, type: U16, scale: 0.1, unit: V, range: [[184, 322]], regulation: "@31232<=@31233;@31232>=@31231"}
+  - {address: 31233, type: U16, scale: 0.1, unit: V, range: [[184, 322]], regulation: "@31233<=@31234;@31233>=@31232"}
+  - {address: 31234, type: U16, scale: 0.1, unit: V, range: [[184, 322]], regulation: "@31234>=@31233"}
+  - {address: 31235, type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 31236, type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 31237, type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 31238, type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 31606, label: "Reactive power ratio", type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 31608, label: PF, type: S16, scale: 0.001, range: [[-1, -0.8], [0.8, 1]]}
+  - {address: 31616, label: "Reactive power response time", type: U16, scale: 0.1, unit: s, range: [[0.1, 600]]}
+  - {address: 31798, type: S16, scale: 0.1, unit: "%", range: [[-50, 50]]}
+  - {address: 31799, type: S16, scale: 0.1, unit: "%", range: [[-50, 50]]}
+  - {address: 31800, type: U16, scale: 0.1, unit: "%", range: [[80, 100]]}
+  - {address: 31801, type: U16, scale: 0.1, unit: "%", range: [[90, 110]]}
+  - {address: 31802, type: U16, scale: 0.1, unit: "%", range: [[90, 110]]}
+  - {address: 31803, type: U16, scale: 0.1, unit: "%", range: [[100, 120]]}
+  - {address: 31804, type: U16, scale: 0.1, unit: "%", range: [[0, 5]]}
+  - {address: 31805, type: U16, scale: 0.1, unit: "%", range: [[0, 50]]}
+  - {address: 31806, type: U16, scale: 0.1, unit: "%", range: [[0, 50]]}
+  - {address: 31850, type: U16, scale: 0.1, unit: "%", range: [[90.1, 109.8]], regulation: "@31850>@31851"}
+  - {address: 31851, type: U16, scale: 0.1, unit: "%", range: [[90, 109.7]], regulation: "@31851<@31850"}
+  - {address: 31852, type: U16, scale: 0.1, unit: "%", range: [[90.2, 109.9]], regulation: "@31852>@31850;@31852<@31853"}
+  - {address: 31853, type: U16, scale: 0.1, unit: "%", range: [[90.3, 110]], regulation: "@31853>@31852"}
+  - {address: 31854, type: S16, scale: 0.001, range: [[-1, 1]], regulation: "@31854>=@31862"}
+  - {address: 31855, type: U16, scale: 0.1, unit: "%", range: [[0.1, 100]], regulation: "@31855>@31856"}
+  - {address: 31856, type: U16, scale: 0.1, unit: "%", range: [[0, 99.9]], regulation: "@31856<@31855"}
+  - {address: 31859, type: U16, scale: 0.01, range: [[0, 0.95]]}
+  - {address: 31860, type: S16, scale: 0.001, range: [[-1, 1]], regulation: "@31860<=@31861"}
+  - {address: 31861, type: S16, scale: 0.001, range: [[-1, 1]], regulation: "@31861<=@31862;@31861>=@31860"}
+  - {address: 31862, type: S16, scale: 0.001, range: [[-1, 1]], regulation: "@31862>=@31861"}
+  - {address: 31865, type: U16, scale: 0.1, unit: V, range: [[184, 276]], regulation: "@31865<@31866"}
+  - {address: 31866, type: U16, scale: 0.1, unit: V, range: [[184, 276]], regulation: "@31866<@31867;@31866>@31865"}
+  - {address: 31867, type: U16, scale: 0.1, unit: V, range: [[184, 276]], regulation: "@31867<@31868;@31867>@31866"}
+  - {address: 31868, type: U16, scale: 0.1, unit: V, range: [[184, 276]], regulation: "@31868>@31867"}
+  - {address: 31869, type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 31870, type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 31871, type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 31872, type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 31898, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31898>=@31900;@31898<=@31901"}
+  - {address: 31899, type: S16, scale: 0.001, range: [[-0.5, 0.5]]}
+  - {address: 31900, type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31900<@31901;@31900>=@31898"}
+  - {address: 31901, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31901>=@31898;@31901>@31900"}
+  - {address: 31902, type: S16, scale: 0.001, range: [[-0.5, 1]]}
+  - {address: 31903, type: S16, scale: 0.001, range: [[-0.5, 1]]}
+  - {address: 31905, type: U16, scale: 0.1, unit: "%", range: [[10, 100]], regulation: "@31905<=@31906;@31905<@31908"}
+  - {address: 31906, type: U16, scale: 0.1, unit: "%", range: [[10, 100]], regulation: "@31906<=@31907;@31906>=@31905"}
+  - {address: 31907, type: U16, scale: 0.1, unit: "%", range: [[10, 100]], regulation: "@31907<=@31908;@31907>=@31906"}
+  - {address: 31908, type: U16, scale: 0.1, unit: "%", range: [[10, 100]], regulation: "@31908>@31905;@31908>=@31907"}
+  - {address: 31909, type: S16, scale: 0.001, range: [[-1, -0.9]]}
+  - {address: 31910, type: S16, scale: 0.001, range: [[-1, -0.9]]}
+  - {address: 31911, type: U16, scale: 0.001, range: [[0.9, 1]]}
+  - {address: 31912, type: U16, scale: 0.001, range: [[0.9, 1]]}
+  - {address: 31950, type: U16, scale: 0.1, unit: "%", range: [[20, 99.9]], regulation: "@31950<=@31951"}
+  - {address: 31951, type: U16, scale: 0.1, unit: "%", range: [[20, 99.9]], regulation: "@31951<@31952;@31951>=@31950"}
+  - {address: 31952, type: U16, scale: 0.1, unit: "%", range: [[20.1, 100]], regulation: "@31952>@31951"}
+  - {address: 31953, type: U16, scale: 0.1, unit: "%", range: [[90, 100]]}
+  - {address: 31954, type: U16, scale: 0.1, unit: "%", range: [[100, 110]], regulation: "@31954>@31955"}
+  - {address: 31955, type: U16, scale: 0.1, unit: "%", range: [[90, 100]], regulation: "@31955<@31954"}
+  - {address: 32310, label: "Country/region", type: U16, scale: 0.1, range: [[0.1, 600]]}
+  - {address: 32314, label: "Grid undervoltage single level protection threshold", type: U16, scale: 0.1, unit: V, range: [[23, 229.9]], regulation: "@32314<@32319"}
+  - {address: 32315, label: "Grid overvoltage single level protection threshold", type: U16, scale: 0.1, unit: V, range: [[220.1, 322]], regulation: "@32315>@32318"}
+  - {address: 32316, label: "Grid underfrequency single level protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[45, 49.96]], regulation: "@32316<@32321"}
+  - {address: 32317, label: "Grid overfrequency single level protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[50.04, 55]], regulation: "@32317>@32320"}
+  - {address: 32318, label: "Overvoltage protection recovery threshold", type: U16, scale: 0.1, unit: V, range: [[220, 321.9]]}
+  - {address: 32319, label: "Undervoltage protection recovery threshold", type: U16, scale: 0.1, unit: V, range: [[23.1, 230]], regulation: "@32319<@32318"}
+  - {address: 32320, label: "Overfrequency protection recovery threshold", type: U16, scale: 0.01, unit: Hz, range: [[50.02, 54.98]]}
+  - {address: 32321, label: "Underfrequency protection recovery threshold", type: U16, scale: 0.01, unit: Hz, range: [[45.02, 49.98]], regulation: "@32321<@32320;@32321>@32316"}
+  - {address: 32322, label: "Grid undervoltage level 1 protection threshold", type: U16, scale: 0.1, unit: V, range: [[23, 229.9]], regulation: "@32322<@32319"}
+  - {address: 32323, label: "Grid overvoltage level 1 protection threshold", type: U16, scale: 0.1, unit: V, range: [[220.1, 322]], regulation: "@32323>@32318"}
+  - {address: 32324, label: "Grid underfrequency level 1 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[45, 49.96]], regulation: "@32324<@32321"}
+  - {address: 32325, label: "Grid overfrequency level 1 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[50.04, 55]], regulation: "@32325>@32320"}
+  - {address: 32326, label: "Grid undervoltage level 2 protection threshold", type: U16, scale: 0.1, unit: V, range: [[23, 229.9]], regulation: "@32326<=@32322"}
+  - {address: 32327, label: "Grid overvoltage level 2 protection threshold", type: U16, scale: 0.1, unit: V, range: [[220.1, 322]], regulation: "@32327>=@32323"}
+  - {address: 32328, label: "Grid underfrequency level 2 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[45, 49.96]], regulation: "@32328<=@32324"}
+  - {address: 32329, label: "Grid overfrequency level 2 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[50.04, 55]], regulation: "@32329>=@32325"}
+  - {address: 32330, label: "Grid undervoltage level 3 protection threshold", type: U16, scale: 0.1, unit: V, range: [[23, 229.9]], regulation: "@32330<=@32326"}
+  - {address: 32331, label: "Grid overvoltage level 3 protection threshold", type: U16, scale: 0.1, unit: V, range: [[220.1, 322]], regulation: "@32331>=@32327"}
+  - {address: 32332, label: "Grid underfrequency level 3 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[45, 49.96]], regulation: "@32332<=@32328"}
+  - {address: 32333, label: "Grid overfrequency level 3 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[50.04, 55]], regulation: "@32333>=@32329"}
+  - {address: 32334, label: "Grid undervoltage level 4 protection threshold", type: U16, scale: 0.1, unit: V, range: [[23, 229.9]], regulation: "@32334<=@32330"}
+  - {address: 32335, label: "Grid overvoltage level 4 protection threshold", type: U16, scale: 0.1, unit: V, range: [[220.1, 322]], regulation: "@32335>=@32331"}
+  - {address: 32336, label: "Grid underfrequency level 4 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[45, 49.96]], regulation: "@32336<=@32332"}
+  - {address: 32337, label: "Grid overfrequency level 4 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[50.04, 55]], regulation: "@32337>=@32333"}
+  - {address: 32338, label: "Grid undervoltage level 5 protection threshold", type: U16, scale: 0.1, unit: V, range: [[23, 229.9]], regulation: "@32338<=@32334"}
+  - {address: 32339, label: "Grid overvoltage level 5 protection threshold", type: U16, scale: 0.1, unit: V, range: [[220.1, 322]], regulation: "@32339>=@32335"}
+  - {address: 32340, label: "Grid underfrequency level 5 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[45, 49.96]], regulation: "@32340<=@32336"}
+  - {address: 32341, label: "Grid overfrequency level 5 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[50.04, 55]], regulation: "@32341>=@32337"}
+  - {address: 32362, label: "Grid undervoltage level 1 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]]}
+  - {address: 32364, label: "Grid overvoltage level 1 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]]}
+  - {address: 32366, label: "Grid underfrequency level 1 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]]}
+  - {address: 32368, label: "Grid overfrequency level 1 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]]}
+  - {address: 32370, label: "Grid undervoltage level 2 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32370<=@32362"}
+  - {address: 32372, label: "Grid overvoltage level 2 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32372<=@32364"}
+  - {address: 32374, label: "Grid underfrequency level 2 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32374<=@32366"}
+  - {address: 32376, label: "Grid overfrequency level 2 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32376<=@32368"}
+  - {address: 32378, label: "Grid undervoltage level 3 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32378<=@32370"}
+  - {address: 32380, label: "Grid overvoltage level 3 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32380<=@32372"}
+  - {address: 32382, label: "Grid underfrequency level 3 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32382<=@32374"}
+  - {address: 32384, label: "Grid overfrequency level 3 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32384<=@32376"}
+  - {address: 32386, label: "Grid undervoltage level 4 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32386<=@32378"}
+  - {address: 32388, label: "Grid overvoltage level 4 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32388<=@32380"}
+  - {address: 32390, label: "Grid underfrequency level 4 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32390<=@32382"}
+  - {address: 32392, label: "Grid overfrequency level 4 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32392<=@32384"}
+  - {address: 32394, label: "Grid undervoltage level 5 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32394<=@32386"}
+  - {address: 32396, label: "Grid overvoltage level 5 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32396<=@32388"}
+  - {address: 32398, label: "Grid underfrequency level 5 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32398<=@32390"}
+  - {address: 32400, label: "Grid overfrequency level 5 protection delay", type: U32, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@32400<=@32392"}
+  res_es:
+  - {address: 13003, label: "Load scheduled period start time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 13004, label: "Load scheduled period start time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13005, label: "Load scheduled period end time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 13006, label: "Load scheduled period end time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13007, label: "Load scheduled period start time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 13008, label: "Load scheduled period start time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13009, label: "Load scheduled period end time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 13010, label: "Load scheduled period end time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13012, label: "Load optimization mode start time: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 13013, label: "Load optimization mode start time: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13014, label: "Load optimization mode end time: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 13015, label: "Load optimization mode end time: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13016, label: "Load optimized power", type: U16, scale: 0.01, unit: kW, range: [[0, 60000]]}
+  - {address: 13052, label: "Charging/discharging power", type: U16, scale: 1, unit: W, range: [[0, 5000]]}
+  - {address: 13102, label: "Active power ramp-up rate", type: U16, scale: 0.01, unit: "%/min", range: [[5, 100]]}
+  - {address: 13107, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@13107<=@13108"}
+  - {address: 13108, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@13108<=@13109;@13108>=@13107"}
+  - {address: 13109, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@13109<=@13110;@13109>=@13108"}
+  - {address: 13110, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@13110>=@13109"}
+  - {address: 13111, type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 13112, type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 13123, label: "Working days discharging start time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 13124, label: "Working days discharging start time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13125, label: "Working days discharging end time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 24]]}
+  - {address: 13126, label: "Working days discharging end time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13127, label: "Working days discharging start time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 13128, label: "Working days discharging start time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13129, label: "Working days discharging end time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 24]]}
+  - {address: 13130, label: "Working days discharging end time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13132, label: "Non-working day battery use start time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 13133, label: "Non-working day battery use start time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13134, label: "Non-working day battery use end time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 24]]}
+  - {address: 13135, label: "Non-working day battery use end time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13136, label: "Non-working day battery use start time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 13137, label: "Non-working day battery use start time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13138, label: "Non-working day battery use end time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 24]]}
+  - {address: 13139, label: "Non-working day battery use end time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13142, label: "Forced charging start time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 13143, label: "Forced charging start time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13144, label: "Forced charging end time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 13145, label: "Forced charging end time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13146, label: "Target SOC of forced charging 1", type: U16, scale: 1, unit: "%", range: [[0, 100]]}
+  - {address: 13147, label: "Forced charging start time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 13148, label: "Forced charging start time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13149, label: "Forced charging end time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 13150, label: "Forced charging end time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 13151, label: "Target SOC of forced charging 2", type: U16, scale: 1, unit: "%", range: [[0, 100]]}
+  - {address: 13172, type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 13173, type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 14600, label: "PV module total yield correction", type: S32, scale: 0.1, unit: Wh, range: [[-214748364.8, 214748364.6]]}
+  - {address: 14606, label: "Anti-hot spot voltage threshold", type: U16, scale: 0.1, unit: V, range: [[0, 90]]}
+  - {address: 14607, label: "Anti-hot spot current threshold", type: U16, scale: 0.01, unit: A, range: [[0, 18]]}
+  - {address: 30461, type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 30462, type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 30463, type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 30464, type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 30643, label: "Country/region", type: U16, scale: 0.1, range: [[0.1, 600]]}
+  - {address: 30648, label: "Grid undervoltage level 1 protection threshold", type: U16, scale: 0.1, unit: V, range: [[23, 230]], regulation: "@30648<=@30665;@30648>=@30650"}
+  - {address: 30649, label: "Grid undervoltage level 1 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@30649>=@30651"}
+  - {address: 30650, label: "Grid undervoltage level 2 protection threshold", type: U16, scale: 0.1, unit: V, range: [[23, 230]], regulation: "@30650<=@30648"}
+  - {address: 30651, label: "Grid undervoltage level 2 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@30651<=@30649"}
+  - {address: 30652, label: "Grid overvoltage level 1 protection threshold", type: U16, scale: 0.1, unit: V, range: [[230, 299]], regulation: "@30652>=@30664;@30652<=@30654"}
+  - {address: 30653, label: "Grid overvoltage level 1 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@30653>=@30655"}
+  - {address: 30654, label: "Grid overvoltage level 2 protection threshold", type: U16, scale: 0.1, unit: V, range: [[230, 311]], regulation: "@30654>=@30652"}
+  - {address: 30655, label: "Grid overvoltage level 2 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@30655<=@30653"}
+  - {address: 30656, label: "Grid underfrequency level 1 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[45, 60]], regulation: "@30656<=@30667;@30656>=@30658"}
+  - {address: 30657, label: "Grid underfrequency level 1 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@30657>=@30659"}
+  - {address: 30658, label: "Grid underfrequency level 2 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[45, 60]], regulation: "@30658<=@30656"}
+  - {address: 30659, label: "Grid underfrequency level 2 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@30659<=@30657"}
+  - {address: 30660, label: "Grid overfrequency level 1 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[50, 65.5]], regulation: "@30660>=@30666;@30660<=@30662"}
+  - {address: 30661, label: "Grid overfrequency level 1 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@30661>=@30663"}
+  - {address: 30662, label: "Grid overfrequency level 2 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[50, 65.5]], regulation: "@30662>=@30660"}
+  - {address: 30663, label: "Grid overfrequency level 2 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@30663<=@30661"}
+  - {address: 30664, label: "Overvoltage protection recovery threshold", type: U16, scale: 0.1, unit: V, range: [[230, 299]], regulation: "@30664<=@30652"}
+  - {address: 30665, label: "Undervoltage protection recovery threshold", type: U16, scale: 0.1, unit: V, range: [[130, 230]], regulation: "@30665>=@30648"}
+  - {address: 30666, label: "Overfrequency protection recovery threshold", type: U16, scale: 0.01, unit: Hz, range: [[50, 65]], regulation: "@30666<=@30660"}
+  - {address: 30667, label: "Underfrequency protection recovery threshold", type: U16, scale: 0.01, unit: Hz, range: [[45, 60]], regulation: "@30667>=@30656"}
+  - {address: 31169, label: "Active power limit ratio", type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 31271, label: PF, type: S16, scale: 0.001, range: [[-1, -0.8], [0.8, 1]]}
+  - {address: 31272, label: "Reactive power ratio", type: S16, scale: 0.1, unit: "%", range: [[-60, 60]]}
+  - {address: 31293, type: U16, scale: 0.1, unit: "%", range: [[80, 94]]}
+  - {address: 31294, type: U16, scale: 0.1, unit: "%", range: [[95, 100]]}
+  - {address: 31295, type: U16, scale: 0.1, unit: "%", range: [[100, 105]]}
+  - {address: 31296, type: U16, scale: 0.1, unit: "%", range: [[106, 120]]}
+  - {address: 31297, type: U16, scale: 0.1, unit: "%", range: [[0, 5]]}
+  - {address: 31298, type: U16, scale: 0.1, unit: "%", range: [[0, 60]]}
+  - {address: 31299, type: U16, scale: 0.1, unit: "%", range: [[0, 60]]}
+  - {address: 31300, type: U16, scale: 0.1, unit: "%", range: [[90, 110]], regulation: "@31300>@31301;@31300<@31302"}
+  - {address: 31301, type: U16, scale: 0.1, unit: "%", range: [[90, 110]], regulation: "@31301<@31300;@31301<@31303"}
+  - {address: 31302, type: U16, scale: 0.1, unit: "%", range: [[90, 110]], regulation: "@31302>@31300"}
+  - {address: 31303, type: U16, scale: 0.1, unit: "%", range: [[90, 110]], regulation: "@31303>@31301"}
+  - {address: 31304, type: U16, scale: 0.1, unit: "%", range: [[0, 60]]}
+  - {address: 31305, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31306>@31308"}
+  - {address: 31306, type: U16, scale: 0.1, unit: "%", range: [[1, 20]], regulation: "@31308<@31306"}
+  - {address: 31308, type: U16, scale: 0.1, unit: "%", range: [[0, 10]]}
+  - {address: 31353, type: U16, scale: 0.1, unit: "%", range: [[0, 50]], regulation: "@31353<=@31354"}
+  - {address: 31354, type: U16, scale: 0.1, unit: "%", range: [[50, 100]], regulation: "@31354>=@31353"}
+  - {address: 31355, type: U16, scale: 0.001, range: [[0.9, 1]]}
+  - {address: 31356, type: U16, scale: 0.001, range: [[0.9, 1]]}
+  - {address: 31357, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31357<=@31358"}
+  - {address: 31358, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31358<=@31359;@31358>=@31357"}
+  - {address: 31359, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31359>=@31358"}
+  - {address: 31360, type: U16, scale: 0.001, range: [[0.9, 1]]}
+  - {address: 31361, type: U16, scale: 0.1, unit: "%", range: [[100, 110]], regulation: "@31361>=@31362"}
+  - {address: 31362, type: U16, scale: 0.1, unit: "%", range: [[90, 100]], regulation: "@31362<=@31361"}
+  - {address: 31363, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@31363<=@31364"}
+  - {address: 31364, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@31364<=@31365;@31364>=@31363"}
+  - {address: 31365, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@31365<=@31366;@31365>=@31364"}
+  - {address: 31366, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@31366>=@31365"}
+  - {address: 31373, type: U16, scale: 0.1, unit: "%", range: [[80, 100]]}
+  - {address: 31374, type: U16, scale: 0.1, unit: "%", range: [[100, 104]]}
+  - {address: 31375, type: U16, scale: 0.1, unit: "%", range: [[104, 107]]}
+  - {address: 31376, type: U16, scale: 0.1, unit: "%", range: [[107, 120]]}
+  - {address: 31377, type: U16, scale: 0.1, unit: "%", range: [[0, 5]]}
+  - {address: 31378, type: U16, scale: 0.1, unit: "%", range: [[0, 120]]}
+  - {address: 31379, type: U16, scale: 0.1, unit: "%", range: [[0, 120]]}
+  - {address: 31380, type: U16, scale: 0.1, unit: "%", range: [[0, 50]]}
+  - {address: 31616, label: "Reactive power response time", type: U16, scale: 0.1, unit: s, range: [[0.1, 600]]}
+  - {address: 32618, label: "Target SOC of off-grid emergency charging", type: U16, scale: 1, unit: "%", range: [[1, 100]]}
+  - {address: 33277, label: "Max. battery charging power from AC", type: U16, scale: 0.01, unit: kW, range: [[0, 500]]}
+  - {address: 33278, label: "Generator rated power", type: U16, scale: 0.1, unit: kW, range: [[0, 500]]}
+  - {address: 33279, label: "Battery SOC threshold for generator startup", type: U16, scale: 0.1, unit: "%", range: [[0, 99.9]], regulation: "@33279<@33280"}
+  - {address: 33280, label: "Battery SOC threshold for generator shutdown", type: U16, scale: 0.1, unit: "%", range: [[0.1, 100]], regulation: "@33279<@33280"}
+  res_new_pv:
+  - {address: 5055, type: U16, scale: 0.1, unit: V, range: [[220, 264]], regulation: "@5055>=@5056"}
+  - {address: 5056, type: U16, scale: 0.1, unit: V, range: [[198, 240]], regulation: "@5056<=@5055"}
+  - {address: 5102, type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 5116, type: U16, scale: 0.1, unit: "%", range: [[80, 100]]}
+  - {address: 5117, type: U16, scale: 0.1, unit: "%", range: [[107, 120]], regulation: "@5117+@5120<=@5118-@5120"}
+  - {address: 5118, type: U16, scale: 0.1, unit: "%", range: [[100, 104]], regulation: "@5118-@5120>=@5117+@5120"}
+  - {address: 5119, type: U16, scale: 0.1, unit: "%", range: [[104, 107]]}
+  - {address: 5120, type: U16, scale: 0.1, unit: "%", range: [[0, 5]]}
+  - {address: 5121, type: U16, scale: 0.1, unit: "%", range: [[0, 120]]}
+  - {address: 5122, type: U16, scale: 0.1, unit: "%", range: [[0, 120]]}
+  - {address: 5123, type: U16, scale: 0.1, unit: "%", range: [[0, 50]]}
+  - {address: 14600, label: "PV module total yield correction", type: S32, scale: 0.1, unit: Wh, range: [[-214748364.8, 214748364.6]]}
+  - {address: 14606, label: "Anti-hot spot voltage threshold", type: U16, scale: 0.1, unit: V, range: [[0, 90]]}
+  - {address: 14607, label: "Anti-hot spot current threshold", type: U16, scale: 0.01, unit: A, range: [[0, 18]]}
+  - {address: 30444, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@31362<=@30444;@31362<=@31361"}
+  - {address: 30445, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@30444<=@30445;@30444>=@31362"}
+  - {address: 30446, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@30445<=@30446;@30445>=@30444"}
+  - {address: 30447, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@30446>=@30445"}
+  - {address: 30448, type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 30449, type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 30450, type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 30451, type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 30461, type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 30462, type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 30463, type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 30464, type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 30648, label: "Grid undervoltage level 1 protection threshold", type: U16, scale: 0.1, unit: V, range: [[46, 230]], regulation: "@30648<=@30665;@30648>=@30650"}
+  - {address: 30649, label: "Grid undervoltage level 1 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]]}
+  - {address: 30650, label: "Grid undervoltage level 2 protection threshold", type: U16, scale: 0.1, unit: V, range: [[46, 230]], regulation: "@30650<=@30648"}
+  - {address: 30651, label: "Grid undervoltage level 2 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@30651<=@30649"}
+  - {address: 30652, label: "Grid overvoltage level 1 protection threshold", type: U16, scale: 0.1, unit: V, range: [[230, 299]], regulation: "@30652>=@30664;@30652<=@30654"}
+  - {address: 30653, label: "Grid overvoltage level 1 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]]}
+  - {address: 30654, label: "Grid overvoltage level 2 protection threshold", type: U16, scale: 0.1, unit: V, range: [[230, 311]], regulation: "@30654>=@30652"}
+  - {address: 30655, label: "Grid overvoltage level 2 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@30655<=@30653"}
+  - {address: 30656, label: "Grid underfrequency level 1 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[44.5, 50]], regulation: "@30656<=@30667;@30656>=@30658"}
+  - {address: 30657, label: "Grid underfrequency level 1 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@30657>=@30659"}
+  - {address: 30658, label: "Grid underfrequency level 2 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[44.5, 50]], regulation: "@30658<=@30656"}
+  - {address: 30659, label: "Grid underfrequency level 2 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@30659<=@30657"}
+  - {address: 30660, label: "Grid overfrequency level 1 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[50, 55.5]], regulation: "@30660>=@30666;@30660<=@30662"}
+  - {address: 30661, label: "Grid overfrequency level 1 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]]}
+  - {address: 30662, label: "Grid overfrequency level 2 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[50, 55.5]], regulation: "@30662>=@30660"}
+  - {address: 30663, label: "Grid overfrequency level 2 protection delay", type: U16, scale: 0.01, unit: s, range: [[0, 600]], regulation: "@30663<=@30661"}
+  - {address: 30664, label: "Overvoltage protection recovery threshold", type: U16, scale: 0.1, unit: V, range: [[230, 277]], regulation: "@30664<=@30652"}
+  - {address: 30665, label: "Undervoltage protection recovery threshold", type: U16, scale: 0.1, unit: V, range: [[46, 230]]}
+  - {address: 30666, label: "Overfrequency protection recovery threshold", type: U16, scale: 0.01, unit: Hz, range: [[50.02, 54.98]], regulation: "@30666<=@30660"}
+  - {address: 30667, label: "Underfrequency protection recovery threshold", type: U16, scale: 0.01, unit: Hz, range: [[45.02, 49.98]], regulation: "@30667>=@30656"}
+  - {address: 31201, label: "Active power ramp-down rate", type: U16, scale: 1, unit: "%/min", range: [[8, 6000]]}
+  - {address: 31202, label: "Active power ramp-up rate", type: U16, scale: 1, unit: "%/min", range: [[8, 6000]]}
+  - {address: 31228, label: "Meter CT ratio", type: U16, scale: 1, range: [[0, 65534]]}
+  - {address: 31271, label: PF, type: S16, scale: 0.001, range: [[-1, -0.8], [0.8, 1]]}
+  - {address: 31272, label: "Reactive power ratio", type: S16, scale: 0.1, unit: "%", range: [[-60, 60]]}
+  - {address: 31293, type: U16, scale: 0.1, unit: "%", range: [[80, 100]]}
+  - {address: 31294, type: U16, scale: 0.1, unit: "%", range: [[80, 100]], regulation: "@31294+@31297<=@31295-@31297"}
+  - {address: 31295, type: U16, scale: 0.1, unit: "%", range: [[100, 120]], regulation: "@31295-@31297>=@31294+@31297"}
+  - {address: 31296, type: U16, scale: 0.1, unit: "%", range: [[100, 120]]}
+  - {address: 31297, type: U16, scale: 0.1, unit: "%", range: [[0, 5]]}
+  - {address: 31298, type: U16, scale: 0.1, unit: "%", range: [[0, 60]]}
+  - {address: 31299, type: U16, scale: 0.1, unit: "%", range: [[0, 60]]}
+  - {address: 31300, type: U16, scale: 0.1, unit: "%", range: [[90, 110]], regulation: "@31300>@31301;@31300<@31302"}
+  - {address: 31301, type: U16, scale: 0.1, unit: "%", range: [[90, 110]], regulation: "@31301<@31300"}
+  - {address: 31302, type: U16, scale: 0.1, unit: "%", range: [[90, 110]], regulation: "@31302>@31300;@31302<@31303"}
+  - {address: 31303, type: U16, scale: 0.1, unit: "%", range: [[90, 110]], regulation: "@31303>@31302"}
+  - {address: 31304, type: U16, scale: 0.1, unit: "%", range: [[0, 60]]}
+  - {address: 31305, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31305>@31306"}
+  - {address: 31306, type: U16, scale: 0.1, unit: "%", range: [[1, 20]], regulation: "@31306<@31305"}
+  - {address: 31345, type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@30451<=@31345"}
+  - {address: 31346, type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31345<=@31346;@31345>=@30451"}
+  - {address: 31347, type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31346<=@31347;@31346>=@31345"}
+  - {address: 31348, type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31347>=@31346"}
+  - {address: 31349, type: S16, scale: 0.001, range: [[0.8, 1]], regulation: "@31348<=@31349"}
+  - {address: 31350, type: S16, scale: 0.001, range: [[0.8, 1]], regulation: "@31349>=@31348"}
+  - {address: 31351, type: S16, scale: 0.001, range: [[0.8, 1]], regulation: "@31350>=@31351"}
+  - {address: 31352, type: S16, scale: 0.001, range: [[0.8, 1]], regulation: "@31351<=@31350"}
+  - {address: 31353, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31353<=@31354"}
+  - {address: 31354, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31354>=@31353"}
+  - {address: 31355, type: U16, scale: 0.001, range: [[0.9, 1]]}
+  - {address: 31356, type: U16, scale: 0.001, range: [[0.9, 1]]}
+  - {address: 31357, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31357<=@31358"}
+  - {address: 31358, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31358<=@31359;@31358>=@31357"}
+  - {address: 31359, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31359>=@31358"}
+  - {address: 31360, type: U16, scale: 0.001, range: [[0.9, 1]]}
+  - {address: 31361, type: U16, scale: 0.1, unit: "%", range: [[100, 110]], regulation: "@31361>=@31362"}
+  - {address: 31362, type: U16, scale: 0.1, unit: "%", range: [[90, 100]], regulation: "@31362<=@31361"}
+  - {address: 31363, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@31363<=@31364"}
+  - {address: 31364, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@31364<=@31365;@31364>=@31363"}
+  - {address: 31365, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@31365<=@31366;@31365>=@31364"}
+  - {address: 31366, type: U16, scale: 0.1, unit: V, range: [[46, 299]], regulation: "@31366>=@31365"}
+  - {address: 31616, label: "Reactive power response time", type: U16, scale: 0.1, unit: s, range: [[0.1, 600]]}
+  unit:
+  - {address: 14600, label: "PV module total yield correction", type: S32, scale: 0.1, unit: Wh, range: [[-214748364.8, 214748364.6]]}
+  - {address: 14606, label: "Anti-hot spot voltage threshold", type: U16, scale: 0.1, unit: V, range: [[0, 90]]}
+  - {address: 14607, label: "Anti-hot spot current threshold", type: U16, scale: 0.01, unit: A, range: [[0, 18]]}
+  - {address: 30070, label: "Total yield correction", type: S32, scale: 1, unit: kWh, range: [[-200000000, 200000000]]}
+  - {address: 30091, label: "Standby time", type: U16, scale: 1, unit: s, range: [[10, 900]]}
+  - {address: 30092, label: "Recovery time from fault", type: U16, scale: 1, unit: s, range: [[0, 3600]]}
+  - {address: 30124, label: "JET certification auxiliary point 1", type: U16, scale: 1, range: [[0, 100]]}
+  - {address: 30125, label: "JET certification auxiliary point 2", type: U16, scale: 1, range: [[0, 100]]}
+  - {address: 30126, label: "JET certification auxiliary point 3", type: U16, scale: 1, range: [[0, 100]]}
+  - {address: 30127, label: "JET certification auxiliary point 4", type: U16, scale: 1, range: [[0, 100]]}
+  - {address: 30267, label: "Reactive power derating setpoint", type: U16, regulation: "@30268>=@30267"}
+  - {address: 30268, label: "Active power derating point", type: U16, regulation: "@30268>=@30267"}
+  - {address: 30269, label: "Voltage rise suppression response time", type: U16, scale: 1, range: [[1, 1200]]}
+  - {address: 30281, label: "Grid unbalance protection threshold", type: U16, scale: 1, range: [[2, 50]]}
+  - {address: 30282, label: "Grid unbalance protection delay", type: U16, scale: 0.01, unit: s, range: [[0.1, 600]]}
+  - {address: 30296, label: "10-min overvoltage protection threshold", type: U16, regulation: "@30296>@30297"}
+  - {address: 30297, label: "10-min overvoltage recovery threshold", type: U16, regulation: "@30297<@30296"}
+  - {address: 30347, label: "Current backfeed alarm threshold", type: U16, scale: 1, unit: v, range: [[1, 600]]}
+  - {address: 30350, label: "Reverse string current alarm threshold", type: U16, scale: 1, unit: A, range: [[1, 30]], regulation: "@30351>=@30350"}
+  - {address: 30351, label: "Reverse string current fault threshold", type: U16, scale: 1, unit: A, range: [[1, 30]], regulation: "@30351>=@30350"}
+  - {address: 30358, label: "Reverse current fault level 2 threshold", type: U16, scale: 1, unit: A, range: [[1, 100]], regulation: "@30358>=@30351"}
+  - {address: 30362, label: "Frequency change rate", type: U16, scale: 0.001, unit: "Hz/s", range: [[0.1, 10]]}
+  - {address: 30363, label: "Phase monitoring", type: U16, scale: 1, unit: "°", range: [[3, 18]]}
+  - {address: 30364, label: "Islanding protection delay", type: U16, scale: 0.01, unit: s, range: [[0.08, 300]]}
+  - {address: 30366, label: "Passive islanding protection threshold (JP)", type: U16, scale: 1, unit: "°", range: [[3, 18]]}
+  - {address: 30448, label: "Communication anomaly trigger delay", type: U16, scale: 1, unit: min, range: [[3, 20]]}
+  - {address: 30450, label: "Communication anomaly auto recovery time", type: U16, scale: 1, unit: min, range: [[3, 20]]}
+  - {address: 30802, label: "LVRT K factor", type: U16, scale: 0.1, range: [[0, 10]]}
+  - {address: 30803, label: "LVRT voltage 1", type: U16, regulation: "@30803>=@30804"}
+  - {address: 30804, label: "LVRT voltage 2", type: U16, regulation: "@30804>=@30805"}
+  - {address: 30805, label: "LVRT voltage 3", type: U16, regulation: "@30805>=@30806"}
+  - {address: 30806, label: "LVRT voltage 4", type: U16, regulation: "@30806>=@30807"}
+  - {address: 30807, label: "LVRT voltage 5", type: U16, regulation: "@30807<=@30806"}
+  - {address: 30813, label: "LVRT time 1", type: U32, scale: 1, unit: ms, range: [[40, 14400000]], regulation: "@30813>=@30815"}
+  - {address: 30815, label: "LVRT time 2", type: U32, scale: 1, unit: ms, range: [[40, 14400000]], regulation: "@30815>=@30817"}
+  - {address: 30817, label: "LVRT time 3", type: U32, scale: 1, unit: ms, range: [[40, 14400000]], regulation: "@30817>=@30819"}
+  - {address: 30819, label: "LVRT time 4", type: U32, scale: 1, unit: ms, range: [[40, 14400000]], regulation: "@30819>=@30821"}
+  - {address: 30821, label: "LVRT time 5", type: U32, scale: 1, unit: ms, range: [[40, 14400000]], regulation: "@30821<=@30819"}
+  - {address: 30825, label: "LVRT maximum reactive current", type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 30827, label: "LVRT zero current trigger voltage", type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 30830, label: "LVRT voltage transient", type: U16, scale: 0.1, unit: "%", range: [[0, 15]]}
+  - {address: 30832, label: "LVRT exit time", type: U16, scale: 1, unit: s, range: [[0, 100]]}
+  - {address: 30833, label: "LVRT response time", type: U16, scale: 1, unit: ms, range: [[30, 600]]}
+  - {address: 30836, label: "LVRT negative sequence K factor", type: U16, scale: 0.1, range: [[0, 10]]}
+  - {address: 30839, label: "LVRT hysteresis voltage", type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 30991, label: "HVRT hysteresis voltage", type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 30994, label: "HVRT negative sequence K factor", type: U16, scale: 0.1, range: [[0, 10]]}
+  - {address: 31001, label: "HVRT voltage 1", type: U16, regulation: "@31001<=@31002"}
+  - {address: 31002, label: "HVRT voltage 2", type: U16, regulation: "@31002<=@31003"}
+  - {address: 31003, label: "HVRT voltage 3", type: U16, regulation: "@31003<=@31004"}
+  - {address: 31004, label: "HVRT voltage 4", type: U16, regulation: "@31004<=@31005"}
+  - {address: 31005, label: "HVRT voltage 5", type: U16, regulation: "@31005>=@31004"}
+  - {address: 31011, label: "HVRT K factor", type: U16, scale: 0.1, range: [[0, 10]]}
+  - {address: 31012, label: "HVRT time 1", type: U32, scale: 1, unit: ms, range: [[40, 14400000]], regulation: "@31012>=@31014"}
+  - {address: 31014, label: "HVRT time 2", type: U32, scale: 1, unit: ms, range: [[40, 14400000]], regulation: "@31014>=@31016"}
+  - {address: 31016, label: "HVRT time 3", type: U32, scale: 1, unit: ms, range: [[40, 14400000]], regulation: "@31016>=@31018"}
+  - {address: 31018, label: "HVRT time 4", type: U32, scale: 1, unit: ms, range: [[40, 14400000]], regulation: "@31018>=@31020"}
+  - {address: 31020, label: "HVRT time 5", type: U32, scale: 1, unit: ms, range: [[40, 14400000]], regulation: "@31020<=@31018"}
+  - {address: 31024, label: "HVRT maximum reactive current", type: U16, scale: 0.1, unit: "%", range: [[0, 100]]}
+  - {address: 31026, label: "HVRT zero current trigger voltage", type: U16, scale: 0.1, unit: "%", range: [[100, 150]]}
+  - {address: 31029, label: "HVRT voltage transient", type: U16, scale: 0.1, unit: "%", range: [[0, 15]]}
+  - {address: 31031, label: "HVRT exit time", type: U16, scale: 1, unit: s, range: [[0, 100]]}
+  - {address: 31032, label: "HVRT response time", type: U16, scale: 1, unit: ms, range: [[30, 600]]}
+  - {address: 31195, label: "Active power soft start time after fault", type: U16, scale: 0.1, unit: s, range: [[0.1, 1200]]}
+  - {address: 31197, label: "Active power soft start time after fault", type: U16, scale: 1, unit: s, range: [[1, 1200]]}
+  - {address: 31199, label: "Active power ramp-up rate", type: U16, scale: 1, unit: "%", range: [[3, 6000]]}
+  - {address: 31201, label: "Active power ramp-down rate", type: U16, scale: 1, unit: "%/min", range: [[1, 6000]]}
+  - {address: 31202, label: "Active power ramp-up rate", type: U16, scale: 1, unit: "%/min", range: [[1, 6000]]}
+  - {address: 31228, label: "Meter CT ratio", type: U16, scale: 1, range: [[0, 65534]]}
+  - {address: 31231, label: OPU_V1, type: U16, regulation: "@31231<=@31232"}
+  - {address: 31232, label: OPU_V2, type: U16, regulation: "@31232<=@31233;@31232>=@31231"}
+  - {address: 31233, label: OPU_V3, type: U16, regulation: "@31233<=@31234;@31233>=@31232"}
+  - {address: 31234, label: OPU_V4, type: U16, regulation: "@31234>=@31233"}
+  - {address: 31235, label: OPU_P1, type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31235>=@31236"}
+  - {address: 31236, label: OPU_P2, type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31236>=@31237;@31236<=@31235"}
+  - {address: 31237, label: OPU_P3, type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31237>=@31238;@31237<=@31236"}
+  - {address: 31238, label: OPU_P4, type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31238<=@31237"}
+  - {address: 31239, label: "Grid overvoltage derating time", type: U16, scale: 0.1, unit: s, range: [[0.1, 600]]}
+  - {address: 31240, label: "Response time of grid overvoltage derating", type: U16, scale: 0.1, unit: s, range: [[0.1, 600]]}
+  - {address: 31399, label: "Overfrequency derating P6", type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31399<=@31407"}
+  - {address: 31401, label: "Overfrequency derating F6", type: U16, regulation: "@31401>=@31402"}
+  - {address: 31402, label: "Overfrequency derating F5", type: U16, regulation: "@31402<=@31401"}
+  - {address: 31403, label: "Overfrequency derating F4", type: U16, regulation: "@31403<=@31402"}
+  - {address: 31404, label: "Overfrequency derating F1", type: U16, regulation: "@31404<=@31405"}
+  - {address: 31405, label: "Overfrequency derating F2", type: U16, regulation: "@31405<=@31406"}
+  - {address: 31406, label: "Overfrequency derating F3", type: U16, regulation: "@31406<=@31403"}
+  - {address: 31407, label: "Overfrequency derating P5", type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31407>=@31399"}
+  - {address: 31408, label: "Overfrequency derating P4", type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31408>=@31407"}
+  - {address: 31409, label: "Overfrequency derating P1", type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31409>=@31410"}
+  - {address: 31410, label: "Overfrequency derating P2", type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31410>=@31411"}
+  - {address: 31411, label: "Overfrequency derating P3", type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31411>=@31408"}
+  - {address: 31414, label: "Active power decrease rate during overfrequency derating", type: U16, scale: 1, unit: "%/min", range: [[1, 6000]]}
+  - {address: 31415, label: "Recovery waiting time after overfrequency derating", type: U16, scale: 0.1, unit: s, range: [[0, 1200]]}
+  - {address: 31416, label: "Active power recovery rate after overfrequency derating", type: U16, scale: 1, unit: "%/min", range: [[1, 6000]]}
+  - {address: 31417, label: "Overfrequency derating delay", type: U16, scale: 0.01, unit: s, range: [[0, 10]]}
+  - {address: 31418, label: "Open loop response time of overfrequency derating", type: U16, scale: 0.1, unit: s, range: [[0.1, 6000]]}
+  - {address: 31421, label: "Underfrequency uprating F1", type: U16, regulation: "@31421>=@31422"}
+  - {address: 31422, label: "Underfrequency uprating F2", type: U16, regulation: "@31422>=@31423"}
+  - {address: 31423, label: "Underfrequency uprating F3", type: U16, regulation: "@31423>=@31424"}
+  - {address: 31424, label: "Underfrequency uprating F4", type: U16, regulation: "@31424<=@31423"}
+  - {address: 31427, label: "Underfrequency uprating P1", type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31427<=@31428"}
+  - {address: 31428, label: "Underfrequency uprating P2", type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31428<=@31429"}
+  - {address: 31429, label: "Underfrequency uprating P3", type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31429<=@31430"}
+  - {address: 31430, label: "Underfrequency uprating P4", type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31430>=@31429"}
+  - {address: 31435, label: "Active power increase rate during underfrequency uprating", type: U16, scale: 1, unit: "%/min", range: [[1, 6000]]}
+  - {address: 31436, label: "Recovery waiting time after underfrequency uprating", type: U16, scale: 0.1, unit: s, range: [[0, 1200]]}
+  - {address: 31437, label: "Active power recovery rate after underfrequency uprating", type: U16, scale: 1, unit: "%/min", range: [[1, 6000]]}
+  - {address: 31438, label: "Underfrequency uprating delay", type: U16, scale: 0.01, unit: s, range: [[0, 10]]}
+  - {address: 31439, label: "Open loop response time of underfrequency uprating", type: U16, scale: 0.1, unit: s, range: [[0.1, 6000]]}
+  - {address: 31443, label: "Selective harmonic suppression value", type: U16, scale: 1, range: [[50, 2000]]}
+  - {address: 31444, label: "Selective harmonic suppression bandwidth", type: U16, scale: 1, range: [[1, 200]]}
+  - {address: 31454, label: "Communication interruption trigger delay", type: U16, scale: 1, unit: s, range: [[1, 36000]]}
+  - {address: 31456, label: "Communication recovery time", type: U16, scale: 1, unit: s, range: [[1, 36000]]}
+  - {address: 31459, label: "Preset reactive power ratio", type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 31460, label: "Preset power factor", type: S16, scale: 0.001, range: [[-1, -0.8], [0.8, 1]]}
+  - {address: 31462, label: "Preset hysteresis ratio", type: U16, scale: 0.1, unit: "%", range: [[0, 5]]}
+  - {address: 31463, label: "Preset QU_V1", type: U16, scale: 0.1, unit: "%", range: [[77, 123]], regulation: "@31463<=@31465"}
+  - {address: 31465, label: "Preset QU_V2", type: U16, scale: 0.1, unit: "%", range: [[77, 123]], regulation: "@31465<=@31467"}
+  - {address: 31467, label: "Preset QU_V3", type: U16, scale: 0.1, unit: "%", range: [[77, 123]], regulation: "@31467<=@31469"}
+  - {address: 31469, label: "Preset QU_V4", type: U16, scale: 0.1, unit: "%", range: [[77, 123]], regulation: "@31469>=@31467"}
+  - {address: 31471, label: "Preset QU_EnterPower", type: U16, scale: 0.1, unit: "%", range: [[20, 100]]}
+  - {address: 31472, label: "Preset QU_ExitPower", type: U16, scale: 0.1, unit: "%", range: [[1, 20]]}
+  - {address: 31474, type: U16, scale: 0.01, range: [[0, 1]]}
+  - {address: 31480, label: "Preset QP_P1", type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31480<=@31481"}
+  - {address: 31481, label: "Preset QP_P2", type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31481<=@31482;@31481>=@31480"}
+  - {address: 31482, label: "Preset QP_P3", type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31482>=@31481"}
+  - {address: 31486, type: U16, scale: 0.1, unit: "%", range: [[100, 110]]}
+  - {address: 31487, type: U16, scale: 0.1, unit: "%", range: [[90, 100]]}
+  - {address: 31488, type: U16, scale: 0.1, unit: "%", range: [[1, 100]]}
+  - {address: 31606, label: "Reactive power ratio", type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 31608, label: PF, type: S16, scale: 0.001, range: [[-1, -0.8], [0.8, 1]]}
+  - {address: 31613, label: "Reactive power ratio during reactive power generation at night", type: S16, scale: 0.1, unit: "%", range: [[-100, 100]]}
+  - {address: 31616, label: "Reactive power response time", type: U16, scale: 0.1, unit: s, range: [[0.1, 600]]}
+  - {address: 31701, label: "Hysteresis ratio", type: U16, scale: 0.1, unit: "%", range: [[0, 5]]}
+  - {address: 31702, label: QU_V1, type: U16, regulation: "@31702<=@31704"}
+  - {address: 31704, label: QU_V2, type: U16, regulation: "@31704<=@31706;@31704>=@31702"}
+  - {address: 31706, label: QU_V3, type: U16, regulation: "@31706<=@31708"}
+  - {address: 31708, label: QU_V4, type: U16, regulation: "@31708>=@31706"}
+  - {address: 31710, label: QU_EnterPower, type: U16, scale: 0.1, unit: "%", range: [[20, 100]]}
+  - {address: 31711, label: QU_ExitPower, type: U16, scale: 0.1, unit: "%", range: [[1, 20]]}
+  - {address: 31713, type: U16, scale: 0.01, range: [[0, 1]]}
+  - {address: 31714, type: U16, scale: 0.1, unit: "%", range: [[77, 123]]}
+  - {address: 31715, type: U16, scale: 1, unit: s, range: [[100, 6000]]}
+  - {address: 31718, label: "Voltage deadband", type: U16, scale: 0.1, unit: "%", range: [[0, 5]]}
+  - {address: 31721, label: QP_P1, type: U16, scale: 0.1, unit: "%", range: [[0, 100]], regulation: "@31721<=@31722"}
+  - {address: 31722, label: QP_P2, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31722<=@31723;@31722>=@31721"}
+  - {address: 31723, label: QP_P3, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31723<=@31731;@31723>=@31722"}
+  - {address: 31727, type: U16, scale: 0.1, unit: "%", range: [[100, 110]]}
+  - {address: 31728, type: U16, scale: 0.1, unit: "%", range: [[90, 100]]}
+  - {address: 31729, type: U16, scale: 0.1, unit: "%", range: [[1, 100]]}
+  - {address: 31731, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31731<=@31733;@31731>=@31723"}
+  - {address: 31732, type: S16, scale: 0.001, range: [[0.8, 1]]}
+  - {address: 31733, type: U16, scale: 0.1, unit: "%", range: [[20, 100]], regulation: "@31733>=@31731"}
+  - {address: 31734, type: S16, scale: 0.001, range: [[0.8, 1]]}
+  - {address: 31865, type: U16, regulation: "@31865<=@31866"}
+  - {address: 31866, type: U16, regulation: "@31866<=@31867;@31866>=@31865"}
+  - {address: 31867, type: U16, regulation: "@31867<=@31868;@31867>=@31866"}
+  - {address: 31868, type: U16, regulation: "@31868>=@31867"}
+  - {address: 32307, label: "Minimum output voltage during off-grid operation", type: U16, scale: 0.1, unit: "%", range: [[40, 100]]}
+  - {address: 32318, label: "Overvoltage protection recovery threshold", type: U16, scale: 0.1, unit: V, range: [[466, 659]], regulation: "@32318>@32319;@32318<@32323"}
+  - {address: 32319, label: "Undervoltage protection recovery threshold", type: U16, scale: 0.1, unit: V, range: [[73.5, 589]], regulation: "@32319<@32318;@32319>@32322"}
+  - {address: 32320, label: "Overfrequency protection recovery threshold", type: U16, scale: 0.01, unit: Hz, range: [[50.02, 54.98]], regulation: "@32320>@32321;@32320<@32325"}
+  - {address: 32321, label: "Underfrequency protection recovery threshold", type: U16, scale: 0.01, unit: Hz, range: [[45.02, 49.98]], regulation: "@32321<@32320;@32321>@32324"}
+  - {address: 32322, label: "Undervoltage level 1 protection threshold", type: U16, scale: 0.1, unit: V, range: [[60, 589]], regulation: "@32322<@32319;@32322>=@32326"}
+  - {address: 32323, label: "Overvoltage level 1 protection threshold", type: U16, scale: 0.1, unit: V, range: [[466, 659]], regulation: "@32323>@32318;@32323<=@32327"}
+  - {address: 32324, label: "Underfrequency level 1 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[45, 49.96]], regulation: "@32324<@32321;@32324>=@32328"}
+  - {address: 32325, label: "Overfrequency level 1 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[50.04, 55]], regulation: "@32325>@32320;@32325<=@32329"}
+  - {address: 32326, label: "Undervoltage level 2 protection threshold", type: U16, scale: 0.1, unit: V, range: [[60, 589]], regulation: "@32326<=@32322;@32326>=@32330"}
+  - {address: 32327, label: "Overvoltage level 2 protection threshold", type: U16, scale: 0.1, unit: V, range: [[466, 659]], regulation: "@32327>=@32323;@32327<=@32331"}
+  - {address: 32328, label: "Underfrequency level 2 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[45, 49.96]], regulation: "@32328<=@32324;@32328>=@32332"}
+  - {address: 32329, label: "Overfrequency level 2 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[50.04, 55]], regulation: "@32329>=@32325;@32329<=@32333"}
+  - {address: 32330, label: "Undervoltage level 3 protection threshold", type: U16, scale: 0.1, unit: V, range: [[60, 589]], regulation: "@32330<=@32326;@32330>=@32334"}
+  - {address: 32331, label: "Overvoltage level 3 protection threshold", type: U16, scale: 0.1, unit: V, range: [[466, 659]], regulation: "@32331>=@32327;@32331<=@32335"}
+  - {address: 32332, label: "Underfrequency level 3 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[45, 49.96]], regulation: "@32332<=@32328;@32332>=@32336"}
+  - {address: 32333, label: "Overfrequency level 3 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[50.04, 55]], regulation: "@32333>=@32329;@32333<=@32337"}
+  - {address: 32334, label: "Undervoltage level 4 protection threshold", type: U16, scale: 0.1, unit: V, range: [[60, 589]], regulation: "@32334<=@32330;@32334>=@32338"}
+  - {address: 32335, label: "Overvoltage level 4 protection threshold", type: U16, scale: 0.1, unit: V, range: [[466, 659]], regulation: "@32335>=@32331;@32335<=@32339"}
+  - {address: 32336, label: "Underfrequency level 4 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[45, 49.96]], regulation: "@32336<=@32332;@32336>=@32340"}
+  - {address: 32337, label: "Overfrequency level 4 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[50.04, 55]], regulation: "@32337>=@32333;@32337<=@32341"}
+  - {address: 32338, label: "Undervoltage level 5 protection threshold", type: U16, scale: 0.1, unit: V, range: [[60, 589]], regulation: "@32338<=@32334"}
+  - {address: 32339, label: "Overvoltage level 5 protection threshold", type: U16, scale: 0.1, unit: V, range: [[466, 659]], regulation: "@32339>=@32335"}
+  - {address: 32340, label: "Underfrequency level 5 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[45, 49.96]], regulation: "@32340<=@32336"}
+  - {address: 32341, label: "Overfrequency level 5 protection threshold", type: U16, scale: 0.01, unit: Hz, range: [[50.04, 55]], regulation: "@32341>=@32337"}
+  - {address: 32362, label: "Undervoltage level 1 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]]}
+  - {address: 32364, label: "Overvoltage level 1 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]]}
+  - {address: 32366, label: "Underfrequency level 1 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]]}
+  - {address: 32368, label: "Overfrequency level 1 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]]}
+  - {address: 32370, label: "Undervoltage level 2 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32370<=@32362"}
+  - {address: 32372, label: "Overvoltage level 2 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32372<=@32364"}
+  - {address: 32374, label: "Underfrequency level 2 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32374<=@32366"}
+  - {address: 32376, label: "Overfrequency level 2 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32376<=@32368"}
+  - {address: 32378, label: "Undervoltage level 3 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32378<=@32370"}
+  - {address: 32380, label: "Overvoltage level 3 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32380<=@32372"}
+  - {address: 32382, label: "Underfrequency level 3 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32382<=@32374"}
+  - {address: 32384, label: "Overfrequency level 3 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32384<=@32376"}
+  - {address: 32386, label: "Undervoltage level 4 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32386<=@32378"}
+  - {address: 32388, label: "Overvoltage level 4 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32388<=@32380"}
+  - {address: 32390, label: "Underfrequency level 4 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32390<=@32382"}
+  - {address: 32392, label: "Overfrequency level 4 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32392<=@32384"}
+  - {address: 32394, label: "Undervoltage level 5 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32394<=@32386"}
+  - {address: 32396, label: "Overvoltage level 5 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32396<=@32388"}
+  - {address: 32398, label: "Underfrequency level 5 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32398<=@32390"}
+  - {address: 32400, label: "Overfrequency level 5 protection delay", type: U32, scale: 0.01, unit: s, range: [[0.01, 14400]], regulation: "@32400<=@32392"}
+  - {address: 32549, label: "Grid connection voltage lower limit", type: U16, scale: 0.1, unit: "%", range: [[50, 100]]}
+  - {address: 32550, label: "Grid connection voltage upper limit", type: U16, scale: 0.1, unit: "%", range: [[100, 140]]}
+  - {address: 32551, label: "Grid connection testing duration", type: U16, scale: 1, unit: s, range: [[0, 900]]}
+  - {address: 32552, label: "Active power rising gradient", type: U16, scale: 1, unit: "%/min", range: [[3, 6000]]}
+  - {address: 32618, label: "Target SOC of off-grid emergency charging", type: U16, scale: 1, unit: "%", range: [[1, 100]]}
+  - {address: 32639, label: BPM_EnterCurrent, type: U16, scale: 1, unit: A, range: [[5, 40]]}
+  - {address: 32640, label: BPM_ExitCurrent, type: U16, scale: 1, unit: A, range: [[5, 40]]}
+  - {address: 32641, label: BPM_EnterDeltaVpv, type: U16, scale: 1, unit: V, range: [[10, 150]]}
+  - {address: 32642, label: BPM_EnterDelayTime, type: U16, scale: 1, unit: s, range: [[1, 1000]]}
+  - {address: 32657, type: U16, scale: 0.1, range: [[1, 20]]}
+  - {address: 32709, label: "SVG delay time", type: U16, scale: 1, unit: s, range: [[30, 3600]]}
+  - {address: 32711, label: "FAN speed limit", type: U16, scale: 1, unit: "%", range: [[1, 100]]}
+  - {address: 32998, label: "Power limit for energy purchase", type: U16, scale: 0.01, unit: kW, range: [[0.01, 50]]}
+  - {address: 33151, label: "Working days discharging start time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 33152, label: "Working days discharging start time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33153, label: "Working days discharging end time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 24]]}
+  - {address: 33154, label: "Working days discharging end time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33155, label: "Working days discharging start time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 33156, label: "Working days discharging start time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33157, label: "Working days discharging end time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 24]]}
+  - {address: 33158, label: "Working days discharging end time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33180, label: "Non-working day battery use start time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 33181, label: "Non-working day battery use start time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33182, label: "Non-working day battery use end time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 24]]}
+  - {address: 33183, label: "Non-working day battery use end time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33184, label: "Non-working day battery use start time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 33185, label: "Non-working day battery use start time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33186, label: "Non-working day battery use end time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 24]]}
+  - {address: 33187, label: "Non-working day battery use end time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33188, label: "Non-working day battery use start time 3: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 33189, label: "Non-working day battery use start time 3: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33190, label: "Non-working day battery use end time 3: hour", type: U16, scale: 1, unit: h, range: [[0, 24]]}
+  - {address: 33191, label: "Non-working day battery use end time 3: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33192, label: "Non-working day battery use start time 4: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 33193, label: "Non-working day battery use start time 4: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33194, label: "Non-working day battery use end time 4: hour", type: U16, scale: 1, unit: h, range: [[0, 24]]}
+  - {address: 33195, label: "Non-working day battery use end time 4: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33210, label: "Forced charging start time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 33211, label: "Forced charging start time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33212, label: "Forced charging end time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 24]]}
+  - {address: 33213, label: "Forced charging end time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33214, label: "Target SOC of forced charging 1", type: U16, scale: 1, unit: "%", range: [[0, 100]]}
+  - {address: 33215, label: "Forced charging start time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 33216, label: "Forced charging start time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33217, label: "Forced charging end time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 24]]}
+  - {address: 33218, label: "Forced charging end time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33219, label: "Target SOC of forced charging 2", type: U16, scale: 1, unit: "%", range: [[0, 100]]}
+  - {address: 33241, label: "Load scheduled period start time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 33242, label: "Load scheduled period start time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33243, label: "Load scheduled period end time 1: hour", type: U16, scale: 1, unit: h, range: [[0, 24]]}
+  - {address: 33244, label: "Load scheduled period end time 1: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33245, label: "Load scheduled period start time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 33246, label: "Load scheduled period start time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33247, label: "Load scheduled period end time 2: hour", type: U16, scale: 1, unit: h, range: [[0, 24]]}
+  - {address: 33248, label: "Load scheduled period end time 2: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33270, label: "Load smart mode start time: hour", type: U16, scale: 1, unit: h, range: [[0, 23]]}
+  - {address: 33271, label: "Load smart mode start time: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33272, label: "Load smart mode end time: hour", type: U16, scale: 1, unit: h, range: [[0, 24]]}
+  - {address: 33273, label: "Load smart mode end time: minute", type: U16, scale: 1, unit: min, range: [[0, 59]]}
+  - {address: 33274, label: "Load rated power", type: U16, scale: 0.01, unit: kW, range: [[0, 600]]}
+  - {address: 33277, label: "Max. battery charging power from AC", type: U16, scale: 0.01, unit: kW, range: [[0, 500]]}
+  - {address: 33278, label: "Generator rated power", type: U16, scale: 0.1, unit: kW, range: [[0, 500]]}
+  - {address: 33279, label: "Battery SOC threshold for generator startup", type: U16, scale: 0.1, unit: "%", range: [[0, 99.9]], regulation: "@33279<@33280"}
+  - {address: 33280, label: "Battery SOC threshold for generator shutdown", type: U16, scale: 0.1, unit: "%", range: [[0.1, 100]], regulation: "@33279<@33280"}
+  - {address: 33502, label: "Total number of master and slaves", type: U16, scale: 1, range: [[2, 5]]}

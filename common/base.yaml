@@ -1,0 +1,60 @@
+# Shared core for both dongles. Chip, pins and product constants come from boards/*.yaml;
+# the network (Wi-Fi or Ethernet) comes from a separate package chosen in the entry YAML.
+substitutions:
+  project_version: "0.9.0"
+  log_level: INFO
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  min_version: 2026.9.0
+  project:
+    name: nickstallman.rewired-s
+    version: ${project_version}
+
+esp32:
+  framework:
+    type: esp-idf
+
+logger:
+  level: ${log_level}
+
+# api: (native API, encryption key) and web_server.auth (digest login) come from a second
+# package: common/access_secrets.yaml reads them from secrets.yaml (compiled builds), while the
+# pre-built entries use common/provisioning.yaml, where Home Assistant sets the API key at
+# adoption and the login is changed from the web UI (docs/prebuilt.md).
+
+# ota: (native OTA on :3232) comes from the same second package as api: (its encryption reuses
+# the api key); the pre-built images gate it with the web login password instead.
+
+web_server:
+  port: 80
+  version: 3
+  # Plaintext /update upload off: firmware only via encrypted ESPHome OTA.
+  ota: false
+
+# Boot-loop guard: a boot that resets within 30 s (stock's boot-good window) counts towards safe
+# mode. Where OTA rollback is on (boards/winet_s2.yaml) this is also when the new image is marked
+# valid; elsewhere the image is valid from its first boot.
+safe_mode:
+  boot_is_good_after: 30s
+
+time:
+  - platform: sntp
+    id: sntp_time
+
+button:
+  - platform: restart
+    id: restart_button
+    name: Restart
+  - platform: safe_mode
+    name: Restart (safe mode)
+
+sensor:
+  - platform: uptime
+    name: Uptime
+
+text_sensor:
+  - platform: version
+    name: ESPHome version
+    hide_timestamp: true

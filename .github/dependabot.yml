@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: npm
+    directory: /components/sungrow_web/web
+    schedule:
+      interval: monthly
+    groups:
+      web-tooling:
+        patterns: ["*"]
+  - package-ecosystem: pip
+    directory: /tools
+    schedule:
+      interval: monthly

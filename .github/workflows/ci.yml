@@ -1,0 +1,116 @@
+# Host test suites, the web suite, generated-file freshness, repository hygiene and ESPHome config
+# validation on every push and pull request; firmware compiles of every entry on pull requests
+# and on main.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  ESPHOME_VERSION: "2026.9.1"
+
+jobs:
+  hygiene:
+    name: Repository hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No stock data, firmware addresses, images, packages or keys
+        run: tools/hygiene_check.sh
+
+  host-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Toolchain
+        run: sudo apt-get update && sudo apt-get install -y g++ make zlib1g-dev
+      - run: pip install -r tools/requirements.txt
+      - name: ArduinoJson (the version ESPHome pulls in)
+        run: git clone --depth 1 --branch v7.4.3 https://github.com/bblanchon/ArduinoJson.git /tmp/aj
+      - name: make test-host
+        run: make test-host ARDUINOJSON_DIR=/tmp/aj/src
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: components/sungrow_web/web/package-lock.json
+      - name: npm ci
+        working-directory: components/sungrow_web/web
+        run: npm ci
+      - name: make web
+        run: make web
+
+  check-gen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r tools/requirements.txt
+      - name: make check-gen
+        run: make check-gen
+
+  esphome-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ESPHome
+        run: pip install "esphome==${ESPHOME_VERSION}" -r tools/requirements.txt
+      - name: Pre-built entries validate without any secrets
+        run: make config-prebuilt ESPHOME=esphome
+      - name: Example secrets
+        run: cp secrets.yaml.example secrets.yaml
+      - name: make config
+        run: make config ESPHOME=esphome
+
+  compile:
+    name: Compile ${{ matrix.entry }}
+    needs: [esphome-config]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        entry: [winet-s, winet-s-ethernet, winet-s2, winet-s2-ethernet, winet-s-prebuilt, winet-s2-prebuilt, winet-s-debug, winet-s2-debug]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ESPHome
+        run: pip install "esphome==${ESPHOME_VERSION}" -r tools/requirements.txt
+      - name: Example secrets
+        run: cp secrets.yaml.example secrets.yaml
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            .esphome/.espressif
+            .esphome/platformio
+          key: esphome-${{ env.ESPHOME_VERSION }}-${{ runner.os }}-${{ hashFiles('boards/*.yaml', 'common/base.yaml') }}
+          restore-keys: esphome-${{ env.ESPHOME_VERSION }}-${{ runner.os }}-
+      - name: esphome compile
+        run: esphome compile ${{ matrix.entry }}.yaml
+      - name: Image size against the OTA slot
+        run: |
+          BUILD_DIR=$(python3 -I tools/build_dir.py ${{ matrix.entry }}.yaml)
+          python3 -I tools/check_image_size.py "$BUILD_DIR/build/firmware.ota.bin" ${{ matrix.entry }}

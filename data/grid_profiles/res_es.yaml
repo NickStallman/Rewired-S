@@ -1,0 +1,688 @@
+# data/grid_profiles/res_es.yaml - grid-code setup profiles and the installer catalogue of the
+# res_es settings family (docs/data_format.md). Read by tools/gen_grid_profiles.py and
+# tools/gen_installer_settings.py. Addresses are 1-based holding registers (wire = n - 1);
+# U32 values are written low word first.
+
+family: res_es
+title: "residential hybrid inverters (protocol 5)"
+registers:
+  13101: {type: U16}
+  13102: {type: U16}
+  13103: {type: U16}
+  13104: {type: U16}
+  13107: {type: U16, label: QU_V1}
+  13108: {type: U16, label: QU_V2}
+  13109: {type: U16, label: QU_V3}
+  13110: {type: U16, label: QU_V4}
+  13111: {type: S16, label: QU_Q1}
+  13112: {type: S16, label: QU_Q4}
+  13118: {type: U16}
+  13119: {type: U16}
+  13120: {type: U16}
+  13121: {type: U16}
+  13122: {type: U16}
+  13167: {type: U16, label: "P1 Ref."}
+  13168: {type: U16, label: "P2 Ref."}
+  13169: {type: U16, label: "P3 Ref."}
+  13170: {type: U16, label: "P4 Ref."}
+  13172: {type: S16, label: QU_Q2}
+  13173: {type: S16, label: QU_Q3}
+  30461: {type: U16, label: OPU_P1}
+  30462: {type: U16, label: OPU_P2}
+  30463: {type: U16, label: OPU_P3}
+  30464: {type: U16, label: OPU_P4}
+  30646: {type: U16}
+  30647: {type: U16}
+  30648: {type: U16}
+  30649: {type: U16}
+  30650: {type: U16}
+  30651: {type: U16}
+  30652: {type: U16}
+  30653: {type: U16}
+  30654: {type: U16}
+  30655: {type: U16}
+  30656: {type: U16}
+  30657: {type: U16}
+  30658: {type: U16}
+  30659: {type: U16}
+  30660: {type: U16}
+  30661: {type: U16}
+  30662: {type: U16}
+  30663: {type: U16}
+  30664: {type: U16}
+  30665: {type: U16}
+  30666: {type: U16}
+  30667: {type: U16}
+  31200: {type: U16}
+  31201: {type: U16}
+  31202: {type: U16}
+  31270: {type: U16}
+  31271: {type: S16}
+  31276: {type: U16}
+  31363: {type: U16, label: OPU_V1}
+  31364: {type: U16, label: OPU_V2}
+  31365: {type: U16, label: OPU_V3}
+  31366: {type: U16, label: OPU_V4}
+  31367: {type: U16}
+  31420: {type: U16}
+  31421: {type: U16, label: F1}
+  31422: {type: U16, label: F2}
+  31427: {type: U16, label: P1}
+  31428: {type: U16, label: P2}
+  31429: {type: U16, label: P3}
+  31615: {type: U16}
+  31616: {type: U16}
+profiles:
+- code: 1
+  label: "AS/NZS 4777.2:2015"
+  writes_sets: true
+  variant_by_input_5479: false
+  variants:
+  - input_5479: []
+    sets:
+    - {address: 30646, words: [0x003C]}
+    - {address: 30647, words: [0x0001]}
+    - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x000A, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x000A, 0x1450, 0x000A, 0x09E2, 0x0802, 0x1397, 0x128E]}
+    - {address: 13101, words: [0x00AA, 0x0640]}
+    - {address: 13103, words: [0x00AA, 0x09F6]}
+    - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+    - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+    - {address: 31367, words: [0x00AA]}
+    - {address: 31363, words: [0x0816, 0x0898, 0x09C4, 0x0A5A]}
+    - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+    - {address: 31270, words: [0x0055]}
+    - {address: 31615, words: [0x0055]}
+    - {address: 31276, words: [0x0055]}
+    - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+    - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+    - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+grid_type_profiles:
+- code: 1
+  label: "STNW1170: single phase<10kVA & three phase<30kVA"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x000A, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x000A, 0x1450, 0x000A, 0x09E2, 0x0872, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x0A14]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09E2, 0x0A28]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0816, 0x0898, 0x0960, 0x0A14]}
+  - {address: 13111, words: [0xFE48]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x0258]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 2
+  label: "STNW1174: 30kVA<Pn≤1500kVA"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x000A, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x000A, 0x1450, 0x000A, 0x09E2, 0x0872, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x0A14]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09E2, 0x0A28]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0816, 0x0898, 0x0960, 0x0A14]}
+  - {address: 13111, words: [0xFE48]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x0258]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 3
+  label: "≤ 10kVA per phase (or 30kVA per three phase)"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x000A, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x000A, 0x1450, 0x000A, 0x09E2, 0x0802, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x0A14]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09E2, 0x0A1E]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0820, 0x0898, 0x096A, 0x09E2]}
+  - {address: 13111, words: [0xFE48]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x01B8]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 4
+  label: "ELE GU 0014: 30-200kVA"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x000A, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x000A, 0x1450, 0x000A, 0x09E2, 0x0870, 0x1397, 0x1379]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x0A14]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13111, words: [0xFED4]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x012C]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 5
+  label: "≤5kVA for single-phase & 30kVA for three-phase"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x000A, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x000A, 0x1450, 0x000A, 0x09E2, 0x0802, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x0A14]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09E2, 0x0A1E]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0820, 0x0898, 0x096A, 0x09E2]}
+  - {address: 13111, words: [0xFE48]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x01B8]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 6
+  label: ">30kVA three-phase"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x000A, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x000A, 0x1450, 0x000A, 0x09E2, 0x0802, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x0A14]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09E2, 0x0A1E]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0820, 0x0898, 0x096A, 0x09E2]}
+  - {address: 13111, words: [0xFE48]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x01B8]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 7
+  label: "UE-ST-2008.1: ≤10kW for single-phase & 30kW for three-phase"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x000A, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x000A, 0x1450, 0x000A, 0x09E2, 0x0802, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x0A14]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09E2, 0x0A1E]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0820, 0x0898, 0x096A, 0x09E2]}
+  - {address: 13111, words: [0xFE48]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x01B8]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 8
+  label: "UE-ST-2008.2: >30kVA three-phase"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x000A, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x000A, 0x1450, 0x000A, 0x09E2, 0x0802, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x0A14]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09E2, 0x0A1E]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0820, 0x0898, 0x096A, 0x09E2]}
+  - {address: 13111, words: [0xFE48]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x01B8]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 9
+  label: "Basic Micro Embedded Generation:2020"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x000A, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x000A, 0x1450, 0x000A, 0x09E2, 0x0802, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x0A14]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09E2, 0x0A1E]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0820, 0x0898, 0x096A, 0x09E2]}
+  - {address: 13111, words: [0xFE48]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x01B8]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 10
+  label: "MDI 0043"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x000A, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x000A, 0x1450, 0x000A, 0x09E2, 0x0802, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x09F6]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09F6, 0x0A5A]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0816, 0x0898, 0x09B0, 0x0A28]}
+  - {address: 13111, words: [0xFDA8]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x0258]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 11
+  label: NS194
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x000A, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x000A, 0x1450, 0x000A, 0x09E2, 0x0802, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x09F6]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09B0, 0x0A14]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0816, 0x0898, 0x09B0, 0x0A14]}
+  - {address: 13111, words: [0xFDA8]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x0258]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 12
+  label: "Embedded Generation Notice Photovoltaic Systems:2020"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0834, 0x0028, 0x0834, 0x0028, 0x09E2, 0x0028, 0x09E2, 0x0028, 0x11F8, 0x0005, 0x11F8, 0x0005, 0x1518, 0x0005, 0x1518, 0x0005, 0x09CE, 0x0848, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x09F6]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A1]}
+  - {address: 31271, words: [0x03D4]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0008, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 13
+  label: "TS129-2019: <10kW for single-phase & 30kW for three-phase"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x001E, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x001E, 0x1450, 0x001E, 0x09E2, 0x0802, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x0A14]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0816, 0x0898, 0x09B0, 0x09E2]}
+  - {address: 13111, words: [0xFECA]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x01B8]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 14
+  label: "TS130-2017: >30kW & ≤200kW"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x001E, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x001E, 0x1450, 0x001E, 0x09E2, 0x0802, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x0A14]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09B0, 0x09E2]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0816, 0x0898, 0x09B0, 0x09E2]}
+  - {address: 13111, words: [0xFECA]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x01B8]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 15
+  label: "TS131-2018: >200kW"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x001E, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x001E, 0x1450, 0x001E, 0x09E2, 0x0802, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x0A14]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0816, 0x0898, 0x09B0, 0x09E2]}
+  - {address: 13111, words: [0xFECA]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x01B8]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 16
+  label: "HPC-9DJ-13-0001-2019: ≤10kVA for single-phase & 30kVA for three-phase"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A5A, 0x000A, 0x0A5A, 0x000A, 0x1194, 0x0096, 0x1194, 0x0096, 0x14B4, 0x000A, 0x14B4, 0x000A, 0x09E2, 0x0802, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x0A14]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09EC, 0x0A5A]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0816, 0x08FC, 0x0960, 0x0A5A]}
+  - {address: 13111, words: [0xFDA8]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x0258]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x134C, 0x1194]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 17
+  label: "HPC-9DJ-13-0002-2019: >30kVA & ≤1MVA"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A5A, 0x000A, 0x0A5A, 0x000A, 0x1194, 0x0096, 0x1194, 0x0096, 0x14B4, 0x000A, 0x14B4, 0x000A, 0x09E2, 0x0802, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x0A14]}
+  - {address: 13118, words: [0x00AA, 0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09EC, 0x0A5A]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0816, 0x08FC, 0x0960, 0x0A5A]}
+  - {address: 13111, words: [0xFDA8]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x0258]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x134C, 0x1194]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+- code: 18
+  label: "EDM＃33612889-2019"
+  sets:
+  - {address: 30646, words: [0x003C]}
+  - {address: 30647, words: [0x0001]}
+  - {address: 30648, words: [0x0708, 0x0096, 0x0708, 0x0096, 0x0A28, 0x0096, 0x0A5A, 0x000A, 0x125C, 0x0096, 0x125C, 0x0096, 0x1450, 0x000A, 0x1450, 0x000A, 0x09E2, 0x0802, 0x1397, 0x128E]}
+  - {address: 13101, words: [0x00AA, 0x0640]}
+  - {address: 13103, words: [0x00AA, 0x0A14]}
+  - {address: 13118, words: [0x00AA, 0x0802, 0x0898, 0x092E, 0x09C4]}
+  - {address: 13167, words: [0x0000, 0x03E8, 0x03E8, 0x03E8]}
+  - {address: 31367, words: [0x00AA]}
+  - {address: 31363, words: [0x0816, 0x0898, 0x09C4, 0x0A5A]}
+  - {address: 30461, words: [0x03E8, 0x03E8, 0x03E8, 0x00C8]}
+  - {address: 31270, words: [0x00A4]}
+  - {address: 13107, words: [0x0802, 0x0898, 0x092E, 0x09C4]}
+  - {address: 13111, words: [0xFED4]}
+  - {address: 13172, words: [0x0000, 0x0000]}
+  - {address: 13112, words: [0x012C]}
+  - {address: 31615, words: [0x0055]}
+  - {address: 31276, words: [0x0055]}
+  - {address: 31200, words: [0x00AA, 0x0010, 0x0010]}
+  - {address: 31420, words: [0x00AA, 0x136F, 0x1324]}
+  - {address: 31427, words: [0x03E8, 0x0000, 0x0000]}
+catalogue:
+- path: [Settings, "Power control", "Active power settings"]
+  write_priority: client
+  read_priority: client
+  items:
+  - address: 13101
+    label: "Power ramp-up"
+    control: switch
+    type: U16
+    options:
+    - {value: 85, label: Disabled}
+    - {value: 170, label: Enabled}
+  - {address: 13102, label: "Active power ramp-up rate", control: number, type: U16, scale: 0.01, accuracy: 2, unit: "%"}
+  - address: 13118
+    label: "Enable HV derating (charging)"
+    control: switch
+    type: U16
+    options:
+    - {value: 85, label: Disabled}
+    - {value: 170, label: Enabled}
+  - {address: 13119, label: "Inflection point voltage 1", control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 13120, label: "Inflection point voltage 2", control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 13121, label: "Inflection point voltage 3", control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 13122, label: "Inflection point voltage 4", control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 13167, label: "P1 Ref.", control: number, type: U16, scale: 0.1, accuracy: 1, unit: "%"}
+  - {address: 13168, label: "P2 Ref.", control: number, type: U16, scale: 0.1, accuracy: 1, unit: "%"}
+  - {address: 13169, label: "P3 Ref.", control: number, type: U16, scale: 0.1, accuracy: 1, unit: "%"}
+  - {address: 13170, label: "P4 Ref.", control: number, type: U16, scale: 0.1, accuracy: 1, unit: "%"}
+  - {address: 30461, label: OPU_P1, control: number, type: U16, scale: 0.1, accuracy: 1, unit: "%"}
+  - {address: 30462, label: OPU_P2, control: number, type: U16, scale: 0.1, accuracy: 1, unit: "%"}
+  - {address: 30463, label: OPU_P3, control: number, type: U16, scale: 0.1, accuracy: 1, unit: "%"}
+  - {address: 30464, label: OPU_P4, control: number, type: U16, scale: 0.1, accuracy: 1, unit: "%"}
+  - address: 31200
+    label: "Active power ramp rate control"
+    control: switch
+    type: U16
+    options:
+    - {value: 85, label: Disabled}
+    - {value: 170, label: Enabled}
+  - {address: 31201, label: "Active power ramp-down rate", control: number, type: U16, scale: 1, accuracy: 0, unit: "%/min"}
+  - {address: 31202, label: "Active power ramp-up rate", control: number, type: U16, scale: 1, accuracy: 0, unit: "%/min"}
+  - {address: 31363, label: OPU_V1, control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 31364, label: OPU_V2, control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 31365, label: OPU_V3, control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 31366, label: OPU_V4, control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - address: 31367
+    label: "Active power regulation at grid overvoltage"
+    control: switch
+    type: U16
+    options:
+    - {value: 85, label: Disabled}
+    - {value: 170, label: Enabled}
+  - address: 31420
+    label: "Underfrequency uprating"
+    control: switch
+    type: U16
+    options:
+    - {value: 85, label: Disabled}
+    - {value: 170, label: Enabled}
+  - {address: 31421, label: F1, control: number, type: U16, scale: 0.01, accuracy: 2, unit: Hz}
+  - {address: 31422, label: F2, control: number, type: U16, scale: 0.01, accuracy: 2, unit: Hz}
+  - {address: 31427, label: P1, control: number, type: U16, scale: 0.1, accuracy: 1, unit: "%"}
+  - {address: 31428, label: P2, control: number, type: U16, scale: 0.1, accuracy: 1, unit: "%"}
+  - {address: 31429, label: P3, control: number, type: U16, scale: 0.1, accuracy: 1, unit: "%"}
+- path: [Settings, "Protection parameters"]
+  write_priority: senior
+  read_priority: senior
+  items:
+  - address: 13103
+    label: "10-min overvoltage protection"
+    control: switch
+    type: U16
+    options:
+    - {value: 85, label: Disabled}
+    - {value: 170, label: Enabled}
+  - {address: 13104, label: "10-minute overvoltage protection", control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 13105, label: "Grid reconnection time", control: number, type: U16, scale: 0.01, accuracy: 2, unit: s}
+  - {address: 30664, label: "Grid overvoltage recovery threshold", control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 30665, label: "Grid undervoltage recovery threshold", control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 30666, label: "Grid overfrequency recovery threshold", control: number, type: U16, scale: 0.01, accuracy: 2, unit: Hz}
+  - {address: 30667, label: "Grid underfrequency recovery threshold", control: number, type: U16, scale: 0.01, accuracy: 2, unit: Hz}
+- path: ["Initialize protection parameter"]
+  write_priority: visitor
+  read_priority: visitor
+  items:
+  - {address: 13107, label: QU_V1, control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 13108, label: QU_V2, control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 13109, label: QU_V3, control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 13110, label: QU_V4, control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 13111, label: QU_Q1, control: number, type: S16, scale: 0.1, accuracy: 1, unit: "%"}
+  - {address: 13112, label: QU_Q4, control: number, type: S16, scale: 0.1, accuracy: 1, unit: "%"}
+  - {address: 13172, label: QU_Q2, control: number, type: S16, scale: 0.1, accuracy: 1, unit: "%"}
+  - {address: 13173, label: QU_Q3, control: number, type: S16, scale: 0.1, accuracy: 1, unit: "%"}
+  - address: 30643
+    label: "Country/region"
+    control: enum
+    type: U16
+    refresh: true
+    options:
+    - {value: 5, label: Austria}
+    - {value: 6, label: Australia}
+    - {value: 8, label: Belgium}
+    - {value: 66, label: Brazil}
+    - {value: 167, label: Brazil_240}
+    - {value: 1, label: Germany}
+    - {value: 0, label: "United Kingdom"}
+    - {value: 3, label: Italy}
+    - {value: 72, label: Luxembourg}
+    - {value: 12, label: Netherlands}
+    - {value: 99, label: "New Zealand"}
+    - {value: 64, label: "South Africa"}
+    - {value: 18, label: Thailand-PEA}
+    - {value: 35, label: Thailand-MEA}
+  - address: 30647
+    label: "Protection level"
+    control: enum
+    type: U16
+    refresh: true
+    options:
+    - {value: 0, label: "Single stage"}
+    - {value: 1, label: "Multiple level"}
+  - {address: 30648, label: "Grid undervoltage level 1 protection threshold", control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 30649, label: "Grid undervoltage level 1 protection delay", control: number, type: U16, scale: 0.01, accuracy: 2, unit: s}
+  - {address: 30650, label: "Grid undervoltage level 2 protection threshold", control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 30651, label: "Grid undervoltage level 2 protection delay", control: number, type: U16, scale: 0.01, accuracy: 2, unit: s}
+  - {address: 30652, label: "Grid overvoltage level 1 protection threshold", control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 30653, label: "Grid overvoltage level 1 protection delay", control: number, type: U16, scale: 0.01, accuracy: 2, unit: s}
+  - {address: 30654, label: "Grid overvoltage level 2 protection threshold", control: number, type: U16, scale: 0.1, accuracy: 1, unit: V}
+  - {address: 30655, label: "Grid overvoltage level 2 protection delay", control: number, type: U16, scale: 0.01, accuracy: 2, unit: s}
+  - {address: 30656, label: "Grid underfrequency level 1 protection threshold", control: number, type: U16, scale: 0.01, accuracy: 2, unit: Hz}
+  - {address: 30657, label: "Grid underfrequency level 1 protection delay", control: number, type: U16, scale: 0.01, accuracy: 2, unit: s}
+  - {address: 30658, label: "Grid underfrequency level 2 protection threshold", control: number, type: U16, scale: 0.01, accuracy: 2, unit: Hz}
+  - {address: 30659, label: "Grid underfrequency level 2 protection delay", control: number, type: U16, scale: 0.01, accuracy: 2, unit: s}
+  - {address: 30660, label: "Grid overfrequency level 1 protection threshold", control: number, type: U16, scale: 0.01, accuracy: 2, unit: Hz}
+  - {address: 30661, label: "Grid overfrequency level 1 protection delay", control: number, type: U16, scale: 0.01, accuracy: 2, unit: s}
+  - {address: 30662, label: "Grid overfrequency level 2 protection threshold", control: number, type: U16, scale: 0.01, accuracy: 2, unit: Hz}
+  - {address: 30663, label: "Grid overfrequency level 2 protection delay", control: number, type: U16, scale: 0.01, accuracy: 2, unit: s}
+  - address: 31270
+    label: "Reactive power regulation mode"
+    control: enum
+    type: U16
+    refresh: true
+    options:
+    - {value: 85, label: "Off"}
+    - {value: 161, label: Pf}
+    - {value: 162, label: Qt}
+    - {value: 163, label: "Q(P)"}
+    - {value: 164, label: "Q(U)"}
+  - {address: 31271, label: PF, control: number, type: S16, scale: 0.001, accuracy: 3, unit: ""}
+- path: [Settings, "System parameters"]
+  write_priority: client
+  read_priority: client
+  items:
+  - {address: 30646, label: "Recovery time from fault", control: number, type: U16, scale: 1, accuracy: 0, unit: s}
+- path: [Settings, "Power control", "Reactive power settings"]
+  write_priority: client
+  read_priority: client
+  items:
+  - {address: 31272, label: "Reactive power ratio", control: number, type: S16, scale: 0.1, accuracy: 1, unit: "%"}
+  - address: 31615
+    label: "Reactive power response"
+    control: switch
+    type: U16
+    options:
+    - {value: 85, label: Disabled}
+    - {value: 170, label: Enabled}
+  - {address: 31616, label: "Reactive power response time", control: number, type: U16, scale: 0.1, accuracy: 1, unit: s}
+- path: [Settings, "Power control", DRM]
+  write_priority: client
+  read_priority: client
+  items:
+  - address: 31276
+    label: DRM
+    control: switch
+    type: U16
+    options:
+    - {value: 85, label: Disabled}
+    - {value: 170, label: Enabled}

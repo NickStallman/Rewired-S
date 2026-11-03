@@ -1,0 +1,38 @@
+name: New device report
+description: An inverter, battery, meter or other device that is not on the compatibility list.
+labels: [new-device]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The fastest way to get a device supported is the **Send diagnostics** button on the Settings page:
+        the report carries the device's identification reply, which registers it answers, and its static
+        values, with serial numbers removed. Quote the reference it shows here.
+  - type: input
+    id: model
+    attributes:
+      label: Device model and role
+      placeholder: "SH8.0RT hybrid inverter, SBH200 battery"
+    validations:
+      required: true
+  - type: input
+    id: diag
+    attributes:
+      label: Diagnostics reference
+      placeholder: "k7Qx2mVb"
+    validations:
+      required: true
+  - type: textarea
+    id: works
+    attributes:
+      label: What works and what does not
+      description: Which values look right against the inverter display or the Sungrow app, which are missing or wrong, whether the controls you tried took effect.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Rewired-S version and dongle
+      placeholder: "0.9.0, WiNet-S2 Wi-Fi"
+    validations:
+      required: true

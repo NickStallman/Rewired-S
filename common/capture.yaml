@@ -1,0 +1,13 @@
+# Diagnostic captures (components/sungrow_capture): the web UI Captures page starts an I-V scan of
+# the PV strings (SG5.0RS, SH10RS) or a grid-waveform recording (SH10RS), fetches the file the
+# inverter sends (YMODEM on the RS485 line; polling pauses for the transfer) and offers it as a
+# download with a metadata JSON. Results stay in RAM until reboot; nothing goes to MQTT / HA.
+# Each start is confirmed in the web UI; the trigger registers are written through
+# sungrow_control's diagnostic gate, not the "Inverter writes enabled" switch. Needs
+# common/rs485.yaml, common/control.yaml and common/web_ui.yaml. See docs/capture.md.
+sungrow_capture:
+  id: sungrow_cap
+  sungrow_modbus_id: rs485_hub
+  sungrow_control_id: sungrow_ctl
+  sungrow_datamodel_id: sungrow_dm
+  time_id: sntp_time
