@@ -1,0 +1,75 @@
+# Runtime provisioning for the pre-built images (docs/prebuilt.md). Everything a compiled build
+# takes from secrets.yaml or a site file is set at runtime here instead:
+#   - Wi-Fi: common/wifi_provisioned.yaml (captive portal / improv_serial), nothing compiled in.
+#   - Native API: encryption compiled in without a key; Home Assistant generates and stores the
+#     key when the dongle is adopted (plaintext until then).
+#   - Native OTA (:3232): gated by a password that sungrow_web keeps equal to the web login
+#     password (ESPHome cannot require a runtime-provisioned key for OTA at build time); once
+#     the dongle is adopted the API key is offered as well and an uploader holding it needs no
+#     password. The http_request OTA below installs releases from the published manifest.
+#   - Web login: the digest auth below carries compile-time placeholders; sungrow_web replaces
+#     them at boot with the pair stored in NVS (default admin / rewired-s until changed on the
+#     Settings page).
+#   - MQTT broker: common/mqtt_ha_provisioned.yaml (Settings page).
+#   - Cloud version: "" = detect it from the stock image left in the other OTA slot
+#     (sungrow_board), with a Settings-page override.
+# Every pre-built entry sets `prebuilt_entry` to its own file stem (winet-s-prebuilt,
+# winet-s2-ethernet-prebuilt, ...), which names the dashboard-import package and the release
+# manifest.
+substitutions:
+  cloud_firmware_version: ""
+  prebuilt_entry: winet-s-prebuilt
+
+esphome:
+  # rewired-s-xxxxxx: several dongles on one network stay distinct, and the AP is named after it.
+  name_add_mac_suffix: true
+  # The four images share the node name, so each builds in its own directory
+  # (.esphome/build/<entry>/build/firmware.ota.bin); one shared directory cannot switch between
+  # the esp32 and esp32s3 toolchains.
+  build_path: build/${prebuilt_entry}
+
+api:
+  # Noise encryption compiled in, key provisioned by Home Assistant at adoption.
+  encryption: {}
+  reboot_timeout: 0s
+
+web_server:
+  auth:
+    type: digest
+    # Placeholders only: sungrow_web (login: runtime) swaps in the stored pair before the server
+    # starts. Keep them here so web_server wraps every handler in its auth middleware.
+    username: admin
+    password: rewired-s
+
+sungrow_web:
+  login: runtime
+  ota_id: ota_native   # keeps the native OTA password equal to the web login password
+
+# Lets the ESPHome dashboard adopt the dongle with the matching source entry.
+dashboard_import:
+  package_import_url: github://NickStallman/Rewired-S/${prebuilt_entry}.yaml@main
+  import_full_config: false
+
+# Firmware updates from the published release manifest: an Update entity in Home Assistant
+# (and the ESPHome web_server page) that installs the next pre-built image over HTTPS
+# (builds[].ota of the manifest tools/release_manifest.py writes). Works before adoption.
+http_request:
+  id: prebuilt_http
+  timeout: 10s
+
+ota:
+  # Native OTA with the auth path compiled in (password: "") and the password set at boot and on
+  # every login change by sungrow_web; `esphome upload` / `make deploy` need it until the dongle
+  # is adopted (then the API key is offered too).
+  - platform: esphome
+    id: ota_native
+    password: ""
+  - platform: http_request
+    id: ota_http
+
+update:
+  - platform: http_request
+    id: firmware_update
+    name: Firmware
+    source: https://nickstallman.github.io/Rewired-S/firmware/${prebuilt_entry}/manifest.json
+    update_interval: 6h

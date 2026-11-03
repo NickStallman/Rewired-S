@@ -1,0 +1,44 @@
+# WiNet-S (V200, ESP32), Wi-Fi.
+# Production firmware: RS485 autodetect of the inverter and the devices it reports (batteries, EV
+# charger, Energy Bridge), iSolarCloud uplink, Modbus-TCP :502, gated register writes, per-device
+# Home Assistant discovery over MQTT, the web UI, diagnostic captures and reset diagnostics.
+# Board specifics live in boards/winet_s.yaml. A site file (sites/README.md) includes this entry and
+# sets its own name and options.
+substitutions:
+  name: winet-s
+  friendly_name: WiNet-S
+
+packages:
+  board: !include boards/winet_s.yaml
+  base: !include common/base.yaml
+  # API key and web login from secrets.yaml (the prebuilt entries use common/provisioning.yaml).
+  access: !include common/access_secrets.yaml
+  # Network: Wi-Fi with a fallback AP. Ethernet (DP83848): winet-s-ethernet.yaml.
+  network: !include common/wifi.yaml
+  board_io: !include common/board_io.yaml
+  rs485: !include common/rs485.yaml
+  identity: !include common/identity.yaml
+  cloud: !include common/cloud.yaml
+  modbus_tcp: !include common/modbus_tcp.yaml
+  # Register writes, off until the "Inverter writes enabled" switch is turned on (docs/control.md).
+  control: !include common/control.yaml
+  # Register writes: the control profile (hybrid or string) attaches itself from the inverter's
+  # device type; MQTT discovery and the web UI expose its controls. Native-API control entities
+  # are part of common/native_entities.yaml.
+  # Every connected device as its own Home Assistant device over MQTT discovery.
+  mqtt_ha: !include common/mqtt_ha.yaml
+  # ha_native: !include common/native_entities.yaml   # native-API entities instead of mqtt_ha (no broker); do not use both
+  web_ui: !include common/web_ui.yaml
+  # I-V scan and grid-waveform captures (web UI Captures page).
+  capture: !include common/capture.yaml
+  # Reset journal, log tail, panic hook, task-watchdog panics, "Last reset" (common/diagnostics.yaml).
+  diagnostics: !include common/diagnostics.yaml
+  # Daily anonymous usage report and diagnostics uploads; analytics: "false" turns it off (docs/analytics.md).
+  analytics: !include common/analytics.yaml
+  # Remote logging: set syslog_host under substitutions and uncomment.
+  # syslog: !include common/syslog.yaml
+
+external_components:
+  - source:
+      type: local
+      path: components

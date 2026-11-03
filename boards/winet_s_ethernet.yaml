@@ -1,0 +1,26 @@
+# Optional network package for the WiNet-S (V200/ESP32): internal EMAC + DP83848 RMII PHY instead
+# of Wi-Fi. Use it in winet-s.yaml in place of common/wifi.yaml (ESPHome can't run both).
+#
+# The values match the stock firmware's Ethernet setup: DP83848 PHY at address 1, MDC GPIO23,
+# MDIO GPIO18, RMII clock input on GPIO0 (IDF default EMAC config), PHY reset on GPIO5.
+# Pin assignments: https://github.com/NickStallman/SG-Docs/blob/main/reference/hardware/winet-s.md
+#   ESP32 RMII data pins are fixed by silicon (not configurable): TXD0 GPIO19, TXD1 GPIO22,
+#   TX_EN GPIO21, RXD0 GPIO25, RXD1 GPIO26, CRS_DV GPIO27.
+ethernet:
+  type: DP83848
+  mdc_pin: GPIO23
+  mdio_pin: GPIO18
+  clk:
+    mode: CLK_EXT_IN   # stock uses the IDF default, an external 50 MHz clock into GPIO0 (same thing)
+    pin: GPIO0
+  phy_addr: 1          # as stock (IDF default is -1/AUTO)
+  # PHY hardware-reset line. ESPHome maps power_pin -> eth_phy_config_t.reset_gpio_num
+  # (components/ethernet/ethernet_component_esp32.cpp:303). Stock reset_gpio_num=5, so this MUST be set
+  # — left unset (reset_gpio_num=-1) the DP83848 is never brought out of hardware reset, so esp_eth PHY
+  # init fails/stalls and Ethernet never comes up.
+  power_pin: GPIO5
+
+text_sensor:
+  - platform: ethernet_info
+    ip_address:
+      name: IP address

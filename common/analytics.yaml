@@ -1,0 +1,31 @@
+# Usage reporting and diagnostics upload (components/sungrow_analytics, docs/analytics.md).
+#
+# Once a day the dongle sends an anonymous usage report: firmware and board versions, the models
+# and firmware versions of the connected devices, which features are on, uptime, memory and the
+# reset reason, plus a short error event when something notable happens (a crash-class reset, a
+# device dropping off the bus, repeated cloud failures, low memory, an unsupported device). The
+# dongle is identified by a hash of its serial number; the serial itself, addresses, host names,
+# the Wi-Fi name and plant names are never sent.
+#
+# On a crash-class reset, a runtime fault or an unrecognised device the dongle also uploads a
+# diagnostics report (build details, the detected hardware and its register map, feature state,
+# memory, the reset journal and the recent log tail, with serials, the Wi-Fi name and addresses
+# replaced), at most three times a day. The web UI (Settings, Diagnostics) sends the same report on
+# request and offers it for download; that button works even with reporting turned off.
+#
+# Turn reporting off with the "Usage reporting" switch (web UI Settings, Diagnostics; Home
+# Assistant), which is remembered across restarts, or in the site file, which sets its default:
+#   substitutions:
+#     analytics: "false"
+# Leaving this package out of the entry removes the component from the build.
+substitutions:
+  analytics: "true"
+
+sungrow_analytics:
+  id: analytics
+  enabled: ${analytics}
+  time_id: sntp_time
+  reporting:
+    name: Usage reporting
+  # endpoint: https://posthog.nickstallman.net   # collector; override for a private one
+  # api_key: ...                                 # selects the data source at the collector

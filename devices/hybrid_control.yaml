@@ -1,0 +1,118 @@
+# Writable SH hybrid registers (sungrow_control, profile "hybrid") + read-back entities with
+# mkaiser's state strings. Needs common/control.yaml. Harmless while "Inverter writes enabled"
+# is off (the default): entities show the inverter's values, writes are refused.
+# Allow-list + evidence: data/write_registers.yaml; migration table: docs/control.md.
+# Usage:
+#   packages:
+#     inverter_control: !include { file: devices/hybrid_control.yaml, vars: { device: 0 } }
+defaults:
+  device: 0
+  prefix: "Inverter "
+
+sungrow_control:
+  devices:
+    - device: ${device}
+      profile: hybrid
+      # registers:                 # extra allow-list entries (raw, 1-based document address)
+      #   - {address: 13100, count: 1, min: 0, max: 100}
+
+select:
+  - platform: sungrow_control
+    device: ${device}
+    key: ems_mode
+    name: "${prefix}EMS mode"
+  - platform: sungrow_control
+    device: ${device}
+    key: forced_cmd
+    name: "${prefix}Battery forced charge discharge"
+  - platform: sungrow_control
+    device: ${device}
+    key: export_power_limit_mode
+    name: "${prefix}Export power limit mode"
+  - platform: sungrow_control
+    device: ${device}
+    key: backup_mode
+    name: "${prefix}Backup mode"
+    disabled_by_default: true
+
+number:
+  - platform: sungrow_control
+    device: ${device}
+    key: forced_power
+    name: "${prefix}Battery forced charge discharge power"
+  - platform: sungrow_control
+    device: ${device}
+    key: max_soc
+    name: "${prefix}Battery max SOC"
+  - platform: sungrow_control
+    device: ${device}
+    key: min_soc
+    name: "${prefix}Battery min SOC"
+  - platform: sungrow_control
+    device: ${device}
+    key: reserved_soc_backup
+    name: "${prefix}Battery reserved SOC for backup"
+  - platform: sungrow_control
+    device: ${device}
+    key: export_power_limit
+    name: "${prefix}Export power limit"
+  - platform: sungrow_control
+    device: ${device}
+    key: battery_max_charge_power
+    name: "${prefix}Battery max charge power"
+  - platform: sungrow_control
+    device: ${device}
+    key: battery_max_discharge_power
+    name: "${prefix}Battery max discharge power"
+  - platform: sungrow_control
+    device: ${device}
+    key: battery_charging_start_power
+    name: "${prefix}Battery charging start power"
+    disabled_by_default: true
+  - platform: sungrow_control
+    device: ${device}
+    key: battery_discharging_start_power
+    name: "${prefix}Battery discharging start power"
+    disabled_by_default: true
+
+# Read-back (what the inverter reports, polled with fn 3 every 10 s and right after each write).
+# State strings match mkaiser / the user's HA package; "unknown" while offline.
+text_sensor:
+  - platform: sungrow_control
+    device: ${device}
+    key: ems_mode
+    name: "${prefix}EMS mode selection"
+  - platform: sungrow_control
+    device: ${device}
+    key: forced_cmd
+    name: "${prefix}Battery forced charge discharge cmd"
+  - platform: sungrow_control
+    device: ${device}
+    key: export_power_limit_mode
+    name: "${prefix}Export power limit mode readback"
+
+sensor:
+  - platform: sungrow_control
+    device: ${device}
+    key: forced_power
+    name: "${prefix}Battery forced charge discharge power readback"
+    device_class: power
+  - platform: sungrow_control
+    device: ${device}
+    key: reserved_soc_backup
+    name: "${prefix}Reserved SOC for backup"
+  - platform: sungrow_control
+    device: ${device}
+    key: export_power_limit
+    name: "${prefix}Export power limit readback"
+    device_class: power
+  - platform: sungrow_control
+    device: ${device}
+    key: max_soc
+    name: "${prefix}Max SOC"
+    accuracy_decimals: 1
+  - platform: sungrow_control
+    device: ${device}
+    key: min_soc
+    name: "${prefix}Min SOC"
+    accuracy_decimals: 1

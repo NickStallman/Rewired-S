@@ -1,0 +1,151 @@
+# Release: on a version tag, build the pre-built and debug images, sign app-only .sgu packages with
+# the project release key, attach everything to a GitHub pre-release and publish the ESP Web Tools /
+# update manifests to GitHub Pages.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+env:
+  ESPHOME_VERSION: "2026.9.1"
+
+jobs:
+  build:
+    name: Build ${{ matrix.entry }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        entry:
+          - winet-s-prebuilt
+          - winet-s-ethernet-prebuilt
+          - winet-s2-prebuilt
+          - winet-s2-ethernet-prebuilt
+          - winet-s-debug
+          - winet-s-debug-ethernet
+          - winet-s2-debug
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ESPHome and the tool requirements
+        run: pip install "esphome==${ESPHOME_VERSION}" -r tools/requirements.txt
+      - name: Example secrets (debug entries only; the pre-built entries use none)
+        run: cp secrets.yaml.example secrets.yaml
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            .esphome/.espressif
+            .esphome/platformio
+          key: esphome-${{ env.ESPHOME_VERSION }}-${{ runner.os }}-${{ hashFiles('boards/*.yaml', 'common/base.yaml') }}
+          restore-keys: esphome-${{ env.ESPHOME_VERSION }}-${{ runner.os }}-
+      - name: Compile
+        run: esphome compile ${{ matrix.entry }}.yaml
+      - name: Collect the image and write the manifest
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          BUILD_DIR=$(python3 -I tools/build_dir.py ${{ matrix.entry }}.yaml)
+          python3 -I tools/release_manifest.py --entry ${{ matrix.entry }} --build-dir "$BUILD_DIR" \
+            --version "$VERSION" --out-dir "release/${{ matrix.entry }}" \
+            --base-url "https://nickstallman.github.io/Rewired-S/firmware/${{ matrix.entry }}" \
+            --release-url "https://github.com/${{ github.repository }}/releases/tag/${GITHUB_REF_NAME}" \
+            --summary "Rewired-S $VERSION"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: image-${{ matrix.entry }}
+          path: release/${{ matrix.entry }}
+          if-no-files-found: error
+
+  package:
+    name: Sign packages and publish the release
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r tools/requirements.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: image-*
+          path: release
+      - name: Release metadata
+        id: meta
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          python3 -I tools/changelog_section.py "$VERSION" > release/NOTES.md
+          cat release/NOTES.md
+      - name: Sign app-only .sgu packages with the release key
+        if: ${{ secrets.SGU_SIGNING_KEY != '' }}
+        env:
+          SGU_SIGNING_KEY: ${{ secrets.SGU_SIGNING_KEY }}
+        run: |
+          umask 077
+          printf '%s' "$SGU_SIGNING_KEY" > /tmp/release_key.pem
+          BUILD=$(python3 -I tools/sgu_build_number.py "${{ steps.meta.outputs.version }}")
+          for entry in winet-s-prebuilt winet-s-ethernet-prebuilt winet-s2-prebuilt winet-s2-ethernet-prebuilt; do
+            board=s; case "$entry" in winet-s2*) board=s2;; esac
+            python3 -I tools/package_sgu.py --app "release/image-$entry/$entry.ota.bin" --board "$board" \
+              --build "$BUILD" --key /tmp/release_key.pem --pubkey tools/release_key_pub.pem \
+              --out-dir "release/sgu-$entry" --zip
+            for f in release/sgu-$entry/*.sgu release/sgu-$entry/*.bin release/sgu-$entry/*.zip; do
+              mv "$f" "release/$entry-$(basename "$f")"
+            done
+          done
+          rm -f /tmp/release_key.pem
+          cp tools/release_key_pub.pem release/rewired-s-release-public-key.pem
+      - name: Flatten the image assets
+        run: |
+          for d in release/image-*; do
+            entry="${d#release/image-}"
+            cp "$d/$entry.ota.bin" "release/$entry-${{ steps.meta.outputs.version }}.ota.bin"
+            cp "$d/manifest.json" "release/$entry-manifest.json"
+          done
+          ls -l release
+      - name: Pages site
+        run: |
+          mkdir -p site/firmware
+          for d in release/image-*; do
+            entry="${d#release/image-}"
+            mkdir -p "site/firmware/$entry"
+            cp "$d"/* "site/firmware/$entry/"
+          done
+          python3 -I tools/pages_index.py --version "${{ steps.meta.outputs.version }}" --out site/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: GitHub pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: true
+          body_path: release/NOTES.md
+          files: |
+            release/*.ota.bin
+            release/*-manifest.json
+            release/*.sgu
+            release/*-WINET-*.bin
+            release/*.zip
+            release/rewired-s-release-public-key.pem
+
+  pages:
+    name: Publish GitHub Pages
+    needs: package
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

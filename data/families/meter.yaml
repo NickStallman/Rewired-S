@@ -1,0 +1,513 @@
+# data/families/meter.yaml - register tables and signal definitions of the meter family
+# (docs/data_format.md). Read by tools/gen_tables.py and tests/test_request_nodes.py.
+#
+# tables.<name>.rows   one entry per polled register block, in poll order:
+#   id          signal id (family-scoped, hex); 0 = a gap-filling read that stores nothing
+#   address     1-based register number (wire address = address - 1)
+#   fn          Modbus function: 4 input, 3 holding, 16 write-multiple, 119 proprietary
+#   count       registers read;  type  s16 u16 s32 u32 s64 u64 f32 str
+#   cycle       poll cycle in 100 ms units; a request node is polled at the cycle of its first row
+#   flags       end = the row closes its request node (nodes also split past 120 registers);
+#               clear_offline / priority / no_bulk_decode / keep_sentinel
+#   bits        {first, count}: a status word whose bits are published as signals first + bit
+#   capability  word.bit of the capability bitmap (signal 0x2181) that must be set for the row
+#   unit, scale only for rows without a signal definition (otherwise taken from the signal)
+# signals   one entry per signal id: key (stable entity key, unique per family), name, unit,
+#   scale (omitted = raw value), device_class / state_class (Home Assistant), category
+#   (core | core_hybrid | core_string | extra | hidden; omitted = placed explicitly by the
+#   device package definition), scope (hybrid = meaningless on a string inverter), priority
+#   (display sort rank, lower first), group (realtime | static | protection), accuracy
+#   (display decimals), enum (decode table name), absent (not-served conditions), confidence
+#   (confirmed | likely | guess) and evidence. Signal order = entity order of the packages.
+# fixes     rows whose address differs from the one the stock dongle polls (row carries the fix)
+# reads     non-polled holding registers surfaced read-only (inverter protection settings)
+#
+# Evidence abbreviations: p1_4 / p2 / p3 / p5 = rows of tables.inv_proto*, slaveNN = rows of
+# the data/modbus_tcp map of dev_type NN, battery / st6100 / ... = rows of that table, all as
+# <table>@<address>; mkaiser N = github.com/mkaiser/Sungrow-SHx-Inverter-Modbus-Home-Assistant
+# modbus_sungrow.yaml (register N); SunGather N = github.com/bohdan-s/SunGather
+# registers-sungrow.yaml; readings = values read from an SH10RS and an SG5.0RS (protocol 3);
+# SG-Docs = https://github.com/NickStallman/SG-Docs.
+
+family: meter
+title: "Energy meters on the inverter's RS485 bus"
+device_types: [18]
+reference: "https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/meters.md"
+notes: |
+  One table per meter model (subtype code reported by the inverter).
+
+tables:
+  other_dev18_st6100:
+    title: "Acrel DTSD1352 three-phase meter"
+    subtype: 6100
+    rows:
+    - {id: 0x2000, address: 4097, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_a_voltage
+    - {id: 0x2001, address: 4099, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_b_voltage
+    - {id: 0x2002, address: 4101, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_c_voltage
+    - {id: 0x2003, address: 4103, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # line_ab_voltage
+    - {id: 0x2004, address: 4105, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # line_bc_voltage
+    - {id: 0x2005, address: 4107, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # line_ca_voltage
+    - {id: 0x2006, address: 4109, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_a_current
+    - {id: 0x2007, address: 4111, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_b_current
+    - {id: 0x2008, address: 4113, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_c_current
+    - {id: 0x2023, address: 4115, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_a_active_power
+    - {id: 0x2024, address: 4117, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_b_active_power
+    - {id: 0x2025, address: 4119, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_c_active_power
+    - {id: 0x200A, address: 4121, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # active_power
+    - {id: 0x200B, address: 4123, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # export_power
+    - {id: 0x2026, address: 4125, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_a_reactive_power
+    - {id: 0x2027, address: 4127, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_b_reactive_power
+    - {id: 0x2028, address: 4129, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_c_reactive_power
+    - {id: 0x200C, address: 4131, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # reactive_power
+    - {id: 0x2029, address: 4133, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_a_apparent_power
+    - {id: 0x202A, address: 4135, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_b_apparent_power
+    - {id: 0x202B, address: 4137, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_c_apparent_power
+    - {id: 0x200D, address: 4139, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # apparent_power
+    - {id: 0x2009, address: 4141, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # power_factor
+    - {id: 0x2022, address: 4143, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # grid_frequency
+    - {id: 0x200E, address: 4145, fn: 4, count: 2, type: f32, cycle: 1}  # forward_active_energy
+    - {id: 0x200F, address: 4147, fn: 4, count: 2, type: f32, cycle: 1}  # reverse_active_energy
+    - {id: 0x2010, address: 4149, fn: 4, count: 2, type: f32, cycle: 1}  # forward_reactive_energy
+    - {id: 0x2011, address: 4151, fn: 4, count: 2, type: f32, cycle: 1}  # reverse_reactive_energy
+    - {id: 0x202C, address: 4153, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline}
+    - {id: 0x202E, address: 4154, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline}
+    - {id: 0x202F, address: 4155, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # load_power
+    - {id: 0x210B, address: 4157, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_a_power_factor
+    - {id: 0x210C, address: 4159, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_b_power_factor
+    - {id: 0x210D, address: 4161, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_c_power_factor
+    - {id: 0x210E, address: 4163, fn: 4, count: 2, type: f32, cycle: 1}  # phase_a_forward_active_energy
+    - {id: 0x210F, address: 4165, fn: 4, count: 2, type: f32, cycle: 1}  # phase_b_forward_active_energy
+    - {id: 0x2110, address: 4167, fn: 4, count: 2, type: f32, cycle: 1}  # phase_c_forward_active_energy
+    - {id: 0x2111, address: 4169, fn: 4, count: 2, type: f32, cycle: 1}  # phase_a_reverse_active_energy
+    - {id: 0x2112, address: 4171, fn: 4, count: 2, type: f32, cycle: 1}  # phase_b_reverse_active_energy
+    - {id: 0x2113, address: 4173, fn: 4, count: 2, type: f32, cycle: 1}  # phase_c_reverse_active_energy
+  other_dev18_st6200:
+    title: "Chint DTSU666 three-phase meter"
+    subtype: 6200
+    rows:
+    - {id: 0x2000, address: 4097, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_a_voltage
+    - {id: 0x2001, address: 4099, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_b_voltage
+    - {id: 0x2002, address: 4101, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_c_voltage
+    - {id: 0x2003, address: 4103, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # line_ab_voltage
+    - {id: 0x2004, address: 4105, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # line_bc_voltage
+    - {id: 0x2005, address: 4107, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # line_ca_voltage
+    - {id: 0x2006, address: 4109, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_a_current
+    - {id: 0x2007, address: 4111, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_b_current
+    - {id: 0x2008, address: 4113, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_c_current
+    - {id: 0x2023, address: 4115, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_a_active_power
+    - {id: 0x2024, address: 4117, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_b_active_power
+    - {id: 0x2025, address: 4119, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_c_active_power
+    - {id: 0x200A, address: 4121, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # active_power
+    - {id: 0x200B, address: 4123, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # export_power
+    - {id: 0x2026, address: 4125, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_a_reactive_power
+    - {id: 0x2027, address: 4127, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_b_reactive_power
+    - {id: 0x2028, address: 4129, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_c_reactive_power
+    - {id: 0x200C, address: 4131, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # reactive_power
+    - {id: 0x2009, address: 4141, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # power_factor
+    - {id: 0x2022, address: 4143, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # grid_frequency
+    - {id: 0x200E, address: 4145, fn: 4, count: 2, type: f32, cycle: 1}  # forward_active_energy
+    - {id: 0x200F, address: 4147, fn: 4, count: 2, type: f32, cycle: 1}  # reverse_active_energy
+    - {id: 0x202C, address: 4153, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline}
+    - {id: 0x202E, address: 4154, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline}
+    - {id: 0x202F, address: 4155, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # load_power
+    - {id: 0x210B, address: 4157, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_a_power_factor
+    - {id: 0x210C, address: 4159, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_b_power_factor
+    - {id: 0x210D, address: 4161, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_c_power_factor
+  other_dev18_st6300:
+    title: "S100 single-phase meter"
+    subtype: 6300
+    rows:
+    - {id: 0x2000, address: 4097, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_a_voltage
+    - {id: 0x2006, address: 4109, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_a_current
+    - {id: 0x2023, address: 4115, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # phase_a_active_power
+    - {id: 0x200A, address: 4121, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # active_power
+    - {id: 0x2009, address: 4141, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # power_factor
+    - {id: 0x2022, address: 4143, fn: 4, count: 2, type: f32, cycle: 1, flags: clear_offline}  # grid_frequency
+    - {id: 0x200E, address: 4145, fn: 4, count: 2, type: f32, cycle: 1}  # forward_active_energy
+    - {id: 0x200F, address: 4147, fn: 4, count: 2, type: f32, cycle: 1}  # reverse_active_energy
+
+fixes:
+- {table: other_dev18_st6100, id: 0x210E, stock_address: 4161, address: 4163, confidence: likely, evidence: "the stock table entry (idx 34) holds regaddr 0x1041, in the WiNet-S and WiNet-S2 images alike. PF-C 0x210d@4161+2 is fixed by three tables (st6100, st6200, tcpslave_dev18), so the six per-phase energy u32s that follow can only sit at 4163..4173 without overlap: the firmware has an off-by-2 in 0x210e and the rest chain from it. As shipped, 0x210e decodes PF-C's registers and 0x2113 misses its real register. st6100 is the Acrel DTSD1352 layout (https://github.com/NickStallman/SG-Docs/blob/main/reference/appendix/register-tables/rs485-meter-dtsd1352.md)"}
+- {table: other_dev18_st6100, id: 0x210F, stock_address: 4163, address: 4165, confidence: likely, evidence: "the stock table entry (idx 35) holds regaddr 0x1043, in the WiNet-S and WiNet-S2 images alike. PF-C 0x210d@4161+2 is fixed by three tables (st6100, st6200, tcpslave_dev18), so the six per-phase energy u32s that follow can only sit at 4163..4173 without overlap: the firmware has an off-by-2 in 0x210e and the rest chain from it. As shipped, 0x210e decodes PF-C's registers and 0x2113 misses its real register. st6100 is the Acrel DTSD1352 layout (https://github.com/NickStallman/SG-Docs/blob/main/reference/appendix/register-tables/rs485-meter-dtsd1352.md)"}
+- {table: other_dev18_st6100, id: 0x2110, stock_address: 4165, address: 4167, confidence: likely, evidence: "the stock table entry (idx 36) holds regaddr 0x1045, in the WiNet-S and WiNet-S2 images alike. PF-C 0x210d@4161+2 is fixed by three tables (st6100, st6200, tcpslave_dev18), so the six per-phase energy u32s that follow can only sit at 4163..4173 without overlap: the firmware has an off-by-2 in 0x210e and the rest chain from it. As shipped, 0x210e decodes PF-C's registers and 0x2113 misses its real register. st6100 is the Acrel DTSD1352 layout (https://github.com/NickStallman/SG-Docs/blob/main/reference/appendix/register-tables/rs485-meter-dtsd1352.md)"}
+- {table: other_dev18_st6100, id: 0x2111, stock_address: 4167, address: 4169, confidence: likely, evidence: "the stock table entry (idx 37) holds regaddr 0x1047, in the WiNet-S and WiNet-S2 images alike. PF-C 0x210d@4161+2 is fixed by three tables (st6100, st6200, tcpslave_dev18), so the six per-phase energy u32s that follow can only sit at 4163..4173 without overlap: the firmware has an off-by-2 in 0x210e and the rest chain from it. As shipped, 0x210e decodes PF-C's registers and 0x2113 misses its real register. st6100 is the Acrel DTSD1352 layout (https://github.com/NickStallman/SG-Docs/blob/main/reference/appendix/register-tables/rs485-meter-dtsd1352.md)"}
+- {table: other_dev18_st6100, id: 0x2112, stock_address: 4169, address: 4171, confidence: likely, evidence: "the stock table entry (idx 38) holds regaddr 0x1049, in the WiNet-S and WiNet-S2 images alike. PF-C 0x210d@4161+2 is fixed by three tables (st6100, st6200, tcpslave_dev18), so the six per-phase energy u32s that follow can only sit at 4163..4173 without overlap: the firmware has an off-by-2 in 0x210e and the rest chain from it. As shipped, 0x210e decodes PF-C's registers and 0x2113 misses its real register. st6100 is the Acrel DTSD1352 layout (https://github.com/NickStallman/SG-Docs/blob/main/reference/appendix/register-tables/rs485-meter-dtsd1352.md)"}
+- {table: other_dev18_st6100, id: 0x2113, stock_address: 4171, address: 4173, confidence: likely, evidence: "the stock table entry (idx 39) holds regaddr 0x104b, in the WiNet-S and WiNet-S2 images alike. PF-C 0x210d@4161+2 is fixed by three tables (st6100, st6200, tcpslave_dev18), so the six per-phase energy u32s that follow can only sit at 4163..4173 without overlap: the firmware has an off-by-2 in 0x210e and the rest chain from it. As shipped, 0x210e decodes PF-C's registers and 0x2113 misses its real register. st6100 is the Acrel DTSD1352 layout (https://github.com/NickStallman/SG-Docs/blob/main/reference/appendix/register-tables/rs485-meter-dtsd1352.md)"}
+
+signals:
+- id: 0x2000
+  key: phase_a_voltage
+  name: "Phase A voltage"
+  unit: V
+  scale: 0.1
+  device_class: voltage
+  state_class: measurement
+  category: core
+  confidence: confirmed
+  evidence: "st6100@4097 st6200@4097 st6300@4097 slave18@4097; stock UI label \"Phase A voltage\""
+- id: 0x2001
+  key: phase_b_voltage
+  name: "Phase B voltage"
+  unit: V
+  scale: 0.1
+  device_class: voltage
+  state_class: measurement
+  category: core
+  confidence: confirmed
+  evidence: "st6100@4099 st6200@4099 slave18@4099; stock UI label \"Phase B voltage\""
+- id: 0x2002
+  key: phase_c_voltage
+  name: "Phase C voltage"
+  unit: V
+  scale: 0.1
+  device_class: voltage
+  state_class: measurement
+  category: core
+  confidence: confirmed
+  evidence: "st6100@4101 st6200@4101 slave18@4101; stock UI label \"Phase C voltage\""
+- id: 0x2003
+  key: line_ab_voltage
+  name: "Line A-B voltage"
+  unit: V
+  scale: 0.1
+  device_class: voltage
+  state_class: measurement
+  category: extra
+  confidence: confirmed
+  evidence: "st6100@4103 st6200@4103 slave18@4103; stock UI label \"A-B line voltage\""
+- id: 0x2004
+  key: line_bc_voltage
+  name: "Line B-C voltage"
+  unit: V
+  scale: 0.1
+  device_class: voltage
+  state_class: measurement
+  category: extra
+  confidence: confirmed
+  evidence: "st6100@4105 st6200@4105 slave18@4105; stock UI label \"B-C line voltage\""
+- id: 0x2005
+  key: line_ca_voltage
+  name: "Line C-A voltage"
+  unit: V
+  scale: 0.1
+  device_class: voltage
+  state_class: measurement
+  category: extra
+  confidence: confirmed
+  evidence: "st6100@4107 st6200@4107 slave18@4107; stock UI label \"C-A line voltage\""
+- id: 0x2006
+  key: phase_a_current
+  name: "Phase A current"
+  unit: A
+  scale: 0.001
+  device_class: current
+  state_class: measurement
+  category: core
+  confidence: confirmed
+  evidence: "st6100@4109 st6200@4109 st6300@4109 slave18@4109; stock UI label \"Phase A current\""
+- id: 0x2007
+  key: phase_b_current
+  name: "Phase B current"
+  unit: A
+  scale: 0.001
+  device_class: current
+  state_class: measurement
+  category: core
+  confidence: confirmed
+  evidence: "st6100@4111 st6200@4111 slave18@4111; stock UI label \"Phase B current\""
+- id: 0x2008
+  key: phase_c_current
+  name: "Phase C current"
+  unit: A
+  scale: 0.001
+  device_class: current
+  state_class: measurement
+  category: core
+  confidence: confirmed
+  evidence: "st6100@4113 st6200@4113 slave18@4113; stock UI label \"Phase C current\""
+- id: 0x2023
+  key: phase_a_active_power
+  name: "Phase A active power"
+  unit: kW
+  scale: 0.001
+  device_class: power
+  state_class: measurement
+  category: core
+  confidence: confirmed
+  evidence: "st6100@4115 st6200@4115 st6300@4115 slave18@4115"
+- id: 0x2024
+  key: phase_b_active_power
+  name: "Phase B active power"
+  unit: kW
+  scale: 0.001
+  device_class: power
+  state_class: measurement
+  category: core
+  confidence: confirmed
+  evidence: "st6100@4117 st6200@4117 slave18@4117"
+- id: 0x2025
+  key: phase_c_active_power
+  name: "Phase C active power"
+  unit: kW
+  scale: 0.001
+  device_class: power
+  state_class: measurement
+  category: core
+  confidence: confirmed
+  evidence: "st6100@4119 st6200@4119 slave18@4119"
+- id: 0x200A
+  key: active_power
+  name: "Active power"
+  unit: kW
+  scale: 0.0001
+  device_class: power
+  state_class: measurement
+  category: core
+  confidence: confirmed
+  evidence: "st6100@4121 st6200@4121 st6300@4121 slave18@4121; stock UI label \"Active power\""
+- id: 0x200B
+  key: export_power
+  name: "Export power"
+  unit: kW
+  scale: 0.0001
+  device_class: power
+  state_class: measurement
+  category: core
+  confidence: likely
+  evidence: "st6100@4123 st6200@4123 slave18@4123; stock UI label \"Feed-in power\"; shares point key neg_curr_power with 0x202f"
+- id: 0x202F
+  key: load_power
+  name: "Load power"
+  unit: kW
+  scale: 0.0001
+  device_class: power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "st6100@4155 st6200@4155 slave18@4155; stock UI label \"Load power\""
+- id: 0x200C
+  key: reactive_power
+  name: "Reactive power"
+  unit: kvar
+  scale: 0.0001
+  device_class: reactive_power
+  state_class: measurement
+  category: core
+  confidence: confirmed
+  evidence: "st6100@4131 st6200@4131 slave18@4131; stock UI label \"Reactive power\""
+- id: 0x200D
+  key: apparent_power
+  name: "Apparent power"
+  unit: kVA
+  scale: 0.0001
+  device_class: apparent_power
+  state_class: measurement
+  category: extra
+  confidence: confirmed
+  evidence: "st6100@4139 slave18@4139; stock UI label \"Apparent power\""
+- id: 0x2009
+  key: power_factor
+  name: "Power factor"
+  scale: 0.001
+  device_class: power_factor
+  state_class: measurement
+  category: core
+  confidence: confirmed
+  evidence: "st6100@4141 st6200@4141 st6300@4141 slave18@4141"
+- id: 0x2022
+  key: grid_frequency
+  name: "Grid frequency"
+  unit: Hz
+  scale: 0.01
+  device_class: frequency
+  state_class: measurement
+  category: core
+  confidence: confirmed
+  evidence: "st6100@4143 st6200@4143 st6300@4143 slave18@4143; stock UI label \"Grid frequency\""
+- id: 0x200E
+  key: forward_active_energy
+  name: "Forward active energy (import)"
+  unit: kWh
+  scale: 0.01
+  device_class: energy
+  state_class: total_increasing
+  category: core
+  confidence: confirmed
+  evidence: "st6100@4145 st6200@4145 st6300@4145 slave18@4145; stock UI label \"Forward active energy\"; forward = import when the meter sits at the grid connection point (Sungrow convention)"
+- id: 0x200F
+  key: reverse_active_energy
+  name: "Reverse active energy (export)"
+  unit: kWh
+  scale: 0.01
+  device_class: energy
+  state_class: total_increasing
+  category: core
+  confidence: confirmed
+  evidence: "st6100@4147 st6200@4147 st6300@4147 slave18@4147; stock UI label \"Reverse active energy\""
+- id: 0x2010
+  key: forward_reactive_energy
+  name: "Forward reactive energy"
+  unit: kvarh
+  scale: 0.01
+  device_class: reactive_energy
+  state_class: total_increasing
+  category: extra
+  confidence: confirmed
+  evidence: "st6100@4149 slave18@4149; stock UI label \"Forward reactive energy\""
+- id: 0x2011
+  key: reverse_reactive_energy
+  name: "Reverse reactive energy"
+  unit: kvarh
+  scale: 0.01
+  device_class: reactive_energy
+  state_class: total_increasing
+  category: extra
+  confidence: confirmed
+  evidence: "st6100@4151 slave18@4151; stock UI label \"Reverse reactive energy\""
+- id: 0x210B
+  key: phase_a_power_factor
+  name: "Phase A power factor"
+  scale: 0.001
+  device_class: power_factor
+  state_class: measurement
+  category: extra
+  confidence: confirmed
+  evidence: "st6100@4157 st6200@4157 slave18@4157"
+- id: 0x210C
+  key: phase_b_power_factor
+  name: "Phase B power factor"
+  scale: 0.001
+  device_class: power_factor
+  state_class: measurement
+  category: extra
+  confidence: confirmed
+  evidence: "st6100@4159 st6200@4159 slave18@4159"
+- id: 0x210D
+  key: phase_c_power_factor
+  name: "Phase C power factor"
+  scale: 0.001
+  device_class: power_factor
+  state_class: measurement
+  category: extra
+  confidence: confirmed
+  evidence: "st6100@4161 st6200@4161 slave18@4161"
+- id: 0x210E
+  key: phase_a_forward_active_energy
+  name: "Phase A forward active energy"
+  unit: kWh
+  scale: 0.01
+  device_class: energy
+  state_class: total_increasing
+  category: extra
+  confidence: confirmed
+  evidence: "st6100@4161; stock UI label \"Phase A forward active energy\"; st6100 only; address fixed, see regaddr fixes"
+- id: 0x210F
+  key: phase_b_forward_active_energy
+  name: "Phase B forward active energy"
+  unit: kWh
+  scale: 0.01
+  device_class: energy
+  state_class: total_increasing
+  category: extra
+  confidence: confirmed
+  evidence: "st6100@4163; stock UI label \"Phase B forward active energy\"; st6100 only; address fixed, see regaddr fixes"
+- id: 0x2110
+  key: phase_c_forward_active_energy
+  name: "Phase C forward active energy"
+  unit: kWh
+  scale: 0.01
+  device_class: energy
+  state_class: total_increasing
+  category: extra
+  confidence: confirmed
+  evidence: "st6100@4165; stock UI label \"Phase B forward active energy\"; st6100 only; address fixed, see regaddr fixes"
+- id: 0x2111
+  key: phase_a_reverse_active_energy
+  name: "Phase A reverse active energy"
+  unit: kWh
+  scale: 0.01
+  device_class: energy
+  state_class: total_increasing
+  category: extra
+  confidence: confirmed
+  evidence: "st6100@4167; stock UI label \"Reverse active electric energy of phase A\"; st6100 only; address fixed, see regaddr fixes"
+- id: 0x2112
+  key: phase_b_reverse_active_energy
+  name: "Phase B reverse active energy"
+  unit: kWh
+  scale: 0.01
+  device_class: energy
+  state_class: total_increasing
+  category: extra
+  confidence: confirmed
+  evidence: "st6100@4169; stock UI label \"Reverse active electric energy of phase B\"; st6100 only; address fixed, see regaddr fixes"
+- id: 0x2113
+  key: phase_c_reverse_active_energy
+  name: "Phase C reverse active energy"
+  unit: kWh
+  scale: 0.01
+  device_class: energy
+  state_class: total_increasing
+  category: extra
+  confidence: confirmed
+  evidence: "st6100@4171; stock UI label \"Reverse active electric energy of phase C\"; st6100 only; address fixed, see regaddr fixes"
+- id: 0x2026
+  key: phase_a_reactive_power
+  name: "Phase A reactive power"
+  unit: kvar
+  scale: 0.0001
+  device_class: reactive_power
+  state_class: measurement
+  category: extra
+  confidence: guess
+  evidence: "st6100@4125 st6200@4125 slave18@4125; unnamed in firmware; slot between Pa..Pc/P/feed-in and total Q in the same order as the Acrel DTSD1352 P,Q,S blocks (manual 0164H..); scale assumed like total Q"
+- id: 0x2027
+  key: phase_b_reactive_power
+  name: "Phase B reactive power"
+  unit: kvar
+  scale: 0.0001
+  device_class: reactive_power
+  state_class: measurement
+  category: extra
+  confidence: guess
+  evidence: "st6100@4127 st6200@4127 slave18@4127; unnamed in firmware; slot between Pa..Pc/P/feed-in and total Q in the same order as the Acrel DTSD1352 P,Q,S blocks (manual 0164H..); scale assumed like total Q"
+- id: 0x2028
+  key: phase_c_reactive_power
+  name: "Phase C reactive power"
+  unit: kvar
+  scale: 0.0001
+  device_class: reactive_power
+  state_class: measurement
+  category: extra
+  confidence: guess
+  evidence: "st6100@4129 st6200@4129 slave18@4129; unnamed in firmware; slot between Pa..Pc/P/feed-in and total Q in the same order as the Acrel DTSD1352 P,Q,S blocks (manual 0164H..); scale assumed like total Q"
+- id: 0x2029
+  key: phase_a_apparent_power
+  name: "Phase A apparent power"
+  unit: kVA
+  scale: 0.0001
+  device_class: apparent_power
+  state_class: measurement
+  category: extra
+  confidence: guess
+  evidence: "st6100@4133 slave18@4133; unnamed in firmware; slot before total S, DTSD1352 ordering; scale assumed like total S"
+- id: 0x202A
+  key: phase_b_apparent_power
+  name: "Phase B apparent power"
+  unit: kVA
+  scale: 0.0001
+  device_class: apparent_power
+  state_class: measurement
+  category: extra
+  confidence: guess
+  evidence: "st6100@4135 slave18@4135; unnamed in firmware; slot before total S, DTSD1352 ordering; scale assumed like total S"
+- id: 0x202B
+  key: phase_c_apparent_power
+  name: "Phase C apparent power"
+  unit: kVA
+  scale: 0.0001
+  device_class: apparent_power
+  state_class: measurement
+  category: extra
+  confidence: guess
+  evidence: "st6100@4137 slave18@4137; unnamed in firmware; slot before total S, DTSD1352 ordering; scale assumed like total S"

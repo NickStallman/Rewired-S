@@ -1,0 +1,33 @@
+# Modbus-TCP slave on :502, compatible with the stock WiNet dongle's LAN Modbus-TCP server
+# (Home Assistant modbus integrations such as mkaiser/Sungrow-SHx-Inverter-Modbus-Home-Assistant,
+# SunGather, ...). Serves fn 0x03/0x04 from the stock tcpslave maps (per dev_type) backed by the
+# sungrow_datamodel signal store; fn 3 reads of unmapped holding registers are forwarded live to
+# the inverter over RS485 (as stock). Writes (fn 6/16) are gated by sungrow_control when
+# common/control.yaml is included (enable switch + allow-list, docs/control.md); otherwise, or
+# while "Inverter writes enabled" is off, they answer exception 0x01.
+#
+# Unit ids: by default each sungrow_modbus device answers under its RS485 address (stock), so the
+# inverter at address 1 is unit 1. Override with `units:` (see components/sungrow_modbus_tcp).
+sungrow_modbus_tcp:
+  id: modbus_tcp_server
+  sungrow_datamodel_id: sungrow_dm
+  sungrow_modbus_id: rs485_hub
+  port: 502
+  max_clients: 4
+  idle_timeout: 120s
+  word_order: low_word_first   # as the public Sungrow Modbus documentation
+  unknown_unit: exception      # stock silently drops; `ignore` reproduces that
+  passthrough: true
+  poll_fallback: false         # true: serve poll-table sigids where the tcpslave sigid is not polled
+  # allowed_ips:               # stock IP allow-list (empty = everyone)
+  #   - 192.0.2.0/24
+  # units:                     # explicit map, e.g. a hybrid on a fixed table:
+  #   - {unit: 1, device: 0, dev_type: 35}
+  enabled:
+    name: Modbus-TCP server
+  clients:
+    name: Modbus-TCP clients
+  requests:
+    name: Modbus-TCP requests
+  errors:
+    name: Modbus-TCP errors

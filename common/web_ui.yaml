@@ -1,0 +1,9 @@
+# Custom local web UI (components/sungrow_web): a TypeScript single-page app served at `/` that
+# replaces ESPHome's web_server landing page — grouped device/stat views, live signals, and a debug
+# serial/log console. It registers ahead of web_server (setup priority 251) and owns only `/` and
+# `/api/*`; `/events`, the REST API and OTA fall through to web_server unchanged, behind the same
+# digest auth (common/base.yaml). The big JS/CSS bundle is embedded (gzipped) in the firmware.
+sungrow_web:
+  id: web_ui
+  sungrow_modbus_id: rs485_hub
+  sungrow_datamodel_id: sungrow_dm

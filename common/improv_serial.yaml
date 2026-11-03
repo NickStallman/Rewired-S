@@ -1,0 +1,4 @@
+# Improv Wi-Fi over the UART0 console (the WiNet-S pads GPIO1/3): a browser with Web Serial, or
+# the ESPHome dashboard, can hand the dongle its Wi-Fi credentials over the same cable the image
+# was flashed with. Shares the logger's UART; no extra pins.
+improv_serial:

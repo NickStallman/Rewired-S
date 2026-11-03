@@ -1,0 +1,24 @@
+# Per-device Home Assistant integration over MQTT (components/sungrow_mqtt).
+#
+# Each connected Sungrow device (inverter / battery stack(s) / meter / ...) discovered on the RS485
+# bus is published as its OWN Home Assistant device via MQTT discovery (winet-extractor style:
+# device block keyed by <model>_<serial>, per-sensor config+state topics, availability/LWT). This is
+# deliberately NOT the ESPHome native API, which would collapse every device into one HA device.
+# The dongle itself stays a native-API HA device (see common/base.yaml + common/cloud.yaml).
+#
+# Credentials come from secrets.yaml (!secret); broker defaults to plaintext TCP on :1883.
+sungrow_mqtt:
+  id: ha_mqtt
+  broker: !secret mqtt_broker
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+  # port: 1883                       # default
+  # discovery_prefix: homeassistant  # default
+  # settle_grace: 5s                 # default; boot hold so every device publishes in one pass
+  # deadband_scale: 1.0              # default; multiplies each signal's publish deadband (0 = every change)
+  # connected: {name: MQTT connected}  # optional binary sensor: the broker session is up
+  # Dongle SN (used for via_device + the MQTT publisher root) from the ext-flash identity.
+  sungrow_extflash_id: extflash
+  # sungrow_datamodel_id / sungrow_modbus_id auto-resolve to the single configured instance.
+  sungrow_control_id: sungrow_ctl    # enables MQTT write command topics + writable HA discovery
+  sw_version: "Rewired-S ${project_version}"   # sw_version of every published device

@@ -1,0 +1,11 @@
+# A site on the native API instead of MQTT discovery: common/native_entities.yaml in place of the
+# entry's common/mqtt_ha.yaml. `make config` validates it.
+substitutions:
+  name: native-example
+  friendly_name: Native Example
+
+packages:
+  entry: !include ../../winet-s-ethernet.yaml
+  ha_native: !include ../../common/native_entities.yaml
+
+sungrow_mqtt: !remove

@@ -1,0 +1,23 @@
+# Inverter models whose power-stage parameter acceptance ranges are known.
+#
+# One row per model: the device code the inverter reports in its devinfo block (the value the
+# firmware shows as dev_code), the model string, the power-stage firmware the ranges were read
+# from, and the CSV with the ranges (doc_reg, count, min, max, label, unit). The power stage
+# silently ignores a parameter write outside its range while the control board acknowledges
+# it, so the firmware refuses (installer writes) or skips (profile writes) such values for a
+# listed model and applies no range check for any other model.
+#
+# Adding a model: add its row and CSV here, then run `make gen`.
+models:
+  - dev_code: 3355          # 0x0D1B
+    model: SH10RS
+    family: hybrid
+    key: SH_RS
+    firmware: SUNSTONE-H_03021.01.16
+    csv: sh10rs.csv
+  - dev_code: 9734          # 0x2606
+    model: SG5.0RS
+    family: string
+    key: SG_RS
+    firmware: SUNSTONE-S_03011.01.36
+    csv: sg5rs.csv

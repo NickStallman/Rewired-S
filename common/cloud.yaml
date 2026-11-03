@@ -1,0 +1,52 @@
+# iSolarCloud uplink (components/isolarcloud). Acts as the stock dongle towards the
+# cloud: same SN (clientId), shared compiled-in credentials, stock topics and payload framing.
+# docs/cloud_identity.md has the identity details.
+#
+# Identity: the SN, broker and enum settings come from the dongle's own /usrdataout sigdata file
+# (sungrow_extflash, id `extflash`, configured in boards/). Only values actually present in the file
+# are used; anything set here or in the entry YAML wins. To override the SN (e.g. the external
+# flash is unreadable), set it in the entry YAML (or a secrets-backed substitution):
+#   substitutions:
+#     cloud_sn: !secret cloud_sn
+# With no SN from either place the uplink stays idle (it never connects without an SN).
+# Telemetry comes from sungrow_datamodel (rundata) and cloud getparam reads go through
+# sungrow_modbus; both are bound automatically when common/rs485.yaml is included.
+substitutions:
+  cloud_sn: ""
+  # Start-up state of the "Cloud writes" switch until it is first changed (then restored):
+  # RESTORE_DEFAULT_OFF keeps iSolarCloud read-only, RESTORE_DEFAULT_ON allows app control.
+  cloud_writes_restore: RESTORE_DEFAULT_OFF
+
+isolarcloud:
+  id: cloud
+  time_id: sntp_time
+  identity_source: extflash
+  sn: ${cloud_sn}
+  # Stock defaults apply when unset: broker iot.isolarcloud.com:16668, ssl_flag 2 (TLS),
+  # enum 0/0/1 (zlib), timezone_id 8, rundata every 5 min (sig 0x1015), beat every 30 min.
+  # sendTime/dataTime are LOCAL time = UTC + `timezone` (sig 0x1089, cloud style: "UTC+10:00" is
+  # 10 h east of UTC). The stock factory value is "UTC+8:00"; the dongle's own copy is used when the
+  # sigdata file has it, and the cloud's settimezone updates it. Outside UTC+8 with no copy, set it:
+  #   timezone: "UTC+10:00"
+  # TLS: the chain is verified against the dongle's /usrdataout/tlsca/cafile (like stock, no
+  # hostname check); ca_certificate: overrides it, verify_server: false disables verification.
+  verify_server: true
+  connected:
+    name: Cloud connected
+  publish_count:
+    name: Cloud publish count
+  last_publish:
+    name: Cloud last publish
+  last_error:
+    name: Cloud last error
+  last_command:
+    name: Cloud last command
+  last_control_command:
+    name: Cloud last control command
+  uplink:
+    name: Cloud uplink
+  # iSolarCloud setting changes (setparam). Separate from "Inverter writes enabled" (common/
+  # control.yaml), which gates MQTT / Modbus-TCP / HA writes.
+  writes:
+    name: Cloud writes
+    restore_mode: ${cloud_writes_restore}

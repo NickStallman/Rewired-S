@@ -1,0 +1,45 @@
+# data/modbus_tcp/battery.yaml - the Modbus-TCP (:502) export map served for a SBR battery (dev_type 44)
+# (docs/data_format.md). Read by tools/gen_tables.py.
+# rows: {id, address, fn, count, type} = the public register a signal is served at; cycle is
+# carried for the few rows that are also polled. shared: public addresses two rows of the same
+# id legitimately share.
+
+table: tcpslave_dev44
+family: battery
+device_types: [44]
+title: "Modbus-TCP export map of the SBR battery (dev_type 44)"
+rows:
+- {id: 0x202B, address: 10701, fn: 4, count: 4, type: str}
+- {id: 0x202C, address: 10705, fn: 4, count: 4, type: str}
+- {id: 0x2156, address: 5448, fn: 4, count: 25, type: str}
+- {id: 0x207E, address: 10628, fn: 4, count: 1, type: s16}
+- {id: 0x207F, address: 10629, fn: 4, count: 1, type: u16}
+- {id: 0x2080, address: 10630, fn: 4, count: 1, type: u16}
+- {id: 0x2081, address: 10631, fn: 4, count: 1, type: u16}
+- {id: 0x2082, address: 10632, fn: 4, count: 1, type: u16}  # status_word_10632
+- {id: 0x2083, address: 10633, fn: 4, count: 1, type: u16}  # status_word_10633
+- {id: 0x2013, address: 10709, fn: 4, count: 1, type: u16}  # stack_online
+- {id: 0x0004, address: 10710, fn: 4, count: 1, type: u16}
+- {id: 0x0002, address: 10711, fn: 4, count: 10, type: str}  # serial_number
+- {id: 0x2016, address: 10721, fn: 4, count: 15, type: str}  # firmware_version
+- {id: 0x2017, address: 10736, fn: 4, count: 2, type: u32}  # protocol_code
+- {id: 0x2018, address: 10738, fn: 4, count: 2, type: u32}  # protocol_version
+- {id: 0x2019, address: 10740, fn: 4, count: 1, type: u16}  # operation_status
+- {id: 0x201A, address: 10741, fn: 4, count: 1, type: u16}  # battery_voltage
+- {id: 0x201B, address: 10742, fn: 4, count: 1, type: s16}  # battery_current
+- {id: 0x201C, address: 10743, fn: 4, count: 1, type: s16}  # battery_temperature
+- {id: 0x201D, address: 10744, fn: 4, count: 1, type: u16}  # battery_soc
+- {id: 0x201E, address: 10745, fn: 4, count: 1, type: u16}  # battery_soh
+- {id: 0x201F, address: 10746, fn: 4, count: 2, type: u32}  # total_charge_energy
+- {id: 0x2020, address: 10748, fn: 4, count: 2, type: u32}  # total_discharge_energy
+- {id: 0x2021, address: 10750, fn: 4, count: 1, type: u16}  # inverter_address
+- {id: 0x2022, address: 10751, fn: 4, count: 1, type: u16}  # inverter_model_class
+- {id: 0x502A, address: 13066, fn: 4, count: 2, type: u32}
+- {id: 0x502B, address: 13068, fn: 4, count: 2, type: u32}
+- {id: 0x502C, address: 13070, fn: 4, count: 2, type: u32}
+- {id: 0x502D, address: 13072, fn: 4, count: 2, type: u32}
+- {id: 0x502E, address: 13074, fn: 4, count: 2, type: u32}
+- {id: 0x502F, address: 13076, fn: 4, count: 2, type: u32}
+- {id: 0x5030, address: 13078, fn: 4, count: 2, type: u32}
+- {id: 0x0002, address: 13080, fn: 4, count: 10, type: str}  # serial_number
+- {id: 0x2358, address: 19939, fn: 4, count: 2, type: u32}  # discharge_cutoff_soc

@@ -1,0 +1,18 @@
+# Diagnostics for the read-only identity reader (sungrow_extflash, configured in boards/).
+# Backup: press "Dump identity file", save the log, then
+#   python3 -I tools/read_identity.py --from-log cap.log --save dev_file_247_1824_2           (WiNet-S2)
+#   python3 -I tools/read_identity.py --board s --from-log cap.log --save dev_file_247_1813_2 (WiNet-S)
+text_sensor:
+  - platform: sungrow_extflash
+    serial_number: {name: Serial number}
+    broker: {name: Cloud broker}
+    identity_source: {name: Identity source}
+    chip: {name: Ext flash chip}
+binary_sensor:
+  - platform: sungrow_extflash
+    mounted: {name: Ext flash mounted}
+    identity_valid: {name: Identity valid}
+button:
+  - platform: sungrow_extflash
+    dump_identity: {name: Dump identity file}
+    list_files: {name: List ext flash files}

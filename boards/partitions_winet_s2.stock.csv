@@ -1,0 +1,22 @@
+# ============================================================================================
+# STOCK partition table: WiNet-S2 (WINET-SV300, ESP32-S3 rev v0.2, 16 MB GigaDevice 0xC84018).
+# AUTHORITATIVE. Read from a WiNet-S2 at flash offset 0x8000 (debug build, GET /dump/ptable.csv):
+# every entry magic 0xAA50, flags 0x0 (no readonly/encrypted bits), MD5 entry present and OK.
+#
+# Layout notes:
+#  - Same as the WiNet-S except oemdata (5 MB here, 4 MB on the S) and usrdata (0xd10000,
+#    0x1f0000). Dual-OTA, no factory partition: ota_0 @0x110000 and ota_1 @0x490000, each
+#    0x380000 (3.5 MB).
+#  - oemdata and usrdata use data subtype 0x81 (IDF ESP_PARTITION_SUBTYPE_DATA_FAT; Sungrow
+#    labels its LittleFS volumes "fat").
+#  - Table at 0x8000 (CONFIG_PARTITION_TABLE_OFFSET default). coredump ends exactly at 16 MB.
+# ============================================================================================
+# Name,    Type, SubType,  Offset,    Size,      Flags
+nvs,       data, nvs,      0x9000,    0x100000,
+otadata,   data, ota,      0x109000,  0x2000,
+phy_init,  data, phy,      0x10b000,  0x1000,
+ota_0,     app,  ota_0,    0x110000,  0x380000,
+ota_1,     app,  ota_1,    0x490000,  0x380000,
+oemdata,   data, 0x81,     0x810000,  0x500000,
+usrdata,   data, 0x81,     0xd10000,  0x1f0000,
+coredump,  data, coredump, 0xf00000,  0x100000,

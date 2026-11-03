@@ -1,0 +1,116 @@
+# Rewired-S overview view: built-in cards only. Replace SH_SERIAL / SG_SERIAL / BAT_SERIAL
+# (dashboards/README.md). Delete the cards for devices you do not have.
+title: Solar
+path: solar
+icon: mdi:solar-power
+cards:
+  - type: vertical-stack
+    cards:
+      - type: tile
+        entity: sensor.sh10rs_SH_SERIAL_mppt_total_power
+        name: Solar
+        icon: mdi:solar-panel
+        color: amber
+      - type: tile
+        entity: sensor.sh10rs_SH_SERIAL_battery_power
+        name: Battery (+ discharging)
+        icon: mdi:battery-charging
+        color: green
+      - type: tile
+        entity: sensor.sh10rs_SH_SERIAL_grid_import_power
+        name: Grid import
+        icon: mdi:transmission-tower-import
+        color: red
+      - type: tile
+        entity: sensor.sh10rs_SH_SERIAL_grid_export_power
+        name: Grid export
+        icon: mdi:transmission-tower-export
+        color: blue
+      - type: tile
+        entity: sensor.sh10rs_SH_SERIAL_load_power
+        name: Load
+        icon: mdi:home-lightning-bolt
+  - type: gauge
+    entity: sensor.sh10rs_SH_SERIAL_battery_soc
+    name: Battery level
+    unit: "%"
+    min: 0
+    max: 100
+    severity:
+      green: 50
+      yellow: 20
+      red: 0
+  - type: entities
+    title: Today
+    entities:
+      - entity: sensor.sh10rs_SH_SERIAL_daily_pv_yield
+        name: PV yield
+      - entity: sensor.sh10rs_SH_SERIAL_daily_export_energy
+        name: Exported
+      - entity: sensor.sh10rs_SH_SERIAL_daily_import_energy
+        name: Imported
+      - entity: sensor.sh10rs_SH_SERIAL_daily_battery_charge_energy
+        name: Battery charged
+      - entity: sensor.sh10rs_SH_SERIAL_daily_battery_discharge_energy
+        name: Battery discharged
+      - entity: sensor.sh10rs_SH_SERIAL_daily_direct_energy_consumption
+        name: Direct consumption
+  - type: entities
+    title: Inverter
+    entities:
+      - entity: sensor.sh10rs_SH_SERIAL_operating_status
+        name: Status
+      - entity: binary_sensor.sh10rs_SH_SERIAL_problem
+        name: Fault
+      - entity: sensor.sh10rs_SH_SERIAL_mppt1_power
+        name: MPPT 1
+      - entity: sensor.sh10rs_SH_SERIAL_mppt2_power
+        name: MPPT 2
+      - entity: sensor.sh10rs_SH_SERIAL_mppt3_power
+        name: MPPT 3
+      - entity: sensor.sh10rs_SH_SERIAL_mppt4_power
+        name: MPPT 4
+      - entity: sensor.sh10rs_SH_SERIAL_internal_air_temperature
+        name: Temperature
+      - entity: sensor.sh10rs_SH_SERIAL_grid_frequency
+        name: Grid frequency
+  - type: history-graph
+    title: Last 6 hours
+    hours_to_show: 6
+    entities:
+      - entity: sensor.sh10rs_SH_SERIAL_mppt_total_power
+        name: Solar
+      - entity: sensor.sh10rs_SH_SERIAL_battery_power
+        name: Battery
+      - entity: sensor.sh10rs_SH_SERIAL_load_power
+        name: Load
+  - type: entities
+    title: String inverter
+    entities:
+      - entity: sensor.sg5_0rs_SG_SERIAL_operating_status
+        name: Status
+      - entity: binary_sensor.sg5_0rs_SG_SERIAL_problem
+        name: Fault
+      - entity: sensor.sg5_0rs_SG_SERIAL_mppt_total_power
+        name: Solar
+      - entity: sensor.sg5_0rs_SG_SERIAL_total_active_power
+        name: AC output
+      - entity: sensor.sg5_0rs_SG_SERIAL_daily_yield
+        name: Today
+  - type: entities
+    title: Battery stack
+    entities:
+      - entity: sensor.sbr192_BAT_SERIAL_battery_soc
+        name: SOC
+      - entity: sensor.sbr192_BAT_SERIAL_battery_soh
+        name: SOH
+      - entity: sensor.sbr192_BAT_SERIAL_battery_voltage
+        name: Voltage
+      - entity: sensor.sbr192_BAT_SERIAL_battery_current
+        name: Current
+      - entity: sensor.sbr192_BAT_SERIAL_battery_temperature
+        name: Temperature
+      - entity: sensor.sbr192_BAT_SERIAL_cycle_count
+        name: Cycles
+      - entity: binary_sensor.sbr192_BAT_SERIAL_problem
+        name: Fault

@@ -1,0 +1,50 @@
+# Reset diagnostics for production nodes (sungrow_board `diagnostics:`, components/sungrow_board/diag.h).
+#
+# Every reset leaves evidence that the next boot reports, with no debug build or UART:
+#  - Reset journal in RTC memory: heartbeat every 500 ms (uptime, last main-loop pass, internal heap,
+#    PSRAM size + free, supervisor kick gaps, Wi-Fi), kick-stall record, crash record. The layout
+#    is fixed, so a build rolled back to still reads a newer build's record when it has this
+#    journal too.
+#  - Panic hook: switches the WiNet-S2 supervisor off first, so a crash ends as a clean panic reset
+#    with a record (not as a supervisor "power-on" reset partway through the reboot).
+#  - Log tail: the last ~6 KB of log lines at the configured log level in RTC memory; no internal heap used.
+#  - Task watchdog panics (5 s): a stuck loop becomes a crash record + backtrace (+ core dump on the
+#    S2) instead of only a warning.
+# Where it shows:
+#  - "Last reset" text sensor (diagnostic): one-line verdict for the previous boot.
+#  - "PSRAM size" sensor (diagnostic): 0 means the board runs on internal RAM only.
+#  - Log: "Previous boot: ..." at boot, and the journal (+ the previous log tail after an abnormal
+#    end) in the config dump every log client receives on connect.
+#  - GET /api/diag (web login): full report; GET /api/coredump: the raw core dump (S2). A core dump
+#    is reported by the first boot after its crash and erased by the boot after that.
+sungrow_board:
+  diagnostics:
+    last_reset:
+      name: Last reset
+
+# IDF reset reason of the current boot (tools/deploy_node.py reads it); "Last reset" above gives
+# the full verdict on the previous one.
+debug:
+  update_interval: 600s
+
+text_sensor:
+  - platform: debug
+    reset_reason:
+      name: Reset reason
+      entity_category: diagnostic
+
+# PSRAM in the heap at boot; 0 = none (absent, or failed to start: the board then runs on internal RAM).
+sensor:
+  - platform: template
+    name: PSRAM size
+    unit_of_measurement: kB
+    icon: mdi:memory
+    entity_category: diagnostic
+    accuracy_decimals: 0
+    update_interval: 600s
+    lambda: 'return esphome::sungrow_board::psram_size_bytes() / 1024.0f;'
+
+esp32:
+  framework:
+    sdkconfig_options:
+      CONFIG_ESP_TASK_WDT_PANIC: y

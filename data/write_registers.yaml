@@ -1,0 +1,302 @@
+# data/write_registers.yaml - the curated WRITE allow-list of sungrow_control, one entry per
+# holding register (docs/data_format.md). tools/gen_write_registers.py turns it into
+# components/sungrow_control/write_registers.{h,cpp} (allow-list rules, read-back poll table)
+# and write_meta.py (entity metadata of the select / number platforms). The register tables
+# in data/families/ describe what is polled; this file lists what may be written.
+#
+#   profile     hybrid (SH, dev_type 35) | string (SG, dev_type 21 / 1)
+#   key         stable id, unique over all profiles (entity `key:` in YAML)
+#   name        English name
+#   address     1-based register number (wire = address - 1; mkaiser's `address:` is the wire
+#               address, e.g. 13049 for EMS mode 13050)
+#   type        u16 | s16
+#   min, max    raw range (inclusive) accepted by the allow-list
+#   values      optional: the only raw values accepted, on top of min / max
+#   options     optional: {value, label} for selects and the read-back text sensor; a value in
+#               options but not in values is shown, never written
+#   scale       display = raw x scale;  unit  display unit;  step  number step (display units)
+#   number_min, number_max   number entity range in display units (default min / max x scale)
+#   address_by_protocol      {protocol type: address} - the register on devices of that
+#               protocol type instead of `address` (allow-list, entity and read-back follow it)
+#   interval    read-back poll period in s (fn 3 by sungrow_control)
+#   mkaiser     what mkaiser / the HA packages use for it (wire address, entities)
+#   confidence  confirmed = two independent sources agree on address, encoding and range;
+#               likely = one good source; guess = inferred
+#   evidence    sources (background: https://github.com/NickStallman/SG-Docs/blob/main/reference/protocols/writes-and-meter-sync.md
+#               and .../reference/devices/sh10rs/control-and-ems.md)
+#
+# Sources: [MK] mkaiser/Sungrow-SHx-Inverter-Modbus-Home-Assistant modbus_sungrow.yaml (2026);
+# [UP] the ha-batterycontroller HA package ha-scripts/sungrow-modbus.yaml (SH10RS hub);
+# [SG5] ha-scripts/sungrow-sg5-modbus.yaml (SG5.0RS); [SGT] SunGather registers-sungrow.yaml
+# (document numbering); [FW] the fn 16 write rows of the inverter poll tables (data/families/inverter.yaml).
+
+registers:
+- profile: hybrid
+  key: ems_mode
+  name: "EMS mode"
+  address: 13050
+  type: u16
+  min: 0
+  max: 8
+  values: [0, 2, 3, 4]
+  options:
+  - {value: 0, label: "Self-consumption mode (default)"}
+  - {value: 2, label: "Forced mode"}
+  - {value: 3, label: "External EMS"}
+  - {value: 4, label: VPP}
+  - {value: 8, label: MicroGrid}
+  interval: 10
+  mkaiser: "wire 13049 fn 6; select.ems_mode / input_select.set_sg_ems_mode; readback sensor.ems_mode_selection_raw, text sensor.ems_mode_selection"
+  confidence: confirmed
+  evidence: "MK :2172-2214 (0/2/3/4, MicroGrid 8 commented out); UP :641-650, 873-907, text :556-575; SGT ems_mode_selection 13050. Writing 8 (MicroGrid) is left out like MK"
+- profile: hybrid
+  key: forced_cmd
+  name: "Battery forced charge/discharge command"
+  address: 13051
+  type: u16
+  min: 170
+  max: 204
+  values: [0xAA, 0xBB, 0xCC]
+  options:
+  - {value: 0xCC, label: "Stop (default)"}
+  - {value: 0xAA, label: "Forced charge"}
+  - {value: 0xBB, label: "Forced discharge"}
+  interval: 10
+  mkaiser: "wire 13050 fn 6; select.battery_forced_charge_discharge / input_select.set_sg_battery_forced_charge_discharge_cmd; readback sensor.battery_forced_charge_discharge_cmd(_raw)"
+  confidence: confirmed
+  evidence: "MK :2216-2257; UP :652-658, 825-853, text :523-538; SGT charge_discharge_command 13051"
+- profile: hybrid
+  key: forced_power
+  name: "Battery forced charge/discharge power"
+  address: 13052
+  type: u16
+  min: 0
+  max: 10000
+  scale: 1
+  unit: W
+  step: 1
+  interval: 10
+  mkaiser: "wire 13051 fn 6, W; number.battery_forced_charge_discharge_power / input_number.set_sg_forced_charge_discharge_power (0-10000 step 100); readback sensor.battery_forced_charge_discharge_power"
+  confidence: confirmed
+  evidence: "MK :1677-1697 (W on SH*RT, 0..max_power); UP :597-601, 1010-1025 (0-10000 W); SGT charge_discharge_power 13052 U16 W. Range: the inverter clamps to its own rating. The SH10RS power stage receives the value in 10 W units and clamps the request to the BMS limits and 33047/33048, so W is the unit on this model (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/control-and-ems.md)"
+- profile: hybrid
+  key: max_soc
+  name: "Battery max SOC"
+  address: 13058
+  type: u16
+  min: 500
+  max: 1000
+  scale: 0.1
+  unit: "%"
+  step: 1
+  interval: 10
+  mkaiser: "wire 13057 fn 6, value x10; number.battery_max_soc / input_number.set_sg_max_soc (50-100); readback sensor.battery_max_soc / sensor.max_soc"
+  confidence: confirmed
+  evidence: "MK :1581-1598; UP :585, 726-741 (both 50-100 %, raw x10)"
+- profile: hybrid
+  key: min_soc
+  name: "Battery min SOC"
+  address: 13059
+  type: u16
+  min: 0
+  max: 500
+  scale: 0.1
+  unit: "%"
+  step: 1
+  interval: 10
+  mkaiser: "wire 13058 fn 6, value x10; number.battery_min_soc / input_number.set_sg_min_soc (0-50); readback sensor.battery_min_soc / sensor.min_soc"
+  confidence: confirmed
+  evidence: "MK :1559-1576; UP :579, 759-774 (both 0-50 %, raw x10)"
+- profile: hybrid
+  key: export_power_limit
+  name: "Export power limit"
+  address: 13074
+  type: u16
+  min: 0
+  max: 30000
+  scale: 1
+  unit: W
+  step: 1
+  interval: 10
+  mkaiser: "wire 13073 fn 6, W; number.export_power_limit / input_number.set_sg_export_power_limit (0-10500 step 100); readback sensor.export_power_limit"
+  confidence: confirmed
+  evidence: "MK :1746-1763 (range from input regs 5622/5623 = export_power_limit_min/max); UP :627-631, 975-990. The max of 30000 W is a sanity cap; the inverter enforces its own min/max (5622/5623)"
+- profile: hybrid
+  key: backup_mode
+  name: "Backup mode (off-grid option)"
+  address: 13075
+  type: u16
+  min: 85
+  max: 170
+  values: [0x55, 0xAA]
+  options:
+  - {value: 0xAA, label: Enabled}
+  - {value: 0x55, label: Disabled}
+  interval: 60
+  mkaiser: "wire 13074 fn 6 (switch.backup_mode, write_type holding, verify); readback sensor.backup_mode_raw"
+  confidence: likely
+  evidence: "MK :1406-1418 only (UP does not write it)"
+- profile: hybrid
+  key: export_power_limit_mode
+  name: "Export power limit mode"
+  address: 13087
+  type: u16
+  min: 85
+  max: 170
+  values: [0x55, 0xAA]
+  options:
+  - {value: 0xAA, label: Enabled}
+  - {value: 0x55, label: Disabled}
+  interval: 10
+  mkaiser: "wire 13086 fn 6; switch.export_power_limit / input_select.set_sg_export_power_limit_mode (Enabled/Disabled); readback sensor.export_power_limit_mode(_raw)"
+  confidence: confirmed
+  evidence: "MK :1420-1432; UP :660-665, 932-957, text :540-553; SGT export_power_limitation 13087. This is the feed-in (backflow) limitation switch"
+- profile: hybrid
+  key: reserved_soc_backup
+  name: "Reserved SOC for backup"
+  address: 13100
+  type: u16
+  min: 0
+  max: 100
+  scale: 1
+  unit: "%"
+  step: 1
+  interval: 10
+  mkaiser: "wire 13099 fn 6, 1 %; number.battery_reserved_soc_for_backup / input_number.set_sg_reserved_soc_for_backup; readback sensor.reserved_soc_for_backup"
+  confidence: confirmed
+  evidence: "MK :1603-1620; UP :591, 792-807; SGT soc_reserve 13100 %"
+- profile: hybrid
+  key: battery_max_charge_power
+  name: "Battery max charge power"
+  address: 33047
+  type: u16
+  min: 1
+  max: 1500
+  scale: 10
+  unit: W
+  step: 10
+  number_min: 10
+  number_max: 15000
+  interval: 10
+  mkaiser: "wire 33046 fn 6, W/10; number.battery_max_charge_power / input_number.set_sg_battery_max_charge_power (100-10000); readback sensor.battery_max_charge_power (x10)"
+  confidence: confirmed
+  evidence: "MK :1702-1719; UP :603, 1043-1058; SGT battery_max_charge_power 33047 accuracy 10 W"
+- profile: hybrid
+  key: battery_max_discharge_power
+  name: "Battery max discharge power"
+  address: 33048
+  type: u16
+  min: 1
+  max: 1500
+  scale: 10
+  unit: W
+  step: 10
+  number_min: 10
+  number_max: 15000
+  interval: 10
+  mkaiser: "wire 33047 fn 6, W/10; number.battery_max_discharge_power / input_number.set_sg_battery_max_discharge_power; readback sensor.battery_max_discharge_power (x10)"
+  confidence: confirmed
+  evidence: "MK :1724-1741; UP :609, 1076-1091; SGT battery_max_discharge_power 33048"
+- profile: hybrid
+  key: battery_charging_start_power
+  name: "Battery charging start power"
+  address: 33149
+  type: u16
+  min: 0
+  max: 100
+  scale: 10
+  unit: W
+  step: 10
+  interval: 30
+  mkaiser: "wire 33148 fn 6, W/10; number.battery_charging_start_power / input_number.set_sg_battery_charging_start_power (0-1000 W)"
+  confidence: likely
+  evidence: "MK :1630-1650; UP :615, 1109-1124 (same address and scale; no third source)"
+- profile: hybrid
+  key: battery_discharging_start_power
+  name: "Battery discharging start power"
+  address: 33150
+  type: u16
+  min: 0
+  max: 100
+  scale: 10
+  unit: W
+  step: 10
+  interval: 30
+  mkaiser: "wire 33149 fn 6, W/10; number.battery_discharging_start_power / input_number.set_sg_battery_discharging_start_power (0-1000 W)"
+  confidence: likely
+  evidence: "MK :1652-1675; UP :621, 1142-1157"
+- profile: hybrid
+  key: hybrid_start_stop
+  name: "Start/stop"
+  address: 5006
+  address_by_protocol: {5: 13000}
+  type: u16
+  min: 206
+  max: 207
+  values: [0xCE, 0xCF]
+  options:
+  - {value: 0xCF, label: Start}
+  - {value: 0xCE, label: Stop}
+  interval: 10
+  mkaiser: "not in mkaiser; stock power_switch row of the setup descriptor (0xCF start / 0xCE stop)"
+  confidence: likely
+  evidence: "Stock setup descriptor: power_switch (inverter type 0, protocol 5) -> 13000, (0|1, 2|3) -> 5006; values 0xCF start / 0xCE stop. Unverified on a hybrid. 0xCE while running is deferred: the power stage limits output to 1 %, waits until it is below 6.25 % of rated or a ramp timer expires, then opens and reports 0x1300; 0xCF waits out the reconnection delay (30091 plus 10 min per recent grid trip, up to 1 h) before 0x1600/running (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/control-and-ems.md)"
+- profile: string
+  key: power_limit_switch
+  name: "Power limitation switch"
+  address: 5007
+  type: u16
+  min: 85
+  max: 170
+  values: [0x55, 0xAA]
+  options:
+  - {value: 0xAA, label: Enabled}
+  - {value: 0x55, label: Disabled}
+  interval: 10
+  mkaiser: "not in mkaiser; SG5 package wire 5006 fn 6 (automation.sg5rs_power_limit_mode_push, input_select.sg5rs_power_limit_mode); readback sensor.sg5rs_power_limit_switch_raw / sensor.sg5rs_power_limit_mode"
+  confidence: confirmed
+  evidence: "SG5 :187-260 (0xAA before the setting); SGT power_limitation_switch 5007 0xAA/0x55"
+- profile: string
+  key: power_limit_pct
+  name: "Power limitation setting"
+  address: 5008
+  type: u16
+  min: 0
+  max: 1000
+  scale: 0.1
+  unit: "%"
+  step: 1
+  interval: 10
+  mkaiser: "not in mkaiser; SG5 package wire 5007 fn 6, pct x10 (automation.sg5rs_power_limit_push, input_number.sg5rs_power_limit_pct 0-100); readback sensor.sg5rs_power_limit_pct"
+  confidence: confirmed
+  evidence: "SG5 :187-225 (clamp 0..1000, 0.1 %); SGT power_limitation_setting 5008 accuracy 0.1 %"
+- profile: string
+  key: power_limit_kw
+  name: "Power limitation adjustment"
+  address: 5039
+  type: u16
+  min: 0
+  max: 1000
+  scale: 0.1
+  unit: kW
+  step: 0.1
+  interval: 60
+  mkaiser: "not used by mkaiser or the SG5 package"
+  confidence: likely
+  evidence: "SGT power_limitation_adjustment 5039 U16 0.1 kW"
+- profile: string
+  key: start_stop
+  name: "Start/stop"
+  address: 5006
+  address_by_protocol: {4: 30045}
+  type: u16
+  min: 206
+  max: 207
+  values: [0xCE, 0xCF]
+  options:
+  - {value: 0xCF, label: Start}
+  - {value: 0xCE, label: Stop}
+  interval: 10
+  mkaiser: "not in mkaiser; stock command sig_0107 @ doc 5006 (wire 5005) fn 16 u16; 0xCF=start / 0xCE=stop"
+  confidence: likely
+  evidence: "raws 0xCF start / 0xCE stop; stock setup descriptor: power_switch (0,4) -> 30045, (0,1)/(1,1)/P2/P3 -> 5006. No clear-fault rule: the stock fault-clear and self-check are equip-layer param_type 5 commands, not holding registers (https://github.com/NickStallman/SG-Docs/blob/main/reference/protocols/writes-and-meter-sync.md)"

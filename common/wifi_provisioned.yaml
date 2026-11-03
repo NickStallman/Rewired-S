@@ -1,0 +1,27 @@
+# Wi-Fi for the pre-built images: no network compiled in. An unprovisioned dongle boots straight
+# into its access point ("rewired-s-xxxxxx", password ${ap_password}); the captive portal at
+# 192.168.4.1 takes the home network's name and password and stores them in NVS, where they
+# survive updates. The 30 s button hold (common/board_io.yaml) erases them again.
+# Compiled builds use common/wifi.yaml (credentials from secrets.yaml).
+substitutions:
+  ap_password: rewired-s-setup
+
+wifi:
+  # Radio always on, as stock (WIFI_PS_NONE): no modem-sleep current steps on the inverter-powered
+  # supply, and no added latency on cloud commands and :502.
+  power_save_mode: none
+  ap:
+    # No ssid: ESPHome names the AP after the node (rewired-s-xxxxxx with name_add_mac_suffix).
+    password: "${ap_password}"
+
+captive_portal:
+
+sensor:
+  - platform: wifi_signal
+    name: WiFi signal
+    update_interval: 60s
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: IP address

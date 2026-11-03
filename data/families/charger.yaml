@@ -1,0 +1,306 @@
+# data/families/charger.yaml - register tables and signal definitions of the charger family
+# (docs/data_format.md). Read by tools/gen_tables.py and tests/test_request_nodes.py.
+#
+# tables.<name>.rows   one entry per polled register block, in poll order:
+#   id          signal id (family-scoped, hex); 0 = a gap-filling read that stores nothing
+#   address     1-based register number (wire address = address - 1)
+#   fn          Modbus function: 4 input, 3 holding, 16 write-multiple, 119 proprietary
+#   count       registers read;  type  s16 u16 s32 u32 s64 u64 f32 str
+#   cycle       poll cycle in 100 ms units; a request node is polled at the cycle of its first row
+#   flags       end = the row closes its request node (nodes also split past 120 registers);
+#               clear_offline / priority / no_bulk_decode / keep_sentinel
+#   bits        {first, count}: a status word whose bits are published as signals first + bit
+#   capability  word.bit of the capability bitmap (signal 0x2181) that must be set for the row
+#   unit, scale only for rows without a signal definition (otherwise taken from the signal)
+# signals   one entry per signal id: key (stable entity key, unique per family), name, unit,
+#   scale (omitted = raw value), device_class / state_class (Home Assistant), category
+#   (core | core_hybrid | core_string | extra | hidden; omitted = placed explicitly by the
+#   device package definition), scope (hybrid = meaningless on a string inverter), priority
+#   (display sort rank, lower first), group (realtime | static | protection), accuracy
+#   (display decimals), enum (decode table name), absent (not-served conditions), confidence
+#   (confirmed | likely | guess) and evidence. Signal order = entity order of the packages.
+# fixes     rows whose address differs from the one the stock dongle polls (row carries the fix)
+# reads     non-polled holding registers surfaced read-only (inverter protection settings)
+#
+# Evidence abbreviations: p1_4 / p2 / p3 / p5 = rows of tables.inv_proto*, slaveNN = rows of
+# the data/modbus_tcp map of dev_type NN, battery / st6100 / ... = rows of that table, all as
+# <table>@<address>; mkaiser N = github.com/mkaiser/Sungrow-SHx-Inverter-Modbus-Home-Assistant
+# modbus_sungrow.yaml (register N); SunGather N = github.com/bohdan-s/SunGather
+# registers-sungrow.yaml; readings = values read from an SH10RS and an SG5.0RS (protocol 3);
+# SG-Docs = https://github.com/NickStallman/SG-Docs.
+
+family: charger
+title: "Sungrow EV charger"
+device_types: [46]
+reference: "https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/ev-charger-and-energy-bridge.md"
+
+tables:
+  charger:
+    title: "EV charger (dev_type 46)"
+    rows:
+    - {id: 0x0002, address: 21201, fn: 4, count: 10, type: str, cycle: 36000}  # serial_number
+    - {id: 0x2053, address: 21215, fn: 4, count: 1, type: u16, cycle: 36000}
+    - {id: 0x0005, address: 21216, fn: 4, count: 8, type: str, cycle: 36000}  # device_model
+    - {id: 0x0004, address: 21224, fn: 4, count: 1, type: u16, cycle: 36000}  # device_type_code
+    - {id: 0x2001, address: 21225, fn: 4, count: 1, type: u16, cycle: 36000}  # phase_count
+    - {id: 0x2002, address: 21226, fn: 4, count: 15, type: str, cycle: 36000}  # software_version
+    - {id: 0x2003, address: 21241, fn: 4, count: 3, type: str, cycle: 36000}  # pcb_version
+    - {id: 0x2004, address: 21244, fn: 4, count: 15, type: str, cycle: 36000}  # light_board_software_version
+    - {id: 0x2005, address: 21259, fn: 4, count: 3, type: str, cycle: 36000, flags: end}  # light_board_pcb_version
+    - {id: 0x2046, address: 21262, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x204B, address: 21263, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x204C, address: 21264, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x2047, address: 21268, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x2048, address: 21269, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x2049, address: 21270, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x204A, address: 21271, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x2006, address: 21272, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}  # min_charging_power
+    - {id: 0x2007, address: 21273, fn: 4, count: 2, type: u32, cycle: 20, flags: clear_offline}  # max_charging_power
+    - {id: 0x2040, address: 21275, fn: 4, count: 25, type: str, cycle: 20}
+    - {id: 0x2009, address: 21300, fn: 4, count: 2, type: u32, cycle: 20, flags: clear_offline}  # total_delivered_energy
+    - {id: 0x200A, address: 21302, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}  # phase_a_voltage
+    - {id: 0x200B, address: 21303, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}  # phase_a_current
+    - {id: 0x200C, address: 21304, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}  # phase_b_voltage
+    - {id: 0x200D, address: 21305, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}  # phase_b_current
+    - {id: 0x200E, address: 21306, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}  # phase_c_voltage
+    - {id: 0x200F, address: 21307, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}  # phase_c_current
+    - {id: 0x2010, address: 21308, fn: 4, count: 2, type: u32, cycle: 20, flags: clear_offline}  # charging_power
+    - {id: 0x2011, address: 21310, fn: 4, count: 2, type: u32, cycle: 20, flags: clear_offline}  # session_energy
+    - {id: 0x2012, address: 21312, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}  # cp_voltage
+    - {id: 0x2013, address: 21313, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}  # pwm_duty_cycle
+    - {id: 0x2014, address: 21314, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}  # charging_start_mode
+    - {id: 0x2015, address: 21315, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}  # fully_charged
+    - {id: 0x2016, address: 21316, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}  # power_regulation_switch
+    - {id: 0x2017, address: 21317, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}  # charging_status
+    - {id: 0x2018, address: 21318, fn: 4, count: 2, type: u32, cycle: 20, flags: clear_offline}
+    - {id: 0x201A, address: 21320, fn: 4, count: 2, type: u32, cycle: 20, flags: clear_offline}
+    - {id: 0x2055, address: 21322, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x201C, address: 21331, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x201D, address: 21332, fn: 4, count: 5, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x2024, address: 21338, fn: 4, count: 2, type: u32, cycle: 20, flags: clear_offline}
+    - {id: 0x2025, address: 21340, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x2026, address: 21341, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x2027, address: 21342, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x2028, address: 21343, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x2029, address: 21344, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x202A, address: 21345, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x202B, address: 21346, fn: 4, count: 2, type: u32, cycle: 20, flags: clear_offline}
+    - {id: 0x202C, address: 21348, fn: 4, count: 2, type: u32, cycle: 20, flags: clear_offline}
+    - {id: 0x202D, address: 21350, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x202E, address: 21351, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x202F, address: 21352, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x2030, address: 21353, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x2031, address: 21354, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x2032, address: 21355, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x2033, address: 21356, fn: 4, count: 2, type: u32, cycle: 20, flags: clear_offline}
+    - {id: 0x2035, address: 21358, fn: 4, count: 2, type: u32, cycle: 20, flags: clear_offline}
+    - {id: 0x2052, address: 21360, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x2054, address: 21362, fn: 4, count: 1, type: u16, cycle: 20, flags: clear_offline}
+    - {id: 0x2279, address: 21211, fn: 3, count: 1, type: u16, cycle: 36000}
+    - {id: 0x2278, address: 21232, fn: 3, count: 1, type: u16, cycle: 36000}
+    - {id: 0x2050, address: 21234, fn: 3, count: 16, type: str, cycle: 36000}
+    - {id: 0x2051, address: 21250, fn: 3, count: 32, type: str, cycle: 36000}
+
+signals:
+- id: 0x0002
+  key: serial_number
+  name: "Serial number"
+  category: extra
+  group: static
+  confidence: likely
+  evidence: "charger@21201; stock UI label \"Device S/N\""
+- id: 0x0005
+  key: device_model
+  name: "Device model"
+  category: extra
+  group: static
+  confidence: likely
+  evidence: "charger@21216; stock UI label \"Device model\""
+- id: 0x0004
+  key: device_type_code
+  name: "Device type code"
+  category: extra
+  confidence: likely
+  evidence: "charger@21224"
+- id: 0x2001
+  key: phase_count
+  name: "Number of phases"
+  category: extra
+  enum: charger_phase
+  confidence: likely
+  evidence: "charger@21225; stock UI label \"Number of phases\""
+- id: 0x2002
+  key: software_version
+  name: "Software version"
+  category: extra
+  confidence: likely
+  evidence: "charger@21226; stock UI label \"Software version\""
+- id: 0x2003
+  key: pcb_version
+  name: "PCB version"
+  category: extra
+  group: static
+  confidence: likely
+  evidence: "charger@21241; stock UI label \"PCB version\""
+- id: 0x2004
+  key: light_board_software_version
+  name: "Light board software version"
+  category: extra
+  confidence: likely
+  evidence: "charger@21244; stock UI label \"Light board software version\""
+- id: 0x2005
+  key: light_board_pcb_version
+  name: "Light board PCB version"
+  category: extra
+  confidence: likely
+  evidence: "charger@21259; stock UI label \"Light board PCB version\""
+- id: 0x2006
+  key: min_charging_power
+  name: "Min. charging power"
+  unit: W
+  device_class: power
+  category: extra
+  confidence: likely
+  evidence: "charger@21272; stock UI label \"Min. charging power\""
+- id: 0x2007
+  key: max_charging_power
+  name: "Max. charging power"
+  unit: W
+  device_class: power
+  category: extra
+  confidence: likely
+  evidence: "charger@21273; stock UI label \"Max. charging power\""
+- id: 0x2009
+  key: total_delivered_energy
+  name: "Total delivered energy"
+  unit: Wh
+  device_class: energy
+  state_class: total_increasing
+  category: extra
+  confidence: likely
+  evidence: "charger@21300; stock UI label \"Total delivered energy\""
+- id: 0x200A
+  key: phase_a_voltage
+  name: "Phase A charging voltage"
+  unit: V
+  scale: 0.1
+  device_class: voltage
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "charger@21302; stock UI label \"Phase A charging voltage\""
+- id: 0x200B
+  key: phase_a_current
+  name: "Phase A charging current"
+  unit: A
+  scale: 0.1
+  device_class: current
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "charger@21303; stock UI label \"Phase A charging current\""
+- id: 0x200C
+  key: phase_b_voltage
+  name: "Phase B charging voltage"
+  unit: V
+  scale: 0.1
+  device_class: voltage
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "charger@21304; stock UI label \"Phase B charging voltage\""
+- id: 0x200D
+  key: phase_b_current
+  name: "Phase B charging current"
+  unit: A
+  scale: 0.1
+  device_class: current
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "charger@21305; stock UI label \"Phase B charging current\""
+- id: 0x200E
+  key: phase_c_voltage
+  name: "Phase C charging voltage"
+  unit: V
+  scale: 0.1
+  device_class: voltage
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "charger@21306; stock UI label \"Phase C charging voltage\""
+- id: 0x200F
+  key: phase_c_current
+  name: "Phase C charging current"
+  unit: A
+  scale: 0.1
+  device_class: current
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "charger@21307; stock UI label \"Phase C charging current\""
+- id: 0x2010
+  key: charging_power
+  name: "Charging power"
+  unit: W
+  device_class: power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "charger@21308; stock UI label \"Charging power\""
+- id: 0x2011
+  key: session_energy
+  name: "Session energy"
+  unit: Wh
+  device_class: energy
+  state_class: total_increasing
+  category: extra
+  confidence: likely
+  evidence: "charger@21310; stock UI label \"Energy charged until now\""
+- id: 0x2012
+  key: cp_voltage
+  name: "CP voltage"
+  unit: V
+  scale: 0.01
+  device_class: voltage
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "charger@21312; stock UI label \"CP voltage\""
+- id: 0x2013
+  key: pwm_duty_cycle
+  name: "PWM duty cycle"
+  unit: "%"
+  scale: 0.1
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "charger@21313; stock UI label \"PWM duty cycle\""
+- id: 0x2014
+  key: charging_start_mode
+  name: "Charging initialization mode"
+  category: extra
+  enum: charger_start_mode
+  confidence: likely
+  evidence: "charger@21314; stock UI label \"Charging initialization mode\""
+- id: 0x2015
+  key: fully_charged
+  name: "Fully charged indicator"
+  category: extra
+  enum: charger_full
+  confidence: likely
+  evidence: "charger@21315; stock UI label \"Fully charged indicator\""
+- id: 0x2016
+  key: power_regulation_switch
+  name: "Power regulation switch"
+  category: extra
+  enum: charger_power_flag
+  confidence: likely
+  evidence: "charger@21316; stock UI label \"Power regulation switch\""
+- id: 0x2017
+  key: charging_status
+  name: "Charging status"
+  category: extra
+  enum: charging_status
+  confidence: likely
+  evidence: "charger@21317; stock UI label \"Charging status\""

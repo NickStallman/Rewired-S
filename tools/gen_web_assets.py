@@ -1,0 +1,178 @@
+#!/usr/bin/env python3
+"""Generate components/sungrow_web/web_assets.h from the esbuild SPA bundle.
+
+Pipeline (all dev/CI only — the device just serves the embedded, gzipped bytes):
+
+    cd components/sungrow_web/web
+    npm ci                      # once: installs esbuild + typescript (dev deps)
+    npm run typecheck           # tsc --noEmit (optional but recommended)
+    cd ../../../                 # back to new_firmware/
+    python3 tools/gen_web_assets.py
+
+By default this runs `npm run build` in components/sungrow_web/web (producing dist/app.js and
+dist/app.css), then:
+  1. reads dist/app.js + dist/app.css,
+  2. derives a short content hash over both (stable across rebuilds of identical sources),
+  3. names the device-side assets app.<hash>.js / app.<hash>.css,
+  4. rewrites the __APP_JS__ / __APP_CSS__ tokens in web/index.html with those names,
+  5. gzips index.html, app.js and app.css deterministically (gzip mtime=0),
+  6. writes components/sungrow_web/web_assets.h with the byte arrays, lengths, paths and hash.
+
+The output is deterministic: identical sources produce an identical header (so a committed
+web_assets.h only changes when the SPA changes). Pass --no-build to consume an existing dist/.
+--check builds the same way, writes the header to a temporary directory and exits 1 when its bytes
+differ from the committed web_assets.h.
+
+Stdlib only.
+"""
+
+from __future__ import annotations
+
+import argparse
+import gzip
+import hashlib
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+WEB_DIR = HERE.parent / "components" / "sungrow_web" / "web"
+OUT_H = HERE.parent / "components" / "sungrow_web" / "web_assets.h"
+HASH_LEN = 10  # hex chars of the content hash used in asset filenames
+
+
+def gz(data: bytes) -> bytes:
+    """Deterministic gzip (no timestamp, no original filename)."""
+    return gzip.compress(data, compresslevel=9, mtime=0)
+
+
+def c_array(name: str, data: bytes) -> str:
+    lines = [f"static const uint8_t {name}[] = {{"]
+    row: list[str] = []
+    for i, b in enumerate(data):
+        row.append(f"0x{b:02x},")
+        if (i + 1) % 16 == 0:
+            lines.append("    " + "".join(row))
+            row = []
+    if row:
+        lines.append("    " + "".join(row))
+    lines.append("};")
+    return "\n".join(lines)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Generate web_assets.h from the esbuild SPA bundle.")
+    ap.add_argument("--web-dir", type=Path, default=WEB_DIR, help="SPA project dir (has package.json + dist/)")
+    ap.add_argument("--out", type=Path, default=OUT_H, help="output C++ header")
+    ap.add_argument("--no-build", action="store_true", help="consume an existing dist/ instead of running npm run build")
+    ap.add_argument("--check", action="store_true",
+                    help="build, write the header to a temporary directory and exit 1 if it differs from --out")
+    args = ap.parse_args()
+
+    web_dir: Path = args.web_dir.resolve()
+    dist = web_dir / "dist"
+
+    if not args.no_build:
+        # Refresh the baked signal-metadata module (web/src/meta.gen.ts) from register_meta.py
+        # before bundling, so labels/units in the SPA always track the data model. Best-effort:
+        # a committed meta.gen.ts keeps the build working if this step is skipped. --check bundles
+        # the committed meta.gen.ts as it is (gen_web_meta.py --check covers that file).
+        gen_meta = HERE / "gen_web_meta.py"
+        if gen_meta.exists() and not args.check:
+            try:
+                subprocess.run([sys.executable, str(gen_meta)], check=True)
+            except (OSError, subprocess.CalledProcessError) as e:
+                print(f"[gen_web_assets] WARNING: gen_web_meta.py failed ({e}); using existing meta.gen.ts",
+                      file=sys.stderr)
+        print(f"[gen_web_assets] npm run build in {web_dir}", file=sys.stderr)
+        try:
+            subprocess.run(["npm", "run", "build"], cwd=web_dir, check=True)
+        except (OSError, subprocess.CalledProcessError) as e:
+            print(f"[gen_web_assets] build failed ({e}); re-run with --no-build to use an existing dist/", file=sys.stderr)
+            return 1
+
+    app_js = (dist / "app.js").read_bytes()
+    app_css = (dist / "app.css").read_bytes()
+    index_tpl = (web_dir / "index.html").read_text(encoding="utf-8")
+
+    content_hash = hashlib.sha256(app_js + app_css).hexdigest()[:HASH_LEN]
+    js_name = f"app.{content_hash}.js"
+    css_name = f"app.{content_hash}.css"
+    js_path = f"/{js_name}"
+    css_path = f"/{css_name}"
+
+    index_html = index_tpl.replace("__APP_JS__", js_name).replace("__APP_CSS__", css_name)
+    if "__APP_JS__" in index_html or "__APP_CSS__" in index_html:
+        print("[gen_web_assets] WARNING: asset tokens not fully substituted in index.html", file=sys.stderr)
+
+    index_gz = gz(index_html.encode("utf-8"))
+    js_gz = gz(app_js)
+    css_gz = gz(app_css)
+
+    header = f"""// GENERATED by tools/gen_web_assets.py — do not edit by hand.
+// Embedded, gzip-compressed SPA assets for the sungrow_web component.
+//
+// Regenerate:  (in new_firmware/)  python3 tools/gen_web_assets.py
+//   which runs `npm run build` in components/sungrow_web/web first. Use --no-build to
+//   reuse an existing dist/. A committed copy keeps the component buildable without Node.
+//
+// Content hash: {content_hash}   (sha256(app.js + app.css)[:{HASH_LEN}])
+// Sizes (gzip):  index.html {len(index_gz)} B, {js_name} {len(js_gz)} B, {css_name} {len(css_gz)} B
+//
+// NOTE: internal-linkage ({{static}}) definitions — include this header from exactly ONE
+// translation unit (spa_handler.cpp).
+#pragma once
+#include <cstddef>
+#include <cstdint>
+
+namespace esphome {{
+namespace sungrow_web {{
+
+// Short content hash; also embedded in the asset filenames below (cache-busting).
+static const char WEB_ASSET_HASH[] = "{content_hash}";
+
+// index.html — served at "/" and "/index.html" (no-cache: it names the hashed assets).
+{c_array("INDEX_HTML_GZ", index_gz)}
+static const size_t INDEX_HTML_GZ_LEN = {len(index_gz)};
+
+// {js_name} — immutable (hashed filename): long Cache-Control.
+static const char APP_JS_PATH[] = "{js_path}";
+{c_array("APP_JS_GZ", js_gz)}
+static const size_t APP_JS_GZ_LEN = {len(js_gz)};
+
+// {css_name} — immutable (hashed filename): long Cache-Control.
+static const char APP_CSS_PATH[] = "{css_path}";
+{c_array("APP_CSS_GZ", css_gz)}
+static const size_t APP_CSS_GZ_LEN = {len(css_gz)};
+
+}}  // namespace sungrow_web
+}}  // namespace esphome
+"""
+
+    if args.check:
+        with tempfile.TemporaryDirectory() as tmp:
+            fresh = Path(tmp) / args.out.name
+            fresh.write_text(header, encoding="utf-8")
+            fresh_bytes = fresh.read_bytes()
+        try:
+            committed = args.out.read_bytes()
+        except OSError:
+            committed = None
+        if committed != fresh_bytes:
+            print(f"stale: {args.out} (run tools/gen_web_assets.py)")
+            return 1
+        print(f"[gen_web_assets] {args.out} up to date (hash {content_hash})", file=sys.stderr)
+        return 0
+
+    args.out.write_text(header, encoding="utf-8")
+    print(
+        f"[gen_web_assets] wrote {args.out} — hash {content_hash}, "
+        f"index {len(index_gz)}B, js {len(js_gz)}B, css {len(css_gz)}B (gzip)",
+        file=sys.stderr,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

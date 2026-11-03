@@ -1,0 +1,25 @@
+# ============================================================================================
+# STOCK partition table: WiNet-S (WINET-SV200, ESP32 classic "ESP32-D0WD rev v1.1", 16MB).
+# AUTHORITATIVE. Decoded live from the device on 2026-10-18 by reading internal flash at
+# offset 0x8000 (the partition table). Every entry: magic 0xAA50, flags = 0x00000000
+# (no readonly/encrypted bits). This is the REAL on-flash layout, NOT a reconstruction.
+#
+# Layout notes:
+#  - Dual-OTA, NO factory partition. The app lives in ota_0/ota_1; the bootloader selects via
+#    otadata. ota_0 @0x110000 and ota_1 @0x490000, each 0x380000 (3.5 MB).
+#  - oemdata AND usrdata both use data subtype 0x81 (IDF ESP_PARTITION_SUBTYPE_DATA_FAT; Sungrow
+#    labels LittleFS volumes "fat"). Expressed here as `data, 0x81`.
+#  - coredump = data/coredump (0x03); nvs = data/nvs (0x02); otadata = data/ota (0x00);
+#    phy_init = data/phy (0x01).
+#  - Table lives at 0x8000 (CONFIG_PARTITION_TABLE_OFFSET default - do NOT change). Total used
+#    0x1000000 (coredump ends exactly at 16 MB).
+# ============================================================================================
+# Name,    Type, SubType,  Offset,    Size,      Flags
+nvs,       data, nvs,      0x9000,    0x100000,
+otadata,   data, ota,      0x109000,  0x2000,
+phy_init,  data, phy,      0x10b000,  0x1000,
+ota_0,     app,  ota_0,    0x110000,  0x380000,
+ota_1,     app,  ota_1,    0x490000,  0x380000,
+oemdata,   data, 0x81,     0x810000,  0x400000,
+usrdata,   data, 0x81,     0xc10000,  0x2f0000,
+coredump,  data, coredump, 0xf00000,  0x100000,

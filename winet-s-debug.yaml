@@ -1,0 +1,72 @@
+# WiNet-S (V200, ESP32) DEBUG build for the first hardware tests. Guide: docs/debug_build.md.
+# Same as winet-s.yaml minus the iSolarCloud uplink (no common/cloud.yaml: no MQTT/TLS client)
+# and minus register writes (no common/control.yaml / *_control.yaml), plus common/debug.yaml.
+# RS485 writes are additionally blocked at the transport (sungrow_debug block_rtu_writes).
+substitutions:
+  name: winet-s-debug
+  friendly_name: WiNet-S debug
+  debug_log_port: "0"   # e.g. "2323": plain-TCP log stream (`nc <ip> 2323`), LAN only, no auth
+
+packages:
+  board: !include boards/winet_s.yaml
+  base: !include common/base.yaml
+  # API key and web login from secrets.yaml (the prebuilt entries use common/provisioning.yaml).
+  access: !include common/access_secrets.yaml
+  # Network: Wi-Fi. The Ethernet (DP83848) variant is winet-s-debug-ethernet.yaml.
+  network: !include common/wifi.yaml
+  board_io: !include common/board_io.yaml
+  rs485: !include common/rs485.yaml
+  identity: !include common/identity.yaml
+  modbus_tcp: !include common/modbus_tcp.yaml
+  # Autodetect the inverter type: this package compiles in the union of string + hybrid
+  # inverter entities. The RS485 master already picks the poll table at runtime from the
+  # devinfo block (common/rs485.yaml device index 0, table: auto), so no build-time choice is
+  # needed; entities whose signal the connected inverter does not report stay unavailable.
+  inverter: !include { file: devices/auto_inverter.yaml, vars: { device: 0 } }
+  # Pin a single device type instead (fewer always-unavailable entities), e.g.:
+  #   inverter: !include { file: devices/hybrid_inverter.yaml, vars: { device: 0 } }
+  #   inverter: !include { file: devices/string_inverter.yaml, vars: { device: 0 } }
+  #
+  # Single-firmware / superset design: compile in the SBR battery (index 1) and meter (index 2)
+  # entities too, and probe their Modbus addresses. The entities of a device that does not answer
+  # stay unavailable. Addresses are installation-specific; set yours.
+  sbr_battery: !include { file: devices/sbr_battery.yaml, vars: { device: 1 } }
+  sbr_link:
+    sungrow_modbus:
+      devices:
+        - index: 1
+          address: 2            # installation-specific: set your SBR's address
+          table: battery        # also reads the cell block 10757+24 every 300 s
+          online: {name: SBR RS485 online}
+  meter: !include { file: devices/meter.yaml, vars: { device: 2 } }
+  meter_link:
+    sungrow_modbus:
+      devices:
+        - index: 2
+          address: 3            # installation-specific: set your meter's address
+          table: other_dev18_st6100
+          online: {name: Meter RS485 online}
+  debug: !include common/debug.yaml
+
+# The stock-OTA install path runs with the dongle's ON-FLASH partition table; this CSV (the
+# device's own table) sets the build-time size check and the factory.bin layout.
+esp32:
+  flash_size: 16MB   # mandatory: IDF sizes usable flash from the app header
+  partitions: boards/partitions_winet_s.stock.csv
+
+external_components:
+  - source:
+      type: local
+      path: components
+
+# One-shot NVS fix (OTA-only). The dongle inherits the stock 1 MB `nvs` partition (@0x9000) in a
+# state where nvs_open() succeeds but writes fail (ESP_ERR_NVS_INVALID_STATE), so ESPHome's
+# auto-erase-on-open-failure never triggers. Pressing this button runs global_preferences->reset()
+# = nvs_flash_erase() of the whole `nvs` partition + reboot; on the next boot nvs_flash_init()
+# comes up clean and preferences persist normally. Safe: our identity is on the EXTERNAL flash
+# (/usrdataout), RF calibration is in the separate phy_init partition, and WiFi creds come from the
+# build — none of that lives in this NVS. Trigger once over the API/HA after first boot.
+button:
+  - platform: factory_reset
+    name: "Erase NVS (one-shot fix)"
+    entity_category: diagnostic

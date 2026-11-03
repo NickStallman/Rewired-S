@@ -1,0 +1,8 @@
+# A site file as sites/README.md describes it: its own name and options on top of a generic entry.
+# `make config` validates it, which checks that an entry merges as a nested package.
+substitutions:
+  name: site-example
+  friendly_name: Site Example
+
+packages:
+  entry: !include ../../winet-s2.yaml

@@ -1,0 +1,174 @@
+# data/families/logger.yaml - register tables and signal definitions of the logger family
+# (docs/data_format.md). Read by tools/gen_tables.py and tests/test_request_nodes.py.
+#
+# tables.<name>.rows   one entry per polled register block, in poll order:
+#   id          signal id (family-scoped, hex); 0 = a gap-filling read that stores nothing
+#   address     1-based register number (wire address = address - 1)
+#   fn          Modbus function: 4 input, 3 holding, 16 write-multiple, 119 proprietary
+#   count       registers read;  type  s16 u16 s32 u32 s64 u64 f32 str
+#   cycle       poll cycle in 100 ms units; a request node is polled at the cycle of its first row
+#   flags       end = the row closes its request node (nodes also split past 120 registers);
+#               clear_offline / priority / no_bulk_decode / keep_sentinel
+#   bits        {first, count}: a status word whose bits are published as signals first + bit
+#   capability  word.bit of the capability bitmap (signal 0x2181) that must be set for the row
+#   unit, scale only for rows without a signal definition (otherwise taken from the signal)
+# signals   one entry per signal id: key (stable entity key, unique per family), name, unit,
+#   scale (omitted = raw value), device_class / state_class (Home Assistant), category
+#   (core | core_hybrid | core_string | extra | hidden; omitted = placed explicitly by the
+#   device package definition), scope (hybrid = meaningless on a string inverter), priority
+#   (display sort rank, lower first), group (realtime | static | protection), accuracy
+#   (display decimals), enum (decode table name), absent (not-served conditions), confidence
+#   (confirmed | likely | guess) and evidence. Signal order = entity order of the packages.
+# fixes     rows whose address differs from the one the stock dongle polls (row carries the fix)
+# reads     non-polled holding registers surfaced read-only (inverter protection settings)
+#
+# Evidence abbreviations: p1_4 / p2 / p3 / p5 = rows of tables.inv_proto*, slaveNN = rows of
+# the data/modbus_tcp map of dev_type NN, battery / st6100 / ... = rows of that table, all as
+# <table>@<address>; mkaiser N = github.com/mkaiser/Sungrow-SHx-Inverter-Modbus-Home-Assistant
+# modbus_sungrow.yaml (register N); SunGather N = github.com/bohdan-s/SunGather
+# registers-sungrow.yaml; readings = values read from an SH10RS and an SG5.0RS (protocol 3);
+# SG-Docs = https://github.com/NickStallman/SG-Docs.
+
+family: logger
+title: "Sungrow data loggers"
+device_types: [34]
+reference: "https://github.com/NickStallman/SG-Docs/blob/main/reference/appendix/register-tables/rs485-inverters.md"
+notes: |
+  One table per logger model (subtype code).
+
+tables:
+  other_dev34_st1819:
+    title: "Logger, subtype 1819"
+    subtype: 1819
+    rows:
+    - {id: 0x0002, address: 8300, fn: 4, count: 10, type: str, cycle: 600}  # serial_number
+    - {id: 0x0005, address: 8310, fn: 4, count: 8, type: str, cycle: 600}  # device_model
+    - {id: 0x1000, address: 8318, fn: 4, count: 15, type: str, cycle: 600}  # app_software_version
+    - {id: 0x1181, address: 8333, fn: 4, count: 15, type: str, cycle: 600}  # build_software_version
+    - {id: 0x1962, address: 8348, fn: 4, count: 15, type: str, cycle: 600}  # certified_software_version
+    - {id: 0x1961, address: 8363, fn: 4, count: 1, type: s16, cycle: 600}  # slave_fault
+    - {id: 0x0008, address: 8364, fn: 4, count: 1, type: s16, cycle: 600}  # link_status
+    - {id: 0x1053, address: 8434, fn: 4, count: 16, type: str, cycle: 600}  # wlan_ssid
+    - {id: 0x1187, address: 8450, fn: 4, count: 10, type: str, cycle: 600, flags: clear_offline}  # wlan_client_ip
+    - {id: 0x1764, address: 8460, fn: 4, count: 32, type: str, cycle: 600}  # wlan_client_mac
+    - {id: 0x1134, address: 8492, fn: 4, count: 1, type: s16, cycle: 600, flags: clear_offline}  # wlan_signal_strength
+    - {id: 0x1968, address: 8493, fn: 4, count: 1, type: u16, cycle: 600}
+  other_dev34_st1820:
+    title: "Logger, subtype 1820"
+    subtype: 1820
+    rows:
+    - {id: 0x0002, address: 8300, fn: 4, count: 10, type: str, cycle: 600}  # serial_number
+    - {id: 0x0005, address: 8310, fn: 4, count: 8, type: str, cycle: 600}  # device_model
+    - {id: 0x1000, address: 8318, fn: 4, count: 15, type: str, cycle: 600}  # app_software_version
+    - {id: 0x1181, address: 8333, fn: 4, count: 15, type: str, cycle: 600}  # build_software_version
+    - {id: 0x1962, address: 8348, fn: 4, count: 15, type: str, cycle: 600}  # certified_software_version
+    - {id: 0x1961, address: 8363, fn: 4, count: 1, type: s16, cycle: 600}  # slave_fault
+    - {id: 0x1022, address: 8365, fn: 4, count: 10, type: str, cycle: 600, flags: clear_offline}  # ethernet_ip
+    - {id: 0x1185, address: 8375, fn: 4, count: 1, type: s16, cycle: 600, flags: clear_offline}  # ethernet_connection_status
+    - {id: 0x1058, address: 8376, fn: 4, count: 16, type: str, cycle: 600}  # wlan_hotspot_ssid
+    - {id: 0x1186, address: 8392, fn: 4, count: 10, type: str, cycle: 600, flags: clear_offline}  # wlan_hotspot_ip
+    - {id: 0x1765, address: 8402, fn: 4, count: 32, type: str, cycle: 600}  # wlan_hotspot_mac
+    - {id: 0x1968, address: 8493, fn: 4, count: 1, type: u16, cycle: 600}
+
+signals:
+- id: 0x0002
+  key: serial_number
+  name: "Serial number"
+  category: extra
+  group: static
+  confidence: likely
+  evidence: "st1819@8300 st1820@8300; stock UI label \"Device S/N\""
+- id: 0x0005
+  key: device_model
+  name: "Device model"
+  category: extra
+  group: static
+  confidence: likely
+  evidence: "st1819@8310 st1820@8310; stock UI label \"Device model\""
+- id: 0x1000
+  key: app_software_version
+  name: "Application software version"
+  category: extra
+  confidence: likely
+  evidence: "st1819@8318 st1820@8318; stock UI label \"Application software version\""
+- id: 0x1181
+  key: build_software_version
+  name: "Build software version"
+  category: extra
+  confidence: likely
+  evidence: "st1819@8333 st1820@8333; stock UI label \"Build software version\""
+- id: 0x1962
+  key: certified_software_version
+  name: Version
+  category: extra
+  confidence: likely
+  evidence: "st1819@8348 st1820@8348"
+- id: 0x1961
+  key: slave_fault
+  name: "Fault status"
+  category: extra
+  confidence: likely
+  evidence: "st1819@8363 st1820@8363; stock UI label \"Fault status\""
+- id: 0x0008
+  key: link_status
+  name: "Link status"
+  category: extra
+  confidence: likely
+  evidence: "st1819@8364"
+- id: 0x1053
+  key: wlan_ssid
+  name: "WLAN SSID"
+  category: extra
+  confidence: likely
+  evidence: "st1819@8434; stock UI label \"WLAN SSID\""
+- id: 0x1187
+  key: wlan_client_ip
+  name: "WLAN client IP address"
+  category: extra
+  confidence: likely
+  evidence: "st1819@8450; stock UI label \"WLAN client IP address\""
+- id: 0x1764
+  key: wlan_client_mac
+  name: "WLAN client MAC address"
+  category: extra
+  confidence: likely
+  evidence: "st1819@8460; stock UI label \"WLAN client MAC address\""
+- id: 0x1134
+  key: wlan_signal_strength
+  name: "WLAN signal strength"
+  unit: dBm
+  device_class: signal_strength
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "st1819@8492; stock UI label \"WLAN signal strength\""
+- id: 0x1022
+  key: ethernet_ip
+  name: "Ethernet IP address"
+  category: extra
+  confidence: likely
+  evidence: "st1820@8365; stock UI label \"ETH IP address\""
+- id: 0x1185
+  key: ethernet_connection_status
+  name: "Ethernet connection status"
+  category: extra
+  confidence: likely
+  evidence: "st1820@8375; stock UI label \"Ethernet connection status\""
+- id: 0x1058
+  key: wlan_hotspot_ssid
+  name: "WLAN hotspot SSID"
+  category: extra
+  confidence: likely
+  evidence: "st1820@8376; stock UI label \"WLAN SSID\""
+- id: 0x1186
+  key: wlan_hotspot_ip
+  name: "WLAN hotspot IP address"
+  category: extra
+  confidence: likely
+  evidence: "st1820@8392; stock UI label \"WLAN hotspot IP address\""
+- id: 0x1765
+  key: wlan_hotspot_mac
+  name: "WLAN hotspot MAC address"
+  category: extra
+  confidence: likely
+  evidence: "st1820@8402; stock UI label \"WLAN client MAC address\"; firmware name \"WLAN client MAC address\" but key wifi_ap_mac, sits in the AP block next to wifi_ap_ip"

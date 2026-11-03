@@ -1,0 +1,230 @@
+# WiNet-S2 (SV300, ESP32-S3) MINIMAL WiFi bring-up / DEBUG build. Guide: docs/debug_build.md.
+#
+# PURPOSE — answer "does the S2 board boot and STAY ALIVE?" with the smallest possible payload,
+# and report the S2 hardware details over the ESPHome API / web server with NO serial console
+# attached (the S2 has no USB recovery). WiFi-first on purpose: if it comes up on WiFi it is fully reachable, and
+# if WiFi can't connect the fallback AP + captive portal + safe_mode give a recovery path that
+# needs no wire.
+#
+# COMPOSED MINIMAL (mirrors winet-s-debug.yaml, MINUS rs485 polling / modbus_tcp / cloud / register
+# writes, on the winet_s2 board):
+#   common/wifi.yaml .... WiFi STA + fallback AP + captive portal
+#   common/base.yaml .... API (encrypted) + OTA (encrypted) + web_server + safe_mode + logger
+#   boards/winet_s2.yaml  PSRAM + sungrow_board external WDOG + RS485/LED/button pins + ext NOR
+#   common/board_io.yaml  3 status LEDs (outputs) + button (binary_sensor) + button/LED logic
+#   common/identity.yaml  ext-NOR (sungrow_extflash) diagnostics: chip JEDEC/size, mount, identity
+#   sungrow_debug ....... flash-layout / partition-table dump + READ-ONLY /dump HTTP
+# EXCLUDED: common/rs485.yaml device polling, common/modbus_tcp.yaml, common/cloud.yaml
+# (iSolarCloud), common/control.yaml + *_control.yaml (writes).
+#
+# DEPENDENCY NOTE — sungrow_debug has a hard DEPENDENCIES on sungrow_modbus + sungrow_datamodel,
+# and sungrow_modbus needs a uart + >=1 device. So a truly "no-modbus" build cannot instantiate
+# the partition-dump tooling at all. We therefore wire up a MINIMAL, DORMANT modbus hub below
+# (uart on the RS485 pins + one device, RTU writes blocked) purely to satisfy that dependency; we
+# do NOT include the common/rs485.yaml polling package, the device-entity packages or modbus_tcp.
+# With nothing on the bus the hub just times out — harmless to the boot test,
+# and block_rtu_writes guarantees only fn 3/4 (reads) could ever leave the transceiver.
+#
+# WHAT IT ANSWERS over API/web (entity names in parentheses):
+#   1. on-flash partition table      -> "Debug dump system" button + GET /dump/index,/dump/<region>
+#                                        (behind web auth) + "Running partition"/"Firmware versions"
+#   2. PSRAM size/type + free heap    -> "PSRAM info","PSRAM size","PSRAM free","Heap free","Heap min free"
+#   3. external WDOG state + edges     -> "Watchdog running","Watchdog edge count"
+#   4. LED polarity (3 LEDs)           -> "LED red (manual)","LED green (manual)","LED blue (manual)"
+#   5. button                          -> "Button"
+#   6. ext-NOR JEDEC id + size + id-read -> "Ext flash chip","Ext flash mounted","Identity valid","Serial number"
+#
+# INSTALL (no serial): build firmware.ota.bin here, package it into a stock .sgu with YOUR key
+# (tools/package_sgu.py) and push it through the iSolarCloud / iConfig OTA pull, exactly as for the
+# S. The stock IDF bootloader keeps running; our image only replaces the app OTA slot.
+#
+# ROLLBACK SAFETY: boards/winet_s2.yaml turns IDF OTA rollback on, so a boot loop reverts to the
+# previous slot, the only recovery without a wire.
+substitutions:
+  name: winet-s2-debug
+  friendly_name: WiNet-S2 debug
+  debug_log_port: "0"   # e.g. "2323": plain-TCP log stream (`nc <ip> 2323`), LAN only, no auth
+
+packages:
+  board: !include boards/winet_s2.yaml
+  base: !include common/base.yaml
+  # API key and web login from secrets.yaml (the prebuilt entries use common/provisioning.yaml).
+  access: !include common/access_secrets.yaml
+  # Network: WiFi. The W5500 Ethernet variant is winet-s2-ethernet.yaml (not the default).
+  network: !include common/wifi.yaml
+  board_io: !include common/board_io.yaml
+  # ext-NOR (sungrow_extflash) diagnostics: chip JEDEC id + size, mount state, identity validity.
+  identity: !include common/identity.yaml
+
+external_components:
+  - source:
+      type: local
+      path: components
+
+esp32:
+  framework:
+    sdkconfig_options:
+      # Task watchdog warns instead of panicking: a stalled loop logs the offending task name
+      # ("Task watchdog got triggered ...") and keeps running, so the cause is visible over the API.
+      CONFIG_ESP_TASK_WDT_PANIC: n
+
+logger:
+  baud_rate: 115200        # UART0 console (hardware_uart from boards/winet_s2.yaml); no USB-JTAG
+
+# ---- minimal DORMANT modbus hub: dependency stub for sungrow_debug ONLY (see header) ----
+# Not common/rs485.yaml: no device-entity packages, no modbus_tcp. One idle
+# device so the hub validates; nothing is polled of interest and writes are blocked (sungrow_debug
+# block_rtu_writes below). Pins come from boards/winet_s2.yaml.
+uart:
+  - id: rs485_uart
+    tx_pin: ${rs485_tx_pin}
+    rx_pin: ${rs485_rx_pin}
+    flow_control_pin:
+      number: ${rs485_de_pin}
+      ignore_strapping_warning: ${rs485_de_ignore_strapping}
+    baud_rate: ${rs485_baud_rate}
+    data_bits: 8
+    parity: NONE
+    stop_bits: 1
+    rx_buffer_size: 512
+
+sungrow_datamodel:
+  id: sungrow_dm
+
+sungrow_modbus:
+  id: rs485_hub
+  uart_id: rs485_uart
+  sungrow_datamodel_id: sungrow_dm
+  devices:
+    - index: 0
+      address: 1
+      table: auto
+
+# ---- board LED/cloud predicates: this build has no cloud and does no device polling ----
+# common/board_io.yaml wires these lambdas to id(cloud)/id(rs485_hub); with no cloud and a dormant
+# bus we force them false so the status LEDs reflect BOARD health only (green heartbeats, red off),
+# not a disconnected inverter. Mirrors common/debug.yaml's cloud override.
+sungrow_board:
+  io:
+    cloud_connected: !lambda return false;
+    cloud_enabled: !lambda return false;
+    cloud_error: !lambda return false;
+    devices_offline: !lambda return false;
+
+# ---- flash / partition diagnostics (answers question 1) ----
+# SAFETY: block_rtu_writes = only fn 3/4 reach the bus; the ext NOR stays read-only; the only flash
+# write possible is the explicit, switch-gated "Boot other slot" (rollback to the stock app).
+sungrow_debug:
+  id: dbg
+  sungrow_modbus_id: rs485_hub
+  sungrow_datamodel_id: sungrow_dm
+  sungrow_extflash_id: extflash   # enables dump_file / list_files over the API
+  block_rtu_writes: true
+  flash_dump: true                # GET http://<ip>/dump/index, /dump/<region> (web server auth)
+  partition:
+    name: Running partition
+  idf_version:
+    name: Firmware versions
+  switches:
+    allow_boot_switch:
+      name: Allow boot switch to other slot   # arms "Boot other slot" once; never restored
+
+button:
+  - platform: template
+    name: Debug dump system
+    entity_category: diagnostic
+    on_press:
+      - lambda: |-
+          id(dbg).dump_flash_layout();   // decodes + logs the ON-FLASH partition table @0x8000
+          id(dbg).dump_system();
+  - platform: template
+    name: Boot other slot (stock app)
+    entity_category: config
+    icon: mdi:backup-restore
+    on_press:
+      - lambda: id(dbg).boot_other_slot();
+
+# Home Assistant: Developer Tools -> Actions -> "ESPHome: <node>_dump_system".
+api:
+  actions:
+    - action: dump_system
+      then:
+        - lambda: |-
+            id(dbg).dump_flash_layout();
+            id(dbg).dump_system();
+
+# ---- LED controllable entities for the polarity check (answers question 4) ----
+# board_io.yaml surfaces the 3 LEDs only as `output`s (not API/web entities); expose them as binary
+# lights so each can be forced on/off to confirm led_inverted (TODO in boards/winet_s2.yaml). The
+# board status logic also drives these outputs every 100 ms, so for a clean check watch the green
+# heartbeat (toggles 1 s when alive) or force a light and observe before the next status update.
+light:
+  - platform: binary
+    name: LED red (manual)
+    output: led_red_out
+  - platform: binary
+    name: LED green (manual)
+    output: led_green_out
+  - platform: binary
+    name: LED blue (manual)
+    output: led_blue_out
+
+# ---- PSRAM + heap + reset reason (ESPHome debug component; answers question 2) ----
+debug:
+  update_interval: 30s
+
+sensor:
+  - platform: debug
+    free:
+      name: Heap free
+    block:
+      name: Heap largest block
+    min_free:
+      name: Heap min free
+    psram:
+      name: PSRAM free
+  # PSRAM size as the SPIRAM heap total (~chip size; distinguishes 2/4 MB quad vs 8 MB octal).
+  # The true chip size needs esp_psram_get_size() from <esp_psram.h>, which is not in main.cpp's
+  # include set; heap_caps_get_total_size(MALLOC_CAP_SPIRAM) is.
+  # Type is the configured mode (psram_mode in boards/winet_s2.yaml), not runtime-detectable here.
+  - platform: template
+    name: PSRAM size
+    unit_of_measurement: MB
+    accuracy_decimals: 2
+    entity_category: diagnostic
+    update_interval: 60s
+    lambda: 'return heap_caps_get_total_size(MALLOC_CAP_SPIRAM) / (1024.0f * 1024.0f);'
+  # External WDOG running-state edge count over the API (question 3). The dump_config line is not
+  # API-visible, so expose the sungrow_board free functions as a sensor.
+  - platform: template
+    name: Watchdog edge count
+    accuracy_decimals: 0
+    entity_category: diagnostic
+    update_interval: 10s
+    lambda: 'return esphome::sungrow_board::watchdog_toggle_count();'
+
+text_sensor:
+  - platform: debug
+    device:
+      name: Device info
+    reset_reason:
+      name: Reset reason
+  # Configured PSRAM mode + usable SPIRAM heap total in one string (question 2). See the PSRAM size
+  # sensor above for why this uses heap_caps rather than esp_psram_get_size().
+  - platform: template
+    name: PSRAM info
+    entity_category: diagnostic
+    update_interval: 60s
+    lambda: |-
+      char b[96];
+      snprintf(b, sizeof(b), "mode=${psram_mode} spiram_total=%uKB free=%uKB",
+               (unsigned) (heap_caps_get_total_size(MALLOC_CAP_SPIRAM) / 1024),
+               (unsigned) (heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024));
+      return std::string(b);
+
+binary_sensor:
+  # External WDOG running-state (question 3).
+  - platform: template
+    name: Watchdog running
+    entity_category: diagnostic
+    lambda: 'return esphome::sungrow_board::watchdog_running();'

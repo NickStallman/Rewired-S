@@ -1,0 +1,13 @@
+# Per-device Home Assistant integration over MQTT for the pre-built images (components/sungrow_mqtt,
+# common/mqtt_ha.yaml has the full description). No broker is compiled in: the Settings page of
+# the web UI takes host, port, credentials, discovery prefix and TLS, stored in NVS
+# (runtime_settings). Until a broker is set the client stays idle.
+sungrow_mqtt:
+  id: ha_mqtt
+  runtime_settings: true
+  connected:
+    name: MQTT connected
+  # Dongle SN (used for via_device + the MQTT publisher root) from the ext-flash identity.
+  sungrow_extflash_id: extflash
+  sungrow_control_id: sungrow_ctl    # enables MQTT write command topics + writable HA discovery
+  sw_version: "Rewired-S ${project_version}"   # sw_version of every published device

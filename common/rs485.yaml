@@ -1,0 +1,70 @@
+# RS485 link to the inverter chain: uart bus + sungrow_datamodel store + sungrow_modbus master.
+# Pins/baud come from boards/*.yaml (rs485_tx_pin / rs485_rx_pin / rs485_de_pin / rs485_baud_rate).
+#
+# DE: `flow_control_pin` makes ESPHome's IDF UART run UART_MODE_RS485_HALF_DUPLEX with DE on RTS,
+# like stock. Software fallback: drop flow_control_pin here and set `de_pin:` on sungrow_modbus.
+# Which UART peripheral ESPHome picks does not matter (GPIO matrix); with the logger on UART0 it
+# is UART1, as stock (rs485_uart_num is informational).
+#
+# Devices: the hub below polls one inverter (index 0, Modbus address 1, table auto-discovered).
+# More devices are added from the entry YAML with an inline package; the `devices:` lists of all
+# packages are concatenated. See the comments in winet-s2.yaml / winet-s.yaml.
+uart:
+  - id: rs485_uart
+    tx_pin: ${rs485_tx_pin}
+    rx_pin: ${rs485_rx_pin}
+    flow_control_pin:
+      number: ${rs485_de_pin}
+      ignore_strapping_warning: ${rs485_de_ignore_strapping}
+    baud_rate: ${rs485_baud_rate}
+    data_bits: 8
+    # The stock dongle opens the port at 9600 8N1.
+    parity: NONE
+    stop_bits: 1
+    # A 120-register reply is 5 + 240 = 245 B; a YMODEM block of a capture file transfer
+    # (common/capture.yaml) is 1029 B. 2 KiB as stock.
+    rx_buffer_size: 2048
+
+sungrow_datamodel:
+  id: sungrow_dm
+
+sungrow_modbus:
+  id: rs485_hub
+  uart_id: rs485_uart
+  sungrow_datamodel_id: sungrow_dm
+  # Pacing and refresh (docs/update_rates.md); these are the defaults:
+  frame_gap: 18ms           # stock nSendFrameSpace; battery/charger/EB devices use frame_gap_fast (1 ms)
+  poll_periods: {fast: 1s, live: 5s, slow: 30s, static: 5min}  # refresh tiers (poll_plan.h)
+  poll_timeout_margin: 200ms  # cyclic reads time out after their wire time + this
+  response_timeout: 1000ms  # discovery / inverter type / ad-hoc / verify reads
+  retries: 0                # stock sends a Modbus request once
+  # fast_loop: false         # default; true runs the main loop without its idle delay while a
+  #                          # transaction is pending (docs/update_rates.md §2.3)
+  offline_after: 10         # consecutive lost frames ...
+  offline_silence: 10s      # ... spanning at least this long
+  # Each device's "Last update" signal (wall clock of its freshest read).
+  # Fully autodetected (no static device list), as stock: the inverter's address is remembered
+  # (NVS) and polled directly from boot. The stock broadcast read of 30035 is sent at boot,
+  # whenever an inverter goes offline and every 60 s while none is online, but neither the SH10RS
+  # nor the SG5.0RS answers it. When it gets no answer, no inverter is online and the remembered
+  # addresses are silent, scan_range is probed read-only, once per boot and once per rescan; that
+  # finds a first inverter or one moved to a new address in the range (stock's fallback writes to
+  # the bus; ours never does). Its type/poll table comes from the devinfo block; batteries, the EV
+  # charger and the Energy Bridge come from the inverter's own lists. After adding hardware, press
+  # "RS485 rescan" (below) or reboot. Connected devices are published per-device to Home Assistant
+  # over MQTT (common/mqtt_ha.yaml) — their diagnostics live there, not as native-API entities here.
+  inverter_search: true
+  scan_range: "1-8"
+  scan_attempts: 2
+  # A device that answers the devinfo read with a Modbus exception is polled with inv_proto1_4
+  # as protocol 1 (stock behaviour); scan_fallback_table overrides that table.
+  # scan_fallback_table: inv_proto1_4
+
+# Search again now and re-probe silent auto-discovered addresses. A dongle-level control.
+button:
+  - platform: template
+    name: RS485 rescan
+    entity_category: config
+    icon: mdi:radar
+    on_press:
+      - lambda: 'id(rs485_hub).rescan();'

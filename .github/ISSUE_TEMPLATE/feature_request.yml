@@ -1,0 +1,11 @@
+name: Feature request
+description: Something Rewired-S should do.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What you would like
+      description: The problem it solves for you, and how you would expect it to work. Check `docs/limitations.md` first; a few things are deliberately left out and the reasons are listed there.
+    validations:
+      required: true

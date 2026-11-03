@@ -1,0 +1,130 @@
+# WiNet-S2 (SV300): ESP32-S3 + PSRAM. Everything device-specific for the S2 lives here.
+# Pin assignments: https://github.com/NickStallman/SG-Docs/blob/main/reference/hardware/winet-s2.md
+substitutions:
+  # cloud identity: must match the stock dongle. The firmware version reported to iSolarCloud; a
+  # site file sets the version its dongle shipped with (docs/cloud_identity.md).
+  cloud_firmware_version: "WINET-SV300.001.03.P032"
+  # Octal: the dongle's stock P024 links only IDF's ESP32-S3 octal PSRAM driver ("octal_psram"),
+  # and quad mode finds no PSRAM on the dongle. Octal PSRAM uses
+  # GPIO33-37, none of which the board uses.
+  psram_mode: octal
+  # RS485: UART1, half-duplex, DE driven by RTS like stock.
+  rs485_uart_num: "1"
+  rs485_tx_pin: GPIO18
+  rs485_rx_pin: GPIO17
+  rs485_de_pin: GPIO8
+  rs485_de_ignore_strapping: "false"
+  rs485_baud_rate: "9600"
+  # External SPI NOR (/usrdataout identity store) on SPI2_HOST, DIO 40 MHz.
+  extflash_spi_host: SPI2
+  extflash_mosi_pin: GPIO11
+  extflash_miso_pin: GPIO13
+  extflash_clk_pin: GPIO12
+  extflash_cs_pin: GPIO10
+  # LEDs + button (common/board_io.yaml).
+  led_red_pin: GPIO19     # USB D- (USB unused; logger is on UART0)
+  led_blue_pin: GPIO38
+  led_green_pin: GPIO20   # USB D+
+  led_inverted: "true"    # active-low
+  button_pin: GPIO4
+  button_pullup: "true"
+
+esp32:
+  variant: esp32s3
+  # Fixed, not a setting: the stock app header says 16 MB, and IDF
+  # sizes usable flash from the running app's header, so anything smaller breaks partitions above
+  # it (oemdata, the stock OTA slot). The chip is a 16 MB GigaDevice, JEDEC 0xC84018.
+  flash_size: 16MB
+  # partitions_winet_s2.stock.csv is the device's on-flash table (@0x8000). It sets the build-time
+  # size check (app slots 0x380000); IDF apps read the on-flash table at runtime.
+  partitions: boards/partitions_winet_s2.stock.csv
+  framework:
+    advanced:
+      # On: the valid mark sticks on the S2 (safe_mode sets it after boot_is_good_after), so an
+      # image that resets before then is rolled back to the previous slot. The S2 has no USB
+      # recovery, which makes the rollback the recovery path.
+      enable_ota_rollback: true
+      # The cloud command path (inbound decode -> handler -> reply envelope + zlib) and the TLS
+      # publish both run in the loop task; the 8 KB default is too small for a live-data command.
+      # The isolarcloud component logs the loop task's minimum free stack.
+      loop_task_stack_size: 16384
+    sdkconfig_options:
+      # PSRAM joins the malloc heap (USE_MALLOC; the psram component's CAPS_ALLOC is the other
+      # option of the same choice). malloc() of 1 KB and more prefers PSRAM, smaller requests and
+      # the 32 KB reserve (CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL) stay internal, and either side
+      # falls back to the other when it runs out. TLS buffers and the Wi-Fi/lwIP packet buffers
+      # also go to PSRAM. Internal RAM is then left to what needs it: task stacks, FreeRTOS
+      # objects, driver and DMA buffers (all allocated with explicit internal caps; esp_flash and
+      # the SPI master bounce non-DMA buffers). Without PSRAM (see psram: below) everything simply
+      # uses internal RAM.
+      CONFIG_SPIRAM_USE_CAPS_ALLOC: "n"
+      CONFIG_SPIRAM_USE_MALLOC: "y"
+      CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL: "1024"
+      CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC: "y"
+      CONFIG_MBEDTLS_INTERNAL_MEM_ALLOC: "n"
+      CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: "y"
+
+psram:
+  mode: ${psram_mode}
+  # 80 MHz like stock (its image carries the MSPI timing tuning that only PSRAM above 40 MHz needs).
+  # The boot memory test of the 8 MB runs before the app can feed the external supervisor; at the
+  # 40 MHz default it takes twice as long and a reboot regularly ran into the supervisor timeout.
+  speed: 80MHz
+  # A board without (working) PSRAM still boots: init failure -> internal RAM only (the "PSRAM
+  # size" sensor reads 0). PSRAM that is found but fails the boot memory test
+  # (CONFIG_SPIRAM_MEMTEST, on) aborts before the image is marked valid, so the bootloader rolls an
+  # OTA back instead of running on corrupt RAM.
+  ignore_not_found: true
+
+logger:
+  # GPIO19/20 (USB D-/D+) are LEDs, so no USB-Serial-JTAG: console on UART0 like stock.
+  hardware_uart: UART0
+
+sungrow_board:
+  variant: winet_s2
+  # 1824 / "WiNet-S2". Identity file /usrdataout/log/sigdata/dev_file_247_1824_2, record cap 0x420.
+  # cloud identity: must match the stock dongle
+  product_type: 0x720
+  product_name: WiNet-S2
+  # The exact stock version the dongle shipped with, so the plant looks unchanged to iSolarCloud.
+  # "" = detect it from the stock image left in the other OTA slot (docs/cloud_identity.md).
+  firmware_version: ${cloud_firmware_version}
+  # Back to stock without a cable: "Allow boot switch" (never restored) arms one press of "Boot
+  # other slot", which boots the stock app the updater left in the other slot (docs/back_to_stock.md).
+  boot_slot:
+    allow:
+      name: Allow boot switch
+    boot_other:
+      name: Boot other slot
+  # IDF core dump on a crash, into the stock table's 1 MB `coredump` partition (0xF00000). The
+  # panic hook (diagnostics) switches the supervisor off before the dump is written; the summary
+  # shows in "Last reset" and the image downloads from /api/coredump.
+  coredump: true
+  # External supervisor ("WDOG"). Without it the board resets shortly after boot.
+  # Stock sequence: enable low, 10 kicks 100 ms apart, enable high, kick every 500 ms.
+  # The start sequence runs from a global constructor (before the scheduler and app_main, like
+  # stock's pre-NVS feed): watchdog_early_start() in components/sungrow_board/sungrow_board.cpp,
+  # emitted by the component's codegen; the periodic kick is armed by an IDF SECONDARY-stage init
+  # function right after esp_timer starts. The supervisor's own timeout is not
+  # known; the 500 ms kick keeps it fed. Every software restart switches the supervisor off first (an
+  # esp_restart shutdown handler, as stock does before its post-upgrade restart), so a slow first
+  # boot of a new image is not reset; with `diagnostics:` (common/diagnostics.yaml) every panic
+  # does the same before IDF's panic handler runs.
+  watchdog:
+    enable_pin: GPIO2   # brownout ISR also pulls this low in stock
+    kick_pin: GPIO7
+    interval: 500ms
+    init_toggles: 10
+    init_delay: 100ms
+
+# External SPI NOR holding the stock /usrdataout (cloud identity). Mounted READ-ONLY, never formatted.
+sungrow_extflash:
+  id: extflash
+  spi_host: ${extflash_spi_host}
+  mosi_pin: ${extflash_mosi_pin}
+  miso_pin: ${extflash_miso_pin}
+  clk_pin: ${extflash_clk_pin}
+  cs_pin: ${extflash_cs_pin}
+  frequency: 40MHz
+  io_mode: dio            # as stock S2
+  dma_channel: auto

@@ -1,0 +1,114 @@
+# WiNet-S (V200): ESP32 classic + PSRAM. Everything device-specific for the S lives here.
+# Pin assignments: https://github.com/NickStallman/SG-Docs/blob/main/reference/hardware/winet-s.md
+substitutions:
+  # cloud identity: must match the stock dongle. The firmware version reported to iSolarCloud; a
+  # site file sets the version its dongle shipped with (docs/cloud_identity.md).
+  cloud_firmware_version: "WINET-SV200.001.00.P046"
+  # RS485: UART1, half-duplex, DE driven by RTS like stock.
+  # GPIO12 (DE) is the MTDI strap (flash voltage): never enable a pull-up on it.
+  rs485_uart_num: "1"
+  rs485_tx_pin: GPIO13
+  rs485_rx_pin: GPIO35   # input-only pin
+  rs485_de_pin: GPIO12   # MTDI strap; driven by RTS
+  rs485_de_ignore_strapping: "true"   # GPIO12 = MTDI strap; driven by the UART RTS, no pull-up
+  rs485_baud_rate: "9600"
+  # External SPI NOR on HSPI (SPI2_HOST), FASTRD 40 MHz, DMA channel 1, as stock.
+  extflash_spi_host: SPI2    # = HSPI, host id 1 on ESP32
+  extflash_mosi_pin: GPIO2
+  extflash_miso_pin: GPIO34  # input-only pin, ok for MISO
+  extflash_clk_pin: GPIO14
+  extflash_cs_pin: GPIO15
+  # LEDs + button (common/board_io.yaml).
+  led_red_pin: GPIO4
+  led_blue_pin: GPIO32
+  led_green_pin: GPIO33
+  led_inverted: "true"     # active-low: stock drives all three high (off) at init
+  button_pin: GPIO36       # input-only (34-39), no internal pull -> external pull-up
+  button_pullup: "false"
+
+esp32:
+  variant: esp32
+  # Fixed, not a setting: the stock app header says 16 MB, and IDF
+  # sizes usable flash from the running app's header, so anything smaller breaks partitions above
+  # it (oemdata, the stock OTA slot). The chip is 16 MB.
+  flash_size: 16MB
+  # partitions_winet_s.stock.csv is the device's on-flash table (@0x8000), so factory.bin /
+  # partition-table.bin are layout-correct for a direct serial flash. For OTA this CSV only sets
+  # the build-time size check (IDF apps are slot-position-independent and read the on-flash table
+  # at runtime).
+  partitions: boards/partitions_winet_s.stock.csv
+  framework:
+    advanced:
+      # Off: the dongle keeps its stock bootloader, which rolls a pending-verify slot back on the
+      # next cold boot, so with rollback on an updated image would be lost at the first power cycle.
+      # The image is marked valid at its first boot instead; a broken image is recovered over UART.
+      enable_ota_rollback: false
+      # Cloud commands and the TLS publish run in the loop task; the 8 KB default is too small for
+      # a live-data command. isolarcloud logs the minimum free loop stack.
+      loop_task_stack_size: 16384
+    # Match the stock app header: flash DIO @ 80 MHz. On classic ESP32 the PSRAM clock is tied to the
+    # flash clock, so flash and PSRAM must agree (both 80 MHz here; see psram: speed below).
+    sdkconfig_options:
+      CONFIG_ESPTOOLPY_FLASHMODE_DIO: "y"
+      CONFIG_ESPTOOLPY_FLASHFREQ_80M: "y"
+      CONFIG_ESPTOOLPY_FLASHFREQ_40M: "n"
+      # PSRAM joins the malloc heap (USE_MALLOC; the psram component's CAPS_ALLOC is the other
+      # option of the same choice). malloc() of 1 KB and more prefers PSRAM, smaller requests and
+      # the 32 KB reserve (CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL) stay internal, and either side
+      # falls back to the other when it runs out. TLS buffers also go to PSRAM. Internal RAM is then
+      # left to task stacks, FreeRTOS objects, driver and DMA buffers (allocated with explicit
+      # internal caps). Without PSRAM (see psram: below) everything simply uses internal RAM.
+      CONFIG_SPIRAM_USE_CAPS_ALLOC: "n"
+      CONFIG_SPIRAM_USE_MALLOC: "y"
+      CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL: "1024"
+      CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC: "y"
+      CONFIG_MBEDTLS_INTERNAL_MEM_ALLOC: "n"
+
+psram:
+  # Quad PSRAM, as stock.
+  mode: quad
+  # Stock app image header = flash DIO @ 80 MHz (seg_count 7); on ESP32 classic the PSRAM clock is
+  # tied to the flash clock, so stock runs PSRAM @ 80 MHz too. Match it (ESPHome defaults to 40 MHz).
+  speed: 80MHz
+  # A board without (working) PSRAM still boots: init failure -> internal RAM only. PSRAM that is
+  # found but fails the boot memory test aborts before the image is marked valid, so the bootloader
+  # rolls an OTA back instead of running on corrupt RAM.
+  ignore_not_found: true
+
+logger:
+  hardware_uart: UART0
+
+sungrow_board:
+  variant: winet_s
+  # 1813 / "WiNet-S": stock V200 constants. Identity file
+  # /usrdataout/log/sigdata/dev_file_247_1813_2, sigdata record cap 0x100 (sungrow_extflash).
+  # cloud identity: must match the stock dongle
+  product_type: 0x715
+  product_name: WiNet-S
+  # The exact stock version the dongle shipped with, so the plant looks unchanged to iSolarCloud.
+  # "" = detect it from the stock image left in the other OTA slot (docs/cloud_identity.md).
+  firmware_version: ${cloud_firmware_version}
+  # Back to stock without a cable: "Allow boot switch" (never restored) arms one press of "Boot
+  # other slot", which boots the stock app the updater left in the other slot (docs/back_to_stock.md).
+  boot_slot:
+    allow:
+      name: Allow boot switch
+    boot_other:
+      name: Boot other slot
+  # No external WDOG on the S: stock pokes MWDT0 directly; ESPHome's task WDT covers us.
+
+# External SPI NOR holding the stock /usrdataout (cloud identity). Mounted READ-ONLY, never formatted.
+sungrow_extflash:
+  id: extflash
+  spi_host: ${extflash_spi_host}
+  mosi_pin:
+    number: ${extflash_mosi_pin}
+    ignore_strapping_warning: true
+  miso_pin: ${extflash_miso_pin}
+  clk_pin: ${extflash_clk_pin}
+  cs_pin:
+    number: ${extflash_cs_pin}
+    ignore_strapping_warning: true
+  frequency: 40MHz
+  io_mode: fastrd         # as stock S
+  dma_channel: 1          # as stock S (ESP32 only)

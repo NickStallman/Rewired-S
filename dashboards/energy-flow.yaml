@@ -1,0 +1,178 @@
+# Rewired-S energy flow view. Needs the HACS cards ha-sankey-chart and mini-graph-card, and the
+# two template sensors from dashboards/README.md (battery charging / discharging power).
+# Replace SH_SERIAL / SG_SERIAL. Remove the SG MPPT nodes and links if there is no string inverter.
+title: Energy flow
+path: energy-flow
+icon: mdi:transit-connection-variant
+cards:
+  - type: custom:sankey-chart
+    layout: vertical
+    height: 240
+    unit_prefix: ""
+    round: 0
+    min_box_size: 3
+    min_box_distance: 5
+    show_states: true
+    show_units: true
+    min_state: 0
+    show_icons: true
+    show_names: false
+    sort_by: none
+    nodes:
+      - id: sensor.sh10rs_SH_SERIAL_mppt1_power
+        section: 0
+        type: entity
+        name: MPPT 1
+        icon: mdi:solar-panel
+        color: var(--success-color)
+      - id: sensor.sh10rs_SH_SERIAL_mppt2_power
+        section: 0
+        type: entity
+        name: MPPT 2
+        icon: mdi:solar-panel
+        color: var(--success-color)
+      - id: sensor.sh10rs_SH_SERIAL_mppt3_power
+        section: 0
+        type: entity
+        name: MPPT 3
+        icon: mdi:solar-panel
+        color: var(--success-color)
+      - id: sensor.sh10rs_SH_SERIAL_mppt4_power
+        section: 0
+        type: entity
+        name: MPPT 4
+        icon: mdi:solar-panel
+        color: var(--success-color)
+      - id: sensor.sg5_0rs_SG_SERIAL_mppt1_power
+        section: 0
+        type: entity
+        name: SG MPPT 1
+        icon: mdi:solar-panel
+        color: var(--success-color)
+      - id: sensor.sg5_0rs_SG_SERIAL_mppt2_power
+        section: 0
+        type: entity
+        name: SG MPPT 2
+        icon: mdi:solar-panel
+        color: var(--success-color)
+      - id: sensor.sh10rs_SH_SERIAL_grid_import_power
+        section: 0
+        type: entity
+        name: Grid import
+        icon: mdi:transmission-tower-import
+        color: var(--error-color)
+      - id: sensor.battery_discharging_power
+        section: 0
+        type: entity
+        name: Battery discharge
+        icon: mdi:battery-arrow-up
+        color: var(--warning-color)
+      - id: solar
+        section: 1
+        type: remaining_parent_state
+        name: Solar
+        icon: mdi:solar-panel
+        color: var(--success-color)
+      - id: sensor.sh10rs_SH_SERIAL_load_power
+        section: 2
+        type: entity
+        name: Load
+        icon: mdi:home
+      - id: sensor.sh10rs_SH_SERIAL_grid_export_power
+        section: 2
+        type: entity
+        name: Grid export
+        icon: mdi:transmission-tower-export
+        color: var(--primary-color)
+      - id: sensor.battery_charging_power
+        section: 2
+        type: entity
+        name: Battery charge
+        icon: mdi:battery-arrow-down
+        color: var(--warning-color)
+    links:
+      - source: sensor.sh10rs_SH_SERIAL_mppt1_power
+        target: solar
+      - source: sensor.sh10rs_SH_SERIAL_mppt2_power
+        target: solar
+      - source: sensor.sh10rs_SH_SERIAL_mppt3_power
+        target: solar
+      - source: sensor.sh10rs_SH_SERIAL_mppt4_power
+        target: solar
+      - source: sensor.sg5_0rs_SG_SERIAL_mppt1_power
+        target: solar
+      - source: sensor.sg5_0rs_SG_SERIAL_mppt2_power
+        target: solar
+      - source: sensor.sh10rs_SH_SERIAL_grid_import_power
+        target: sensor.sh10rs_SH_SERIAL_load_power
+      - source: sensor.sh10rs_SH_SERIAL_grid_import_power
+        target: sensor.battery_charging_power
+      - source: sensor.battery_discharging_power
+        target: sensor.sh10rs_SH_SERIAL_load_power
+      - source: sensor.battery_discharging_power
+        target: sensor.sh10rs_SH_SERIAL_grid_export_power
+      - source: solar
+        target: sensor.sh10rs_SH_SERIAL_load_power
+      - source: solar
+        target: sensor.battery_charging_power
+      - source: solar
+        target: sensor.sh10rs_SH_SERIAL_grid_export_power
+  - type: gauge
+    name: Battery level
+    unit: "%"
+    max: 100
+    entity: sensor.sh10rs_SH_SERIAL_battery_soc
+  - type: vertical-stack
+    cards:
+      - type: custom:mini-graph-card
+        name: Solar power
+        icon: mdi:solar-panel
+        hours_to_show: 3
+        points_per_hour: 12
+        smoothing: false
+        entities:
+          - entity: sensor.sh10rs_SH_SERIAL_mppt_total_power
+            name: Hybrid
+            color: "#4caf50"
+          - entity: sensor.sg5_0rs_SG_SERIAL_mppt_total_power
+            name: String
+            color: "#2196f3"
+      - type: custom:mini-graph-card
+        name: Battery power (+ discharging)
+        hours_to_show: 3
+        points_per_hour: 12
+        smoothing: false
+        entities:
+          - entity: sensor.sh10rs_SH_SERIAL_battery_power
+        color_thresholds:
+          - value: -10000
+            color: "#2196f3"
+          - value: 0
+            color: "#888888"
+          - value: 1
+            color: "#ff9800"
+      - type: custom:mini-graph-card
+        name: Grid (import / export)
+        hours_to_show: 3
+        points_per_hour: 12
+        smoothing: false
+        entities:
+          - entity: sensor.sh10rs_SH_SERIAL_grid_import_power
+            name: Import
+            color: "#f44336"
+          - entity: sensor.sh10rs_SH_SERIAL_grid_export_power
+            name: Export
+            color: "#2196f3"
+  - type: statistics-graph
+    title: MPPT production
+    chart_type: line
+    period: 5minute
+    days_to_show: 0.5
+    stat_types: [mean]
+    entities:
+      - sensor.sh10rs_SH_SERIAL_mppt1_power
+      - sensor.sh10rs_SH_SERIAL_mppt2_power
+      - sensor.sh10rs_SH_SERIAL_mppt3_power
+      - sensor.sh10rs_SH_SERIAL_mppt4_power
+      - sensor.sg5_0rs_SG_SERIAL_mppt1_power
+      - sensor.sg5_0rs_SG_SERIAL_mppt2_power

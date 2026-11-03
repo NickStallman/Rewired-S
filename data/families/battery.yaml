@@ -1,0 +1,910 @@
+# data/families/battery.yaml - register tables and signal definitions of the battery family
+# (docs/data_format.md). Read by tools/gen_tables.py and tests/test_request_nodes.py.
+#
+# tables.<name>.rows   one entry per polled register block, in poll order:
+#   id          signal id (family-scoped, hex); 0 = a gap-filling read that stores nothing
+#   address     1-based register number (wire address = address - 1)
+#   fn          Modbus function: 4 input, 3 holding, 16 write-multiple, 119 proprietary
+#   count       registers read;  type  s16 u16 s32 u32 s64 u64 f32 str
+#   cycle       poll cycle in 100 ms units; a request node is polled at the cycle of its first row
+#   flags       end = the row closes its request node (nodes also split past 120 registers);
+#               clear_offline / priority / no_bulk_decode / keep_sentinel
+#   bits        {first, count}: a status word whose bits are published as signals first + bit
+#   capability  word.bit of the capability bitmap (signal 0x2181) that must be set for the row
+#   unit, scale only for rows without a signal definition (otherwise taken from the signal)
+# signals   one entry per signal id: key (stable entity key, unique per family), name, unit,
+#   scale (omitted = raw value), device_class / state_class (Home Assistant), category
+#   (core | core_hybrid | core_string | extra | hidden; omitted = placed explicitly by the
+#   device package definition), scope (hybrid = meaningless on a string inverter), priority
+#   (display sort rank, lower first), group (realtime | static | protection), accuracy
+#   (display decimals), enum (decode table name), absent (not-served conditions), confidence
+#   (confirmed | likely | guess) and evidence. Signal order = entity order of the packages.
+# fixes     rows whose address differs from the one the stock dongle polls (row carries the fix)
+# reads     non-polled holding registers surfaced read-only (inverter protection settings)
+#
+# Evidence abbreviations: p1_4 / p2 / p3 / p5 = rows of tables.inv_proto*, slaveNN = rows of
+# the data/modbus_tcp map of dev_type NN, battery / st6100 / ... = rows of that table, all as
+# <table>@<address>; mkaiser N = github.com/mkaiser/Sungrow-SHx-Inverter-Modbus-Home-Assistant
+# modbus_sungrow.yaml (register N); SunGather N = github.com/bohdan-s/SunGather
+# registers-sungrow.yaml; readings = values read from an SH10RS and an SG5.0RS (protocol 3);
+# SG-Docs = https://github.com/NickStallman/SG-Docs.
+
+family: battery
+title: "Sungrow SBR battery stack, read through the hybrid inverter"
+device_types: [44]
+reference: "https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md"
+notes: |
+  The cell block 10757..10780 (24 input registers) carries the per-module cell voltage and
+  temperature extremes; its signals have no category and are placed in the sbr_battery
+  package explicitly by tools/gen_tables.py (DEVICES).
+
+tables:
+  battery:
+    title: "SBR stack via the inverter (dev_type 44)"
+    rows:
+    - {id: 0x2156, address: 5448, fn: 4, count: 25, type: str, cycle: 1}
+    - {id: 0x202B, address: 10701, fn: 4, count: 4, type: str, cycle: 1, flags: "clear_offline no_bulk_decode"}
+    - {id: 0x202C, address: 10705, fn: 4, count: 4, type: str, cycle: 1, flags: "end clear_offline no_bulk_decode"}
+    - {id: 0x207E, address: 10628, fn: 4, count: 1, type: s16, cycle: 1}
+    - {id: 0x207F, address: 10629, fn: 4, count: 1, type: u16, cycle: 1}
+    - {id: 0x2080, address: 10630, fn: 4, count: 1, type: u16, cycle: 1}
+    - {id: 0x2081, address: 10631, fn: 4, count: 1, type: u16, cycle: 1}
+    - {id: 0x2082, address: 10632, fn: 4, count: 1, type: u16, cycle: 1}  # status_word_10632
+    - {id: 0x2083, address: 10633, fn: 4, count: 1, type: u16, cycle: 1}  # status_word_10633
+    - {id: 0x2084, address: 10635, fn: 4, count: 15, type: str, cycle: 1, flags: clear_offline, capability: "1.3"}
+    - {id: 0x208B, address: 10650, fn: 4, count: 2, type: s32, cycle: 1, flags: clear_offline, capability: "1.3"}
+    - {id: 0x2085, address: 10652, fn: 4, count: 2, type: s32, cycle: 1, flags: clear_offline, capability: "1.3"}
+    - {id: 0x2086, address: 10654, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.3"}
+    - {id: 0x2087, address: 10655, fn: 4, count: 2, type: s32, cycle: 1, flags: clear_offline, capability: "1.3"}
+    - {id: 0x2088, address: 10657, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.3"}
+    - {id: 0x2089, address: 10658, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.3"}
+    - {id: 0x208A, address: 10659, fn: 4, count: 2, type: s32, cycle: 1, flags: clear_offline, capability: "1.3"}
+    - {id: 0x208C, address: 10663, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.4"}
+    - {id: 0x2071, address: 10666, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # bms_request_flags
+    - {id: 0x2072, address: 10667, fn: 4, count: 8, type: str, cycle: 1, flags: keep_sentinel, capability: "1.1"}
+    - {id: 0x2073, address: 10675, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # module_1_soc
+    - {id: 0x2074, address: 10676, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # module_2_soc
+    - {id: 0x2075, address: 10677, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # module_3_soc
+    - {id: 0x2076, address: 10678, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # module_4_soc
+    - {id: 0x2077, address: 10679, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # module_5_soc
+    - {id: 0x2078, address: 10680, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # module_6_soc
+    - {id: 0x2079, address: 10681, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # module_7_soc
+    - {id: 0x207A, address: 10682, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # module_8_soc
+    - {id: 0x207B, address: 10683, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # balancing_status
+    - {id: 0x207C, address: 10684, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # soc_calibration_state
+    - {id: 0x2066, address: 10685, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline, capability: "1.2"}  # cycle_count
+    - {id: 0x2067, address: 10687, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # discharge_charge_ratio
+    - {id: 0x2068, address: 10688, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline, capability: "1.2"}  # lifetime_discharge_ah
+    - {id: 0x2069, address: 10690, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # internal_resistance
+    - {id: 0x206A, address: 10691, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline, capability: "1.2"}  # lifetime_charge_ah
+    - {id: 0x206B, address: 10693, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # deep_discharge_count
+    - {id: 0x206C, address: 10694, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # charge_undertemp_alarm_hours
+    - {id: 0x206D, address: 10695, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # undertemp_alarm_hours
+    - {id: 0x206E, address: 10696, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # rated_power
+    - {id: 0x206F, address: 10697, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # max_discharge_power
+    - {id: 0x2070, address: 10698, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.2"}  # module_rated_capacity
+    - {id: 0x202D, address: 10699, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline}  # bms_capability_word
+    - {id: 0x2013, address: 10709, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline}  # stack_online
+    - {id: 0x0004, address: 10710, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.0"}
+    - {id: 0x0002, address: 10711, fn: 4, count: 10, type: str, cycle: 1, flags: clear_offline, capability: "1.0"}  # serial_number
+    - {id: 0x2016, address: 10721, fn: 4, count: 15, type: str, cycle: 1, flags: clear_offline, capability: "1.0"}  # firmware_version
+    - {id: 0x2017, address: 10736, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline, capability: "1.0"}  # protocol_code
+    - {id: 0x2018, address: 10738, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline, capability: "1.0"}  # protocol_version
+    - {id: 0x2019, address: 10740, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.0"}  # operation_status
+    - {id: 0x201A, address: 10741, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.0"}  # battery_voltage
+    - {id: 0x201B, address: 10742, fn: 4, count: 1, type: s16, cycle: 1, flags: clear_offline, capability: "1.0"}  # battery_current
+    - {id: 0x201C, address: 10743, fn: 4, count: 1, type: s16, cycle: 1, flags: clear_offline, capability: "1.0"}  # battery_temperature
+    - {id: 0x201D, address: 10744, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.0"}  # battery_soc
+    - {id: 0x201E, address: 10745, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.0"}  # battery_soh
+    - {id: 0x201F, address: 10746, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline, capability: "1.0"}  # total_charge_energy
+    - {id: 0x2020, address: 10748, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline, capability: "1.0"}  # total_discharge_energy
+    - {id: 0x2021, address: 10750, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.0"}  # inverter_address
+    - {id: 0x2022, address: 10751, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.0"}  # inverter_model_class
+    - {id: 0x202E, address: 10757, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # cell_voltage_max
+    - {id: 0x202F, address: 10758, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # cell_voltage_max_position
+    - {id: 0x2030, address: 10759, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # cell_voltage_min
+    - {id: 0x2031, address: 10760, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # cell_voltage_min_position
+    - {id: 0x2032, address: 10761, fn: 4, count: 1, type: s16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_temperature_max
+    - {id: 0x2033, address: 10762, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_temperature_max_position
+    - {id: 0x2034, address: 10763, fn: 4, count: 1, type: s16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_temperature_min
+    - {id: 0x2035, address: 10764, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_temperature_min_position
+    - {id: 0x2036, address: 10765, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_1_cell_voltage_max
+    - {id: 0x2039, address: 10766, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_2_cell_voltage_max
+    - {id: 0x203C, address: 10767, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_3_cell_voltage_max
+    - {id: 0x203F, address: 10768, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_4_cell_voltage_max
+    - {id: 0x2042, address: 10769, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_5_cell_voltage_max
+    - {id: 0x2045, address: 10770, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_6_cell_voltage_max
+    - {id: 0x2048, address: 10771, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_7_cell_voltage_max
+    - {id: 0x204B, address: 10772, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_8_cell_voltage_max
+    - {id: 0x2037, address: 10773, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_1_cell_voltage_min
+    - {id: 0x203A, address: 10774, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_2_cell_voltage_min
+    - {id: 0x203D, address: 10775, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_3_cell_voltage_min
+    - {id: 0x2040, address: 10776, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_4_cell_voltage_min
+    - {id: 0x2043, address: 10777, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_5_cell_voltage_min
+    - {id: 0x2046, address: 10778, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_6_cell_voltage_min
+    - {id: 0x2049, address: 10779, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_7_cell_voltage_min
+    - {id: 0x204C, address: 10780, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_8_cell_voltage_min
+    - {id: 0x2038, address: 10781, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_1_cell_type_code
+    - {id: 0x203B, address: 10782, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_2_cell_type_code
+    - {id: 0x203E, address: 10783, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_3_cell_type_code
+    - {id: 0x2041, address: 10784, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_4_cell_type_code
+    - {id: 0x2044, address: 10785, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_5_cell_type_code
+    - {id: 0x2047, address: 10786, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_6_cell_type_code
+    - {id: 0x204A, address: 10787, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_7_cell_type_code
+    - {id: 0x204D, address: 10788, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_8_cell_type_code
+    - {id: 0x204E, address: 10789, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # dc_contactor_status
+    - {id: 0x204F, address: 10790, fn: 4, count: 1, type: u16, cycle: 1, flags: clear_offline, capability: "1.1"}  # fault_module_id
+    - {id: 0x205E, address: 10791, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_1_date_code
+    - {id: 0x205F, address: 10793, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_2_date_code
+    - {id: 0x2060, address: 10795, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_3_date_code
+    - {id: 0x2061, address: 10797, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_4_date_code
+    - {id: 0x2062, address: 10799, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_5_date_code
+    - {id: 0x2063, address: 10801, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_6_date_code
+    - {id: 0x2064, address: 10803, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_7_date_code
+    - {id: 0x2065, address: 10805, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline, capability: "1.1"}  # module_8_date_code
+    - {id: 0x502C, address: 10811, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline}
+    - {id: 0x502D, address: 10813, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline}
+    - {id: 0x502E, address: 10815, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline}
+    - {id: 0x502F, address: 10817, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline}
+    - {id: 0x5030, address: 10819, fn: 4, count: 2, type: u32, cycle: 1, flags: clear_offline}
+    - {id: 0x207D, address: 10821, fn: 4, count: 1, type: u16, cycle: 1, capability: "1.1"}
+    - {id: 0x2050, address: 10822, fn: 4, count: 9, type: str, cycle: 1, flags: clear_offline, capability: "1.1"}  # pack1_serial_number
+    - {id: 0x2051, address: 10831, fn: 4, count: 9, type: str, cycle: 1, flags: clear_offline, capability: "1.1"}  # pack2_serial_number
+    - {id: 0x2052, address: 10840, fn: 4, count: 9, type: str, cycle: 1, flags: clear_offline, capability: "1.1"}  # pack3_serial_number
+    - {id: 0x2053, address: 10849, fn: 4, count: 9, type: str, cycle: 1, flags: clear_offline, capability: "1.1"}  # pack4_serial_number
+    - {id: 0x2054, address: 10858, fn: 4, count: 9, type: str, cycle: 1, flags: clear_offline, capability: "1.1"}  # pack5_serial_number
+    - {id: 0x2055, address: 10867, fn: 4, count: 9, type: str, cycle: 1, flags: clear_offline, capability: "1.1"}  # pack6_serial_number
+    - {id: 0x2056, address: 10876, fn: 4, count: 9, type: str, cycle: 1, flags: clear_offline, capability: "1.1"}  # pack7_serial_number
+    - {id: 0x2057, address: 10885, fn: 4, count: 9, type: str, cycle: 1, flags: clear_offline, capability: "1.1"}  # pack8_serial_number
+    - {id: 0x2358, address: 19939, fn: 4, count: 2, type: u32, cycle: 1}  # discharge_cutoff_soc
+
+signals:
+- id: 0x0002
+  key: serial_number
+  name: "Serial number"
+  category: core
+  priority: 1
+  group: static
+  confidence: confirmed
+  evidence: "battery@10711 slave44@10711 slave44@13080; stock UI label \"Device S/N\""
+- id: 0x2016
+  key: firmware_version
+  name: "Firmware version"
+  category: core
+  priority: 7
+  group: static
+  confidence: confirmed
+  evidence: "battery@10721 slave44@10721; stock UI label \"Current version\"; the SH10RS formats it as 'SBRBCU-S_22011.%02x.%02x' from the CAN 0x707 u32 (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x2050
+  key: pack1_serial_number
+  name: "Pack 1 serial number"
+  category: extra
+  group: static
+  confidence: confirmed
+  evidence: "battery@10822; stock UI label \"Pack 1 S/N\""
+- id: 0x2051
+  key: pack2_serial_number
+  name: "Pack 2 serial number"
+  category: extra
+  group: static
+  confidence: confirmed
+  evidence: "battery@10831; stock UI label \"Pack 2 S/N\""
+- id: 0x2052
+  key: pack3_serial_number
+  name: "Pack 3 serial number"
+  category: extra
+  group: static
+  confidence: confirmed
+  evidence: "battery@10840; stock UI label \"Pack 3 S/N\""
+- id: 0x2053
+  key: pack4_serial_number
+  name: "Pack 4 serial number"
+  category: extra
+  group: static
+  confidence: confirmed
+  evidence: "battery@10849; stock UI label \"Pack 4 S/N\""
+- id: 0x2054
+  key: pack5_serial_number
+  name: "Pack 5 serial number"
+  category: extra
+  group: static
+  confidence: confirmed
+  evidence: "battery@10858; stock UI label \"Pack 5 S/N\""
+- id: 0x2055
+  key: pack6_serial_number
+  name: "Pack 6 serial number"
+  category: extra
+  group: static
+  confidence: confirmed
+  evidence: "battery@10867; stock UI label \"Pack 6 S/N\""
+- id: 0x2056
+  key: pack7_serial_number
+  name: "Pack 7 serial number"
+  category: extra
+  group: static
+  confidence: confirmed
+  evidence: "battery@10876; stock UI label \"Pack 7 S/N\""
+- id: 0x2057
+  key: pack8_serial_number
+  name: "Pack 8 serial number"
+  category: extra
+  group: static
+  confidence: confirmed
+  evidence: "battery@10885; stock UI label \"Pack 8 S/N\""
+- id: 0x2019
+  key: operation_status
+  name: "Battery operating status"
+  category: core
+  priority: 8
+  enum: battery_status
+  confidence: confirmed
+  evidence: "battery@10740 slave44@10740; stock UI label \"Battery operating status\"; an SBR192 in operation reads 2 = Running"
+- id: 0x201A
+  key: battery_voltage
+  name: "Battery voltage"
+  unit: V
+  scale: 0.1
+  device_class: voltage
+  state_class: measurement
+  category: core
+  priority: 30
+  confidence: confirmed
+  evidence: "battery@10741 slave44@10741; stock UI label \"Battery voltage\""
+- id: 0x201B
+  key: battery_current
+  name: "Battery current"
+  unit: A
+  scale: 0.1
+  device_class: current
+  state_class: measurement
+  category: core
+  priority: 12
+  confidence: confirmed
+  evidence: "battery@10742 slave44@10742; stock UI label \"Battery current\"; sign: + = discharge (the BCU inverts the sign on transmit; +2.5/+3.3 A read while the inverter discharged 1.46 kW)"
+- id: 0x201C
+  key: battery_temperature
+  name: "Battery temperature"
+  unit: "℃"
+  scale: 0.1
+  device_class: temperature
+  state_class: measurement
+  category: core
+  priority: 60
+  confidence: confirmed
+  evidence: "battery@10743 slave44@10743; stock UI label \"Battery temperature\""
+- id: 0x201D
+  key: battery_soc
+  name: "Battery SOC"
+  unit: "%"
+  scale: 0.1
+  device_class: battery
+  state_class: measurement
+  category: core
+  priority: 10
+  confidence: confirmed
+  evidence: "battery@10744 slave44@10744; stock UI label \"Battery SOC\""
+- id: 0x201E
+  key: battery_soh
+  name: "Battery SOH"
+  unit: "%"
+  scale: 1.0
+  state_class: measurement
+  category: core
+  priority: 70
+  confidence: confirmed
+  evidence: "battery@10745 slave44@10745; stock UI label \"Battery SOH\"; scale 1 here (0.1 on the inverter side)"
+- id: 0x201F
+  key: total_charge_energy
+  name: "Total battery charge"
+  unit: kWh
+  scale: 0.1
+  device_class: energy
+  state_class: total_increasing
+  category: core
+  priority: 100
+  confidence: confirmed
+  evidence: "battery@10746 slave44@10746; stock UI label \"Total battery charge\""
+- id: 0x2020
+  key: total_discharge_energy
+  name: "Total battery discharge (BMS)"
+  unit: kWh
+  scale: 0.1
+  device_class: energy
+  state_class: total_increasing
+  category: core
+  priority: 101
+  confidence: confirmed
+  evidence: "battery@10748 slave44@10748; stock UI label \"Total battery discharge (BMS)\""
+- id: 0x204E
+  key: dc_contactor_status
+  name: "DC contactor status"
+  category: extra
+  enum: battery_contactor
+  confidence: confirmed
+  evidence: "register 10789 Zustand DC-Schütz (photovoltaikforum kfh, mkaiser modbus_sungrow_SBR_battery.yaml); reads 2 while running (meaning of the codes not documented); <- CAN 0x719 d0; BCU: 0 open, 1 contactor fault, 2 closed, 3 contactor fault (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x204F
+  key: fault_module_id
+  name: "Faulted modules (bitmap)"
+  category: extra
+  confidence: confirmed
+  evidence: "battery@10790 <- CAN 0x719 d1; BCU: bit m-1 set for each module named by an active OV/UV/OT/UT alarm; 0 = none (key matches the stock 'Fault Module ID' point 58636) (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x2071
+  key: bms_request_flags
+  name: "BMS request flags"
+  category: extra
+  confidence: likely
+  evidence: "battery@10666 <- CAN 0x705 d1 (served by the inverter's battery emulation); BCU: bit 0 charge not allowed, bit 1 discharge not allowed, bit 2 forced-charge request, 0x10 mode-dependent; decoded into charge_prohibited / discharge_prohibited / forced_charge_request; reads 0 in normal operation (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x207B
+  key: balancing_status
+  name: "Balancing status"
+  category: core
+  priority: 75
+  enum: battery_balancing
+  confidence: confirmed
+  evidence: "cross-checked against the portal over several days by KRoperUK/sungrow-hass issue 501 (balancing starts ~40 min after 100 % SOC, lasts 30-70 min); register from the stock dev-44 point map; <- CAN 0x70F mux 4 d7; BCU: 0 none, 1 capacity-mode, 2 voltage-mode balancing (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x207C
+  key: soc_calibration_state
+  name: "Low-SOC rest calibration"
+  category: extra
+  enum: battery_soc_calibration
+  confidence: confirmed
+  evidence: "battery@10684 <- CAN 0x70F mux 4 d6; BCU aggregate of the per-module OCV rest calibration states (after >= 60 min rest, module voltage stable within 5 mV, OCV threshold ~3.28 V at 25 C): 5 every module calibrated at the low end, 1 some modules, 0 none since current last exceeded 0.5 A (2 is reserved, never produced); 1 and 5 trigger capacity-mode balancing (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x206B
+  key: deep_discharge_count
+  name: "Deep discharge count"
+  state_class: total_increasing
+  category: extra
+  confidence: confirmed
+  evidence: "battery@10693 <- CAN 0x70F mux 1 d6d7; BCU: entries into cell under-voltage protection level 2 (min cell <= 2.50 V) (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x206C
+  key: charge_undertemp_alarm_hours
+  name: "Charging time under low-temperature alarm"
+  unit: h
+  device_class: duration
+  state_class: total_increasing
+  category: extra
+  confidence: likely
+  evidence: "battery@10694 <- CAN 0x70F mux 1 d4d5; BCU: hours charging (I > 0.5 A) with a charge under-temperature alarm level >= 2 (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x206D
+  key: undertemp_alarm_hours
+  name: "Time under low-temperature alarm"
+  unit: h
+  device_class: duration
+  state_class: total_increasing
+  category: extra
+  confidence: likely
+  evidence: "battery@10695 <- CAN 0x70F mux 1 d2d3; BCU: hours with an under-temperature alarm level >= 2 (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x206E
+  key: rated_power
+  name: "Rated power"
+  unit: W
+  device_class: power
+  state_class: measurement
+  category: extra
+  confidence: confirmed
+  evidence: "battery@10696 <- CAN 0x70F mux 0 d6d7; BCU = modules x 64 V x 30 A (11520 W for an SBR192 stack)"
+- id: 0x206F
+  key: max_discharge_power
+  name: "Max. discharge power"
+  unit: W
+  device_class: power
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "battery@10697 <- CAN 0x70F mux 0 d4d5; BCU = modules x 64 V x round(module-limited max discharge current); below rated_power when modules derate (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x2082
+  key: status_word_10632
+  name: "Status word 10632 (unidentified)"
+  category: hidden
+  confidence: guess
+  evidence: "battery@10632: the SH10RS serves 0xFFFF for all of 10601-10664 (absent on every stack). Polled for the stock poll set and cloud upload; no BCU source (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x2083
+  key: status_word_10633
+  name: "Status word 10633 (unidentified)"
+  category: hidden
+  confidence: guess
+  evidence: "battery@10633: the SH10RS serves 0xFFFF for all of 10601-10664 (absent on every stack). Polled for the stock poll set and cloud upload; no BCU source (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x2073
+  key: module_1_soc
+  name: "Module 1 SOC"
+  unit: "%"
+  scale: 0.01
+  device_class: battery
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "battery@10675, iSolarCloud point 58641 (x0.0001 = fraction); <- CAN 0x70F mux 5-7; BCU module SOC 0.01 %; slots 7/8 read 0xFFFF (absent) with 6 modules, and a module whose cell-type code (10781+) is 0 is cleared"
+- id: 0x2074
+  key: module_2_soc
+  name: "Module 2 SOC"
+  unit: "%"
+  scale: 0.01
+  device_class: battery
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "battery@10676, iSolarCloud point 58642 (x0.0001 = fraction); <- CAN 0x70F mux 5-7; BCU module SOC 0.01 %; slots 7/8 read 0xFFFF (absent) with 6 modules, and a module whose cell-type code (10781+) is 0 is cleared"
+- id: 0x2075
+  key: module_3_soc
+  name: "Module 3 SOC"
+  unit: "%"
+  scale: 0.01
+  device_class: battery
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "battery@10677, iSolarCloud point 58643 (x0.0001 = fraction); <- CAN 0x70F mux 5-7; BCU module SOC 0.01 %; slots 7/8 read 0xFFFF (absent) with 6 modules, and a module whose cell-type code (10781+) is 0 is cleared"
+- id: 0x2076
+  key: module_4_soc
+  name: "Module 4 SOC"
+  unit: "%"
+  scale: 0.01
+  device_class: battery
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "battery@10678, iSolarCloud point 58644 (x0.0001 = fraction); <- CAN 0x70F mux 5-7; BCU module SOC 0.01 %; slots 7/8 read 0xFFFF (absent) with 6 modules, and a module whose cell-type code (10781+) is 0 is cleared"
+- id: 0x2077
+  key: module_5_soc
+  name: "Module 5 SOC"
+  unit: "%"
+  scale: 0.01
+  device_class: battery
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "battery@10679, iSolarCloud point 58645 (x0.0001 = fraction); <- CAN 0x70F mux 5-7; BCU module SOC 0.01 %; slots 7/8 read 0xFFFF (absent) with 6 modules, and a module whose cell-type code (10781+) is 0 is cleared"
+- id: 0x2078
+  key: module_6_soc
+  name: "Module 6 SOC"
+  unit: "%"
+  scale: 0.01
+  device_class: battery
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "battery@10680, iSolarCloud point 58646 (x0.0001 = fraction); <- CAN 0x70F mux 5-7; BCU module SOC 0.01 %; slots 7/8 read 0xFFFF (absent) with 6 modules, and a module whose cell-type code (10781+) is 0 is cleared"
+- id: 0x2079
+  key: module_7_soc
+  name: "Module 7 SOC"
+  unit: "%"
+  scale: 0.01
+  device_class: battery
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "battery@10681, iSolarCloud point 58647 (x0.0001 = fraction); <- CAN 0x70F mux 5-7; BCU module SOC 0.01 %; slots 7/8 read 0xFFFF (absent) with 6 modules, and a module whose cell-type code (10781+) is 0 is cleared"
+- id: 0x207A
+  key: module_8_soc
+  name: "Module 8 SOC"
+  unit: "%"
+  scale: 0.01
+  device_class: battery
+  state_class: measurement
+  category: extra
+  confidence: likely
+  evidence: "battery@10682, iSolarCloud point 58648 (x0.0001 = fraction); <- CAN 0x70F mux 5-7; BCU module SOC 0.01 %; slots 7/8 read 0xFFFF (absent) with 6 modules, and a module whose cell-type code (10781+) is 0 is cleared"
+- id: 0x2070
+  key: module_rated_capacity
+  name: "Rated capacity"
+  unit: Ah
+  scale: 0.01
+  state_class: measurement
+  category: extra
+  confidence: confirmed
+  evidence: "battery@10698 <- CAN 0x70F mux 0 d2d3; BCU rated capacity 0.01 Ah (5000, or 4000 for the 40 Ah module variant) (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x2066
+  key: cycle_count
+  name: "Cycle count"
+  scale: 0.1
+  state_class: total_increasing
+  category: core
+  priority: 72
+  confidence: confirmed
+  evidence: "battery@10685 u32 low word first <- CAN 0x70F mux 4 d2-5; BCU cycle count in 0.1 cycle (rounded from a 0.01-cycle counter), one cycle per 2 x rated capacity of charge+discharge throughput (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x206A
+  key: lifetime_charge_ah
+  name: "Lifetime charge throughput"
+  unit: Ah
+  scale: 1.0
+  state_class: total_increasing
+  category: extra
+  confidence: confirmed
+  evidence: "battery@10691 u32 <- CAN 0x70F mux 2 d2-5; BCU lifetime charge in Ah; 10687 = 10688/10691 x 10000 (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x2068
+  key: lifetime_discharge_ah
+  name: "Lifetime discharge throughput"
+  unit: Ah
+  scale: 1.0
+  state_class: total_increasing
+  category: extra
+  confidence: confirmed
+  evidence: "battery@10688 u32 <- CAN 0x70F mux 3 d2-5; BCU lifetime discharge in Ah (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x2067
+  key: discharge_charge_ratio
+  name: "Discharge/charge ratio"
+  unit: "%"
+  scale: 0.01
+  state_class: measurement
+  category: extra
+  confidence: confirmed
+  evidence: "battery@10687 <- CAN 0x70F mux 3 d6d7; BCU lifetime discharge Ah / charge Ah x 10000, results >= 10007 sent as 9990"
+- id: 0x2069
+  key: internal_resistance
+  name: "Internal resistance"
+  unit: "mΩ"
+  scale: 0.1
+  state_class: measurement
+  category: extra
+  confidence: confirmed
+  evidence: "battery@10690 <- CAN 0x70F mux 2 d6d7; BCU: a cycle-count model, per cell 4.000 mΩ + 0.0005 mΩ/cycle x cells, not a measurement (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x202D
+  key: bms_capability_word
+  name: "BMS capability word"
+  category: hidden
+  confidence: likely
+  evidence: "battery@10699 u32 low word first <- CAN 0x70D d0-3 (aligned reads only); BCU constant 0x0000000F (the frame repeats it in d4-7 and is not sent during a firmware-update session); bit meanings undocumented; reads 15 (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x2013
+  key: stack_online
+  name: "Stack online"
+  category: extra
+  group: static
+  confidence: confirmed
+  evidence: "battery@10709: 1 after the stack S/N frame 0x708 arrives, 0 after the 80-tick CAN timeout"
+- id: 0x2038
+  key: module_1_cell_type_code
+  name: "Module 1 cell type code"
+  category: extra
+  group: static
+  enum: battery_module_cell_type
+  confidence: confirmed
+  evidence: "battery@10781 <- CAN 0x71A byte 0; BCU: character 5 of the module S/N read from the module EEPROM (68 'D' old modules, 75 'K' new), 1 if the EEPROM read fails, 0 if no module"
+- id: 0x203B
+  key: module_2_cell_type_code
+  name: "Module 2 cell type code"
+  category: extra
+  group: static
+  enum: battery_module_cell_type
+  confidence: confirmed
+  evidence: "battery@10782 <- CAN 0x71A byte 1; BCU: character 5 of the module S/N read from the module EEPROM (68 'D' old modules, 75 'K' new), 1 if the EEPROM read fails, 0 if no module"
+- id: 0x203E
+  key: module_3_cell_type_code
+  name: "Module 3 cell type code"
+  category: extra
+  group: static
+  enum: battery_module_cell_type
+  confidence: confirmed
+  evidence: "battery@10783 <- CAN 0x71A byte 2; BCU: character 5 of the module S/N read from the module EEPROM (68 'D' old modules, 75 'K' new), 1 if the EEPROM read fails, 0 if no module"
+- id: 0x2041
+  key: module_4_cell_type_code
+  name: "Module 4 cell type code"
+  category: extra
+  group: static
+  enum: battery_module_cell_type
+  confidence: confirmed
+  evidence: "battery@10784 <- CAN 0x71A byte 3; BCU: character 5 of the module S/N read from the module EEPROM (68 'D' old modules, 75 'K' new), 1 if the EEPROM read fails, 0 if no module"
+- id: 0x2044
+  key: module_5_cell_type_code
+  name: "Module 5 cell type code"
+  category: extra
+  group: static
+  enum: battery_module_cell_type
+  confidence: confirmed
+  evidence: "battery@10785 <- CAN 0x71A byte 4; BCU: character 5 of the module S/N read from the module EEPROM (68 'D' old modules, 75 'K' new), 1 if the EEPROM read fails, 0 if no module"
+- id: 0x2047
+  key: module_6_cell_type_code
+  name: "Module 6 cell type code"
+  category: extra
+  group: static
+  enum: battery_module_cell_type
+  confidence: confirmed
+  evidence: "battery@10786 <- CAN 0x71A byte 5; BCU: character 5 of the module S/N read from the module EEPROM (68 'D' old modules, 75 'K' new), 1 if the EEPROM read fails, 0 if no module"
+- id: 0x204A
+  key: module_7_cell_type_code
+  name: "Module 7 cell type code"
+  category: extra
+  group: static
+  enum: battery_module_cell_type
+  confidence: confirmed
+  evidence: "battery@10787 <- CAN 0x71A byte 6; BCU: character 5 of the module S/N read from the module EEPROM (68 'D' old modules, 75 'K' new), 1 if the EEPROM read fails, 0 if no module"
+- id: 0x204D
+  key: module_8_cell_type_code
+  name: "Module 8 cell type code"
+  category: extra
+  group: static
+  enum: battery_module_cell_type
+  confidence: confirmed
+  evidence: "battery@10788 <- CAN 0x71A byte 7; BCU: character 5 of the module S/N read from the module EEPROM (68 'D' old modules, 75 'K' new), 1 if the EEPROM read fails, 0 if no module"
+- id: 0x205E
+  key: module_1_date_code
+  name: "Module 1 date code"
+  category: hidden
+  group: static
+  confidence: confirmed
+  evidence: "battery@10791 u32 low word first <- CAN 0x71B-0x71E (aligned reads only); BCU: YY x 10^6 + M x 10^4 + DD x 100 + S/N character 6 from the module S/N; published decoded as module_N_manufacture_date"
+- id: 0x205F
+  key: module_2_date_code
+  name: "Module 2 date code"
+  category: hidden
+  group: static
+  confidence: confirmed
+  evidence: "battery@10793 u32 low word first <- CAN 0x71B-0x71E (aligned reads only); BCU: YY x 10^6 + M x 10^4 + DD x 100 + S/N character 6 from the module S/N; published decoded as module_N_manufacture_date"
+- id: 0x2060
+  key: module_3_date_code
+  name: "Module 3 date code"
+  category: hidden
+  group: static
+  confidence: confirmed
+  evidence: "battery@10795 u32 low word first <- CAN 0x71B-0x71E (aligned reads only); BCU: YY x 10^6 + M x 10^4 + DD x 100 + S/N character 6 from the module S/N; published decoded as module_N_manufacture_date"
+- id: 0x2061
+  key: module_4_date_code
+  name: "Module 4 date code"
+  category: hidden
+  group: static
+  confidence: confirmed
+  evidence: "battery@10797 u32 low word first <- CAN 0x71B-0x71E (aligned reads only); BCU: YY x 10^6 + M x 10^4 + DD x 100 + S/N character 6 from the module S/N; published decoded as module_N_manufacture_date"
+- id: 0x2062
+  key: module_5_date_code
+  name: "Module 5 date code"
+  category: hidden
+  group: static
+  confidence: confirmed
+  evidence: "battery@10799 u32 low word first <- CAN 0x71B-0x71E (aligned reads only); BCU: YY x 10^6 + M x 10^4 + DD x 100 + S/N character 6 from the module S/N; published decoded as module_N_manufacture_date"
+- id: 0x2063
+  key: module_6_date_code
+  name: "Module 6 date code"
+  category: hidden
+  group: static
+  confidence: confirmed
+  evidence: "battery@10801 u32 low word first <- CAN 0x71B-0x71E (aligned reads only); BCU: YY x 10^6 + M x 10^4 + DD x 100 + S/N character 6 from the module S/N; published decoded as module_N_manufacture_date"
+- id: 0x2064
+  key: module_7_date_code
+  name: "Module 7 date code"
+  category: hidden
+  group: static
+  confidence: confirmed
+  evidence: "battery@10803 u32 low word first <- CAN 0x71B-0x71E (aligned reads only); BCU: YY x 10^6 + M x 10^4 + DD x 100 + S/N character 6 from the module S/N; published decoded as module_N_manufacture_date"
+- id: 0x2065
+  key: module_8_date_code
+  name: "Module 8 date code"
+  category: hidden
+  group: static
+  confidence: confirmed
+  evidence: "battery@10805 u32 low word first <- CAN 0x71B-0x71E (aligned reads only); BCU: YY x 10^6 + M x 10^4 + DD x 100 + S/N character 6 from the module S/N; published decoded as module_N_manufacture_date"
+- id: 0x2358
+  key: discharge_cutoff_soc
+  name: "Discharge cut-off SOC"
+  unit: "%"
+  scale: 0.01
+  device_class: battery
+  state_class: measurement
+  category: extra
+  group: static
+  confidence: confirmed
+  evidence: "battery@19939 u32 low word first, BCU parameter read through the inverter's Modbus-over-CAN tunnel; the BCU sets discharge-not-allowed below it; e.g. 500 = 5.00 % (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x2017
+  key: protocol_code
+  name: "Battery protocol code"
+  category: hidden
+  confidence: confirmed
+  evidence: "battery@10736 u32 = SH10RS constant 0x41413130 ('10AA'), the inverter's battery-device protocol code (same as inverter 2534/2535); not BCU data (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x2018
+  key: protocol_version
+  name: "Battery protocol version"
+  category: hidden
+  confidence: confirmed
+  evidence: "battery@10738 u32 = SH10RS constant 0x01000800 (stock shows V1.0.8; same as inverter 2536); not BCU data (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x2021
+  key: inverter_address
+  name: "Serving inverter address"
+  category: hidden
+  confidence: confirmed
+  evidence: "battery@10750 = the SH10RS's own Modbus address; not BCU data (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x2022
+  key: inverter_model_class
+  name: "Serving inverter model class"
+  category: hidden
+  confidence: confirmed
+  evidence: "battery@10751 = SH10RS value from its device type: 3 for device types 0xd0d-0xd10, 0xd17/18/1a/1b, 0xd22-0xd26, otherwise 4; not BCU data (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md)"
+- id: 0x202E
+  key: cell_voltage_max
+  name: "Cell voltage max"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  priority: 81
+  confidence: confirmed
+  evidence: "battery@10757; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x202F
+  key: cell_voltage_max_position
+  name: "Cell voltage max position (raw)"
+  confidence: confirmed
+  evidence: "battery@10758; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2030
+  key: cell_voltage_min
+  name: "Cell voltage min"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  priority: 82
+  confidence: confirmed
+  evidence: "battery@10759; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2031
+  key: cell_voltage_min_position
+  name: "Cell voltage min position (raw)"
+  confidence: confirmed
+  evidence: "battery@10760; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2032
+  key: module_temperature_max
+  name: "Module temperature max"
+  unit: "℃"
+  scale: 0.1
+  device_class: temperature
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10761; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2033
+  key: module_temperature_max_position
+  name: "Module temperature max position (raw)"
+  confidence: confirmed
+  evidence: "battery@10762; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2034
+  key: module_temperature_min
+  name: "Module temperature min"
+  unit: "℃"
+  scale: 0.1
+  device_class: temperature
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10763; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2035
+  key: module_temperature_min_position
+  name: "Module temperature min position (raw)"
+  confidence: confirmed
+  evidence: "battery@10764; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2036
+  key: module_1_cell_voltage_max
+  name: "Module 1 cell voltage max"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10765; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2037
+  key: module_1_cell_voltage_min
+  name: "Module 1 cell voltage min"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10773; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2039
+  key: module_2_cell_voltage_max
+  name: "Module 2 cell voltage max"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10766; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x203A
+  key: module_2_cell_voltage_min
+  name: "Module 2 cell voltage min"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10774; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x203C
+  key: module_3_cell_voltage_max
+  name: "Module 3 cell voltage max"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10767; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x203D
+  key: module_3_cell_voltage_min
+  name: "Module 3 cell voltage min"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10775; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x203F
+  key: module_4_cell_voltage_max
+  name: "Module 4 cell voltage max"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10768; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2040
+  key: module_4_cell_voltage_min
+  name: "Module 4 cell voltage min"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10776; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2042
+  key: module_5_cell_voltage_max
+  name: "Module 5 cell voltage max"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10769; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2043
+  key: module_5_cell_voltage_min
+  name: "Module 5 cell voltage min"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10777; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2045
+  key: module_6_cell_voltage_max
+  name: "Module 6 cell voltage max"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10770; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2046
+  key: module_6_cell_voltage_min
+  name: "Module 6 cell voltage min"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10778; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2048
+  key: module_7_cell_voltage_max
+  name: "Module 7 cell voltage max"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10771; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x2049
+  key: module_7_cell_voltage_min
+  name: "Module 7 cell voltage min"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10779; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x204B
+  key: module_8_cell_voltage_max
+  name: "Module 8 cell voltage max"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10772; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"
+- id: 0x204C
+  key: module_8_cell_voltage_min
+  name: "Module 8 cell voltage min"
+  unit: V
+  scale: 0.0001
+  device_class: voltage
+  state_class: measurement
+  confidence: confirmed
+  evidence: "battery@10780; cell block layout per winet-extractor RegisterBlocks.ts; SG-Docs reference/devices/sbr192/registers-via-inverter.md"

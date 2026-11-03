@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and help
+    url: https://github.com/NickStallman/Rewired-S/discussions
+    about: Ask about installing, configuring or using Rewired-S.
+  - name: Protocol and hardware documentation
+    url: https://github.com/NickStallman/SG-Docs
+    about: How the dongles, inverters and batteries work. Corrections to the documentation go there.

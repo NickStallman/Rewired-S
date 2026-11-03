@@ -1,0 +1,53 @@
+# Inverter register WRITES (sungrow_control): the global enable switch, stats, the
+# `write_registers` HA action and :502 write gating. The writable entities come from
+# devices/hybrid_control.yaml / devices/string_control.yaml. See docs/control.md.
+#
+# Nothing is written until "Inverter writes enabled" is turned on (restored across reboots,
+# default OFF). Every write - from HA entities, the action or a Modbus-TCP client - passes the
+# same gate: enable switch, register allow-list + value ranges, device online, rate limit.
+# Remove this package (and the *_control device packages) to drop write support entirely.
+sungrow_control:
+  id: sungrow_ctl
+  sungrow_modbus_id: rs485_hub
+  sungrow_datamodel_id: sungrow_dm
+  verify: true                    # entities / action read the register back after writing
+  # Inverter clock (doc 5000-5005) from SNTP local time: after boot, then daily per inverter.
+  # Not a system parameter, so it is written even while "Inverter writes enabled" is off.
+  clock_sync_time_id: sntp_time
+  writes_enabled:
+    id: sungrow_writes_enabled    # stable id (the debug build forces it off)
+    name: Inverter writes enabled
+  last_write:
+    name: Inverter last write
+  writes_ok:
+    name: Inverter writes ok
+  writes_failed:
+    name: Inverter writes failed
+
+# Modbus-TCP :502: fn 6 / fn 16 from LAN clients (mkaiser's modbus.write_register) go through
+# the same gate. Optionally restrict who may write:
+sungrow_modbus_tcp:
+  sungrow_control_id: sungrow_ctl
+  # write_allowed_ips:
+  #   - 192.0.2.10              # e.g. the Home Assistant host
+
+# HA action `esphome.<node>_write_registers` (device index, 1-based document address, values,
+# verify). Allow-list and enable switch apply; the response reports success / the reason.
+api:
+  actions:
+    - action: write_registers
+      variables:
+        device: int
+        address: int
+        values: int[]
+        verify: bool
+      then:
+        - sungrow_control.write_registers:
+            id: sungrow_ctl
+            device: !lambda "return device;"
+            address: !lambda "return address;"
+            values: !lambda "return std::vector<int32_t>(values.begin(), values.end());"
+            verify: !lambda "return verify;"
+        - api.respond:
+            success: !lambda "return id(sungrow_ctl).last_ok();"
+            error_message: !lambda "return id(sungrow_ctl).last_message();"

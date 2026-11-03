@@ -1,0 +1,28 @@
+# Connected-device entities over the ESPHome native API (sungrow_datamodel sensors), for a setup
+# without an MQTT broker. Use it in place of common/mqtt_ha.yaml, not together with it: with both,
+# every value reaches Home Assistant twice. The native API folds all devices into the dongle's one
+# Home Assistant device; MQTT discovery (mqtt_ha) gives each connected device its own.
+#
+#   packages:
+#     ha_native: !include common/native_entities.yaml
+#
+# Device 0 is the inverter. The auto_inverter packages carry the entities of both inverter types
+# (string and hybrid); the RS485 master picks the poll table at runtime and entities the connected
+# inverter does not report stay unavailable. Pinned to one type instead:
+#   inverter: !include { file: ../devices/string_inverter.yaml, vars: { device: 0 } }
+#   inverter_extra: !include { file: ../devices/string_inverter_extra.yaml, vars: { device: 0 } }
+#   inverter: !include { file: ../devices/hybrid_inverter.yaml, vars: { device: 0 } }
+#   inverter_extra: !include { file: ../devices/hybrid_inverter_extra.yaml, vars: { device: 0 } }
+# Devices the inverter reports (battery stacks, the meter) take the next indices in discovery
+# order; add their entities for the index they get:
+#   sbr_battery: !include { file: ../devices/sbr_battery.yaml, vars: { device: 1 } }
+#   sbr_battery_extra: !include { file: ../devices/sbr_battery_extra.yaml, vars: { device: 1 } }
+#   meter: !include { file: ../devices/meter.yaml, vars: { device: 2 } }
+#   meter_extra: !include { file: ../devices/meter_extra.yaml, vars: { device: 2 } }
+# Native control entities (selects and numbers with read-backs) exist per inverter type; pick
+# the one for the connected inverter. The control profile itself attaches automatically.
+#   inverter_control: !include { file: ../devices/hybrid_control.yaml, vars: { device: 0 } }
+#   inverter_control: !include { file: ../devices/string_control.yaml, vars: { device: 0 } }
+packages:
+  inverter: !include { file: ../devices/auto_inverter.yaml, vars: { device: 0 } }
+  inverter_extra: !include { file: ../devices/auto_inverter_extra.yaml, vars: { device: 0 } }

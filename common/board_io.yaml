@@ -1,0 +1,113 @@
+# Button + LEDs, shared by both boards. Pins/polarity come from boards/*.yaml substitutions.
+# Behaviour follows stock (docs/board_pins.md "Button / LED behaviour"). The logic is C++ in components/sungrow_board/board_logic.h (host tests: tests/board);
+# this file only wires it up. It is merged into the `sungrow_board:` block of boards/*.yaml.
+#
+# LEDs (updated every 100 ms):
+#   blue  = network/cloud: off = no Wi-Fi/Ethernet link; solid = link + cloud connected;
+#           link without cloud: solid for 60 s, then a 1 s flash every 4 s;
+#           200 ms blink while our fallback AP (captive portal) is up (stock: SmartConfig open).
+#   green = heartbeat (toggles every 1 s) with no faults, off with faults.
+#   red   = on with faults.
+#   Faults = any found RS485 device (one with a register table; empty scan slots don't count)
+#   offline (ignored for the first 60 s after boot) or the
+#   cloud uplink in error (isolarcloud has_error(): enabled and down > 60 s, connect failed, or identity unusable).
+#   Not mirrored: stock's 1 s blue blink for its undocumented "wifi_data_state" and the
+#   green 200 ms blink of stock network-config mode (we have no such mode).
+#
+# Button (polled every 50 ms; clicks dispatched 1 s after release; a press > 1 s is never a
+# click; a long press only counts if the button was idle >= 3 s before it):
+#   1 click   : no-op. Stock opens SmartConfig (ESP-Touch provisioning); ESPHome has no
+#               SmartConfig, provisioning is the fallback AP + captive portal instead.
+#   2 clicks  : fallback AP OFF (stock: Wi-Fi hotspot off, sig 0x1011 = 0). Stored in ESPHome's own
+#               NVS preferences, never on the external flash. If the AP is running, the dongle
+#               restarts to stop it (ESPHome can't stop a running AP). Stock skips this while a
+#               WiMeter/WiProxy is paired or in network-config mode; we have neither.
+#   3+ clicks : fallback AP ON (stock: close SmartConfig, then hotspot on; it never turns the
+#               hotspot off). Same storage. It takes effect the next time the STA can't connect
+#               for ap_timeout; ESPHome can't start the AP on demand.
+#   hold 5-30 s, release : restart (stock: > 5 s = network-config mode, which we don't have).
+#   hold >= 30 s, release: reset ESPHome settings = erase ONLY ESPHome's NVS namespace "esphome"
+#               (captive-portal Wi-Fi creds, restored entity states, isolarcloud server-switch
+#               state, the fallback AP flag) and restart. Never touches the external flash
+#               (/usrdataout identity), other NVS namespaces or the app partitions.
+#               Stock's 30 s factory reset rewrites the external flash; that is NOT implemented.
+#   Long presses act on release (stock acts while held), so a 30 s hold doesn't restart at 5 s.
+
+output:
+  - platform: gpio
+    id: led_red_out
+    pin:
+      number: ${led_red_pin}
+      inverted: ${led_inverted}
+  - platform: gpio
+    id: led_green_out
+    pin:
+      number: ${led_green_pin}
+      inverted: ${led_inverted}
+  - platform: gpio
+    id: led_blue_out
+    pin:
+      number: ${led_blue_pin}
+      inverted: ${led_inverted}
+
+binary_sensor:
+  - platform: gpio
+    id: board_button
+    name: Button
+    entity_category: diagnostic
+    pin:
+      number: ${button_pin}
+      inverted: true  # pressed = low on both boards
+      mode:
+        input: true
+        pullup: ${button_pullup}
+    filters:
+      - delayed_on_off: 50ms
+
+sungrow_board:
+  io:
+    id: board_io
+    led_red: led_red_out
+    led_green: led_green_out
+    led_blue: led_blue_out
+    # isolarcloud (common/cloud.yaml, id cloud) and sungrow_modbus (common/rs485.yaml, id rs485_hub).
+    cloud_connected: !lambda return id(cloud).is_connected();
+    cloud_enabled: !lambda return id(cloud).is_enabled();
+    cloud_error: !lambda return id(cloud).has_error();
+    devices_offline: !lambda |-
+      for (const auto &dev : id(rs485_hub).master().devices()) {
+        if (dev.table() == nullptr)
+          continue;  // scan slot with no device found (yet): not a fault
+        if (!dev.online())
+          return true;
+      }
+      return false;
+    fault_grace: 60s
+    button: board_button
+    hold_marks: [5s, 30s]
+    on_click:
+      - lambda: |-
+          if (x == 1) {
+            ESP_LOGI("board_io", "1 click: no-op (stock SmartConfig; ESPHome uses the fallback AP instead)");
+          } else if (x == 2) {
+            ESP_LOGI("board_io", "2 clicks: fallback AP off");
+            id(board_io).set_fallback_ap_enabled(false);
+          } else {
+            ESP_LOGI("board_io", "%u clicks: fallback AP on", (unsigned) x);
+            id(board_io).set_fallback_ap_enabled(true);
+          }
+    on_hold_reached:
+      - lambda: |-
+          if (x >= 30000) {
+            ESP_LOGW("board_io", "Held 30 s: release now to RESET ESPHome settings (ext flash is never touched)");
+          } else {
+            ESP_LOGI("board_io", "Held 5 s: release now to restart, or keep holding to 30 s to reset ESPHome settings");
+          }
+    on_long_press:
+      - lambda: |-
+          if (x >= 30000) {
+            id(board_io).reset_esphome_settings();
+          } else if (x >= 5000) {
+            ESP_LOGI("board_io", "Button held %u ms -> restart", (unsigned) x);
+            id(restart_button).press();
+          }

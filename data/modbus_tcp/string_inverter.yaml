@@ -1,0 +1,536 @@
+# data/modbus_tcp/string_inverter.yaml - the Modbus-TCP (:502) export map served for a string inverter (dev_type 1 / 21)
+# (docs/data_format.md). Read by tools/gen_tables.py.
+# rows: {id, address, fn, count, type} = the public register a signal is served at; cycle is
+# carried for the few rows that are also polled. shared: public addresses two rows of the same
+# id legitimately share.
+
+table: tcpslave_dev1_21
+family: inverter
+device_types: [1, 21]
+title: "Modbus-TCP export map of the string inverter (dev_type 1 / 21)"
+rows:
+- {id: 0x0004, address: 2515, fn: 4, count: 1, type: u16}  # device_type_code
+- {id: 0x0005, address: 2516, fn: 4, count: 8, type: str}  # device_model
+- {id: 0x200B, address: 2524, fn: 4, count: 10, type: str}
+- {id: 0x2025, address: 2534, fn: 4, count: 2, type: u32}  # protocol_code
+- {id: 0x2026, address: 2536, fn: 4, count: 2, type: u32}
+- {id: 0x200A, address: 2551, fn: 4, count: 2, type: u32}
+- {id: 0x201A, address: 2553, fn: 4, count: 2, type: u32}
+- {id: 0x201B, address: 2555, fn: 4, count: 2, type: u32}
+- {id: 0x201C, address: 2565, fn: 4, count: 2, type: u32}
+- {id: 0x201D, address: 2567, fn: 4, count: 2, type: u32}
+- {id: 0x20F0, address: 2577, fn: 4, count: 2, type: u32}
+- {id: 0x0000, address: 2579, fn: 4, count: 2, type: u32}  # gap-filling read
+- {id: 0x2011, address: 2582, fn: 4, count: 120, type: str}  # firmware_version
+- {id: 0x5852, address: 2702, fn: 4, count: 60, type: str}
+- {id: 0x2006, address: 4950, fn: 4, count: 2, type: u32}
+- {id: 0x2007, address: 4952, fn: 4, count: 2, type: u32}
+- {id: 0x2008, address: 4954, fn: 4, count: 15, type: str}  # arm_software_version
+- {id: 0x2009, address: 4969, fn: 4, count: 15, type: str}  # dsp_software_version
+- {id: 0x0002, address: 4990, fn: 4, count: 10, type: str}  # serial_number
+- {id: 0x0004, address: 5000, fn: 4, count: 1, type: u16}  # device_type_code
+- {id: 0x2000, address: 5001, fn: 4, count: 1, type: u16}  # rated_active_power
+- {id: 0x2003, address: 5002, fn: 4, count: 1, type: u16}  # output_type
+- {id: 0x2020, address: 5003, fn: 4, count: 1, type: u16}  # daily_yield
+- {id: 0x2022, address: 5004, fn: 4, count: 2, type: u32}  # total_yield_sg
+- {id: 0x2030, address: 5006, fn: 4, count: 2, type: u32}  # total_running_time
+- {id: 0x2031, address: 5008, fn: 4, count: 1, type: s16}  # internal_temperature
+- {id: 0x2033, address: 5009, fn: 4, count: 2, type: u32}  # apparent_power
+- {id: 0x2040, address: 5011, fn: 4, count: 1, type: u16}  # mppt1_voltage
+- {id: 0x2041, address: 5012, fn: 4, count: 1, type: u16}  # mppt1_current
+- {id: 0x2042, address: 5013, fn: 4, count: 1, type: u16}  # mppt2_voltage
+- {id: 0x2043, address: 5014, fn: 4, count: 1, type: u16}  # mppt2_current
+- {id: 0x2044, address: 5015, fn: 4, count: 1, type: u16}  # mppt3_voltage
+- {id: 0x2045, address: 5016, fn: 4, count: 1, type: u16}  # mppt3_current
+- {id: 0x2032, address: 5017, fn: 4, count: 2, type: u32}  # total_dc_power
+- {id: 0x2077, address: 5019, fn: 4, count: 1, type: u16}  # phase_a_voltage
+- {id: 0x2078, address: 5020, fn: 4, count: 1, type: u16}  # phase_b_voltage
+- {id: 0x2079, address: 5021, fn: 4, count: 1, type: u16}  # phase_c_voltage
+- {id: 0x207A, address: 5022, fn: 4, count: 1, type: s16}  # phase_a_current
+- {id: 0x207B, address: 5023, fn: 4, count: 1, type: s16}  # phase_b_current
+- {id: 0x207C, address: 5024, fn: 4, count: 1, type: s16}  # phase_c_current
+- {id: 0x2080, address: 5031, fn: 4, count: 2, type: s32}  # active_power
+- {id: 0x2081, address: 5033, fn: 4, count: 2, type: s32}  # reactive_power
+- {id: 0x2082, address: 5035, fn: 4, count: 1, type: s16}  # power_factor
+- {id: 0x2084, address: 5036, fn: 4, count: 1, type: u16}  # grid_frequency_pub
+- {id: 0x2800, address: 5037, fn: 4, count: 1, type: u16}
+- {id: 0x2086, address: 5038, fn: 4, count: 1, type: u16}  # device_state
+- {id: 0x20D0, address: 5039, fn: 4, count: 1, type: u16}
+- {id: 0x20D1, address: 5040, fn: 4, count: 1, type: u16}
+- {id: 0x20D2, address: 5041, fn: 4, count: 1, type: u16}
+- {id: 0x20D3, address: 5042, fn: 4, count: 1, type: u16}
+- {id: 0x20D4, address: 5043, fn: 4, count: 1, type: u16}
+- {id: 0x20D5, address: 5044, fn: 4, count: 1, type: u16}
+- {id: 0x2004, address: 5045, fn: 4, count: 1, type: u16}
+- {id: 0x20DC, address: 5049, fn: 4, count: 1, type: u16}  # rated_reactive_power
+- {id: 0x2087, address: 5071, fn: 4, count: 1, type: u16}  # insulation_resistance
+- {id: 0x2088, address: 5072, fn: 4, count: 1, type: u16}
+- {id: 0x217E, address: 5077, fn: 4, count: 2, type: u32}  # active_power_limit_setpoint
+- {id: 0x217F, address: 5079, fn: 4, count: 2, type: s32}
+- {id: 0x2089, address: 5081, fn: 4, count: 2, type: u32}
+- {id: 0x2182, address: 5083, fn: 4, count: 2, type: s32}  # meter_active_power
+- {id: 0x2183, address: 5085, fn: 4, count: 2, type: s32}  # meter_phase_a_active_power
+- {id: 0x2184, address: 5087, fn: 4, count: 2, type: s32}  # meter_phase_b_active_power
+- {id: 0x2185, address: 5089, fn: 4, count: 2, type: s32}  # meter_phase_c_active_power
+- {id: 0x2544, address: 5091, fn: 4, count: 2, type: s32}  # load_power_sg
+- {id: 0x2503, address: 5093, fn: 4, count: 2, type: u32}  # daily_export_energy
+- {id: 0x2504, address: 5095, fn: 4, count: 2, type: u32}  # total_export_energy
+- {id: 0x2505, address: 5097, fn: 4, count: 2, type: u32}  # daily_import_energy
+- {id: 0x2506, address: 5099, fn: 4, count: 2, type: u32}  # total_import_energy
+- {id: 0x2507, address: 5101, fn: 4, count: 2, type: u32}  # daily_direct_consumption_energy
+- {id: 0x2508, address: 5103, fn: 4, count: 2, type: u32}  # total_direct_consumption_energy
+- {id: 0x208A, address: 5113, fn: 4, count: 1, type: u16}  # daily_running_time
+- {id: 0x2001, address: 5114, fn: 4, count: 1, type: u16}
+- {id: 0x2046, address: 5115, fn: 4, count: 1, type: u16}  # mppt4_voltage
+- {id: 0x2047, address: 5116, fn: 4, count: 1, type: u16}  # mppt4_current
+- {id: 0x2048, address: 5117, fn: 4, count: 1, type: u16}  # mppt5_voltage
+- {id: 0x2049, address: 5118, fn: 4, count: 1, type: u16}  # mppt5_current
+- {id: 0x204A, address: 5119, fn: 4, count: 1, type: u16}  # mppt6_voltage
+- {id: 0x204B, address: 5120, fn: 4, count: 1, type: u16}  # mppt6_current
+- {id: 0x204C, address: 5121, fn: 4, count: 1, type: u16}  # mppt7_voltage
+- {id: 0x204D, address: 5122, fn: 4, count: 1, type: u16}  # mppt7_current
+- {id: 0x204E, address: 5123, fn: 4, count: 1, type: u16}  # mppt8_voltage
+- {id: 0x204F, address: 5124, fn: 4, count: 1, type: u16}  # mppt8_current
+- {id: 0x2180, address: 5125, fn: 4, count: 1, type: u16}
+- {id: 0x208B, address: 5128, fn: 4, count: 2, type: u32}  # monthly_yield
+- {id: 0x2050, address: 5130, fn: 4, count: 1, type: u16}  # mppt9_voltage
+- {id: 0x2051, address: 5131, fn: 4, count: 1, type: u16}  # mppt9_current
+- {id: 0x2052, address: 5132, fn: 4, count: 1, type: u16}  # mppt10_voltage
+- {id: 0x2053, address: 5133, fn: 4, count: 1, type: u16}  # mppt10_current
+- {id: 0x2054, address: 5134, fn: 4, count: 1, type: u16}  # mppt11_voltage
+- {id: 0x2055, address: 5135, fn: 4, count: 1, type: u16}  # mppt11_current
+- {id: 0x2056, address: 5136, fn: 4, count: 1, type: u16}  # mppt12_voltage
+- {id: 0x2057, address: 5137, fn: 4, count: 1, type: u16}  # mppt12_current
+- {id: 0x2058, address: 5140, fn: 4, count: 1, type: u16}
+- {id: 0x2059, address: 5141, fn: 4, count: 1, type: u16}
+- {id: 0x2824, address: 5142, fn: 4, count: 1, type: u16}
+- {id: 0x2023, address: 5144, fn: 4, count: 2, type: u32}  # total_yield_fine
+- {id: 0x2091, address: 5146, fn: 4, count: 1, type: s16}  # negative_voltage_to_ground
+- {id: 0x2092, address: 5147, fn: 4, count: 1, type: u16}  # bus_voltage
+- {id: 0x2085, address: 5148, fn: 4, count: 1, type: u16}  # grid_frequency_sg
+- {id: 0x2093, address: 5150, fn: 4, count: 1, type: u16}
+- {id: 0x2094, address: 5151, fn: 4, count: 1, type: u16}
+- {id: 0x2093, address: 5150, fn: 4, count: 1, type: u16}
+- {id: 0x2094, address: 5151, fn: 4, count: 1, type: u16}
+- {id: 0x20DE, address: 5186, fn: 4, count: 1, type: u16}  # mppt13_voltage
+- {id: 0x20DF, address: 5187, fn: 4, count: 1, type: u16}  # mppt13_current
+- {id: 0x20E0, address: 5188, fn: 4, count: 1, type: u16}  # mppt14_voltage
+- {id: 0x20E1, address: 5189, fn: 4, count: 1, type: u16}  # mppt14_current
+- {id: 0x20E2, address: 5190, fn: 4, count: 1, type: u16}  # mppt15_voltage
+- {id: 0x20E3, address: 5191, fn: 4, count: 1, type: u16}  # mppt15_current
+- {id: 0x20E4, address: 5192, fn: 4, count: 1, type: u16}  # mppt16_voltage
+- {id: 0x20E5, address: 5193, fn: 4, count: 1, type: u16}  # mppt16_current
+- {id: 0x2107, address: 7013, fn: 4, count: 1, type: u16}  # string1_current
+- {id: 0x2109, address: 7014, fn: 4, count: 1, type: u16}  # string2_current
+- {id: 0x210B, address: 7015, fn: 4, count: 1, type: u16}  # string3_current
+- {id: 0x210D, address: 7016, fn: 4, count: 1, type: u16}  # string4_current
+- {id: 0x210F, address: 7017, fn: 4, count: 1, type: u16}  # string5_current
+- {id: 0x2111, address: 7018, fn: 4, count: 1, type: u16}  # string6_current
+- {id: 0x2113, address: 7019, fn: 4, count: 1, type: u16}  # string7_current
+- {id: 0x2115, address: 7020, fn: 4, count: 1, type: u16}  # string8_current
+- {id: 0x2117, address: 7021, fn: 4, count: 1, type: u16}  # string9_current
+- {id: 0x2119, address: 7022, fn: 4, count: 1, type: u16}  # string10_current
+- {id: 0x211B, address: 7023, fn: 4, count: 1, type: u16}  # string11_current
+- {id: 0x211D, address: 7024, fn: 4, count: 1, type: u16}  # string12_current
+- {id: 0x211F, address: 7025, fn: 4, count: 1, type: u16}  # string13_current
+- {id: 0x2121, address: 7026, fn: 4, count: 1, type: u16}  # string14_current
+- {id: 0x2123, address: 7027, fn: 4, count: 1, type: u16}  # string15_current
+- {id: 0x2125, address: 7028, fn: 4, count: 1, type: u16}  # string16_current
+- {id: 0x2127, address: 7029, fn: 4, count: 1, type: u16}  # string17_current
+- {id: 0x2129, address: 7030, fn: 4, count: 1, type: u16}  # string18_current
+- {id: 0x212B, address: 7031, fn: 4, count: 1, type: u16}  # string19_current
+- {id: 0x212D, address: 7032, fn: 4, count: 1, type: u16}  # string20_current
+- {id: 0x212F, address: 7033, fn: 4, count: 1, type: u16}  # string21_current
+- {id: 0x2131, address: 7034, fn: 4, count: 1, type: u16}  # string22_current
+- {id: 0x2133, address: 7035, fn: 4, count: 1, type: u16}  # string23_current
+- {id: 0x2135, address: 7036, fn: 4, count: 1, type: u16}  # string24_current
+- {id: 0x2137, address: 7037, fn: 4, count: 1, type: u16}  # string25_current
+- {id: 0x2139, address: 7038, fn: 4, count: 1, type: u16}  # string26_current
+- {id: 0x213B, address: 7039, fn: 4, count: 1, type: u16}  # string27_current
+- {id: 0x213D, address: 7040, fn: 4, count: 1, type: u16}  # string28_current
+- {id: 0x213F, address: 7041, fn: 4, count: 1, type: u16}  # string29_current
+- {id: 0x2141, address: 7042, fn: 4, count: 1, type: u16}  # string30_current
+- {id: 0x2143, address: 7043, fn: 4, count: 1, type: u16}  # string31_current
+- {id: 0x2145, address: 7044, fn: 4, count: 1, type: u16}  # string32_current
+- {id: 0x0000, address: 5200, fn: 4, count: 14, type: str}  # gap-filling read
+- {id: 0x252C, address: 5214, fn: 4, count: 2, type: s32}  # battery_power
+- {id: 0x2501, address: 5216, fn: 4, count: 2, type: s32}  # export_power
+- {id: 0x2502, address: 5218, fn: 4, count: 2, type: s32}  # load_power
+- {id: 0x2177, address: 5220, fn: 4, count: 1, type: u16}
+- {id: 0x2086, address: 5221, fn: 4, count: 1, type: u16}  # device_state
+- {id: 0x2004, address: 5222, fn: 4, count: 1, type: u16}
+- {id: 0x2020, address: 5223, fn: 4, count: 1, type: u16}  # daily_yield
+- {id: 0x208B, address: 5224, fn: 4, count: 2, type: u32}  # monthly_yield
+- {id: 0x20DD, address: 5226, fn: 4, count: 2, type: u32}  # yearly_yield
+- {id: 0x2024, address: 5228, fn: 4, count: 2, type: u32}
+- {id: 0x2030, address: 5230, fn: 4, count: 2, type: u32}  # total_running_time
+- {id: 0x2080, address: 5232, fn: 4, count: 2, type: s32}  # active_power
+- {id: 0x2081, address: 5234, fn: 4, count: 2, type: s32}  # reactive_power
+- {id: 0x2032, address: 5236, fn: 4, count: 2, type: u32}  # total_dc_power
+- {id: 0x2033, address: 5238, fn: 4, count: 2, type: u32}  # apparent_power
+- {id: 0x208A, address: 5240, fn: 4, count: 1, type: u16}  # daily_running_time
+- {id: 0x2082, address: 5241, fn: 4, count: 1, type: s16}  # power_factor
+- {id: 0x208C, address: 5242, fn: 4, count: 1, type: u16}  # grid_frequency
+- {id: 0x2091, address: 5243, fn: 4, count: 1, type: s16}  # negative_voltage_to_ground
+- {id: 0x2092, address: 5244, fn: 4, count: 1, type: u16}  # bus_voltage
+- {id: 0x2031, address: 5245, fn: 4, count: 1, type: s16}  # internal_temperature
+- {id: 0x2087, address: 5246, fn: 4, count: 1, type: u16}  # insulation_resistance
+- {id: 0x2077, address: 5247, fn: 4, count: 1, type: u16}  # phase_a_voltage
+- {id: 0x2078, address: 5248, fn: 4, count: 1, type: u16}  # phase_b_voltage
+- {id: 0x2079, address: 5249, fn: 4, count: 1, type: u16}  # phase_c_voltage
+- {id: 0x207A, address: 5250, fn: 4, count: 1, type: s16}  # phase_a_current
+- {id: 0x207B, address: 5251, fn: 4, count: 1, type: s16}  # phase_b_current
+- {id: 0x207C, address: 5252, fn: 4, count: 1, type: s16}  # phase_c_current
+- {id: 0x2106, address: 5253, fn: 4, count: 1, type: u16}  # string1_voltage
+- {id: 0x2107, address: 5254, fn: 4, count: 1, type: u16}  # string1_current
+- {id: 0x2108, address: 5255, fn: 4, count: 1, type: u16}  # string2_voltage
+- {id: 0x2109, address: 5256, fn: 4, count: 1, type: u16}  # string2_current
+- {id: 0x210A, address: 5257, fn: 4, count: 1, type: u16}  # string3_voltage
+- {id: 0x210B, address: 5258, fn: 4, count: 1, type: u16}  # string3_current
+- {id: 0x210C, address: 5259, fn: 4, count: 1, type: u16}  # string4_voltage
+- {id: 0x210D, address: 5260, fn: 4, count: 1, type: u16}  # string4_current
+- {id: 0x210E, address: 5261, fn: 4, count: 1, type: u16}  # string5_voltage
+- {id: 0x210F, address: 5262, fn: 4, count: 1, type: u16}  # string5_current
+- {id: 0x2110, address: 5263, fn: 4, count: 1, type: u16}  # string6_voltage
+- {id: 0x2111, address: 5264, fn: 4, count: 1, type: u16}  # string6_current
+- {id: 0x2112, address: 5265, fn: 4, count: 1, type: u16}  # string7_voltage
+- {id: 0x2113, address: 5266, fn: 4, count: 1, type: u16}  # string7_current
+- {id: 0x2114, address: 5267, fn: 4, count: 1, type: u16}  # string8_voltage
+- {id: 0x2115, address: 5268, fn: 4, count: 1, type: u16}  # string8_current
+- {id: 0x2116, address: 5269, fn: 4, count: 1, type: u16}  # string9_voltage
+- {id: 0x2117, address: 5270, fn: 4, count: 1, type: u16}  # string9_current
+- {id: 0x2118, address: 5271, fn: 4, count: 1, type: u16}  # string10_voltage
+- {id: 0x2119, address: 5272, fn: 4, count: 1, type: u16}  # string10_current
+- {id: 0x211A, address: 5273, fn: 4, count: 1, type: u16}  # string11_voltage
+- {id: 0x211B, address: 5274, fn: 4, count: 1, type: u16}  # string11_current
+- {id: 0x211C, address: 5275, fn: 4, count: 1, type: u16}  # string12_voltage
+- {id: 0x211D, address: 5276, fn: 4, count: 1, type: u16}  # string12_current
+- {id: 0x211E, address: 5277, fn: 4, count: 1, type: u16}  # string13_voltage
+- {id: 0x211F, address: 5278, fn: 4, count: 1, type: u16}  # string13_current
+- {id: 0x2120, address: 5279, fn: 4, count: 1, type: u16}  # string14_voltage
+- {id: 0x2121, address: 5280, fn: 4, count: 1, type: u16}  # string14_current
+- {id: 0x2122, address: 5281, fn: 4, count: 1, type: u16}  # string15_voltage
+- {id: 0x2123, address: 5282, fn: 4, count: 1, type: u16}  # string15_current
+- {id: 0x2124, address: 5283, fn: 4, count: 1, type: u16}  # string16_voltage
+- {id: 0x2125, address: 5284, fn: 4, count: 1, type: u16}  # string16_current
+- {id: 0x2126, address: 5285, fn: 4, count: 1, type: u16}  # string17_voltage
+- {id: 0x2127, address: 5286, fn: 4, count: 1, type: u16}  # string17_current
+- {id: 0x2128, address: 5287, fn: 4, count: 1, type: u16}  # string18_voltage
+- {id: 0x2129, address: 5288, fn: 4, count: 1, type: u16}  # string18_current
+- {id: 0x212A, address: 5289, fn: 4, count: 1, type: u16}  # string19_voltage
+- {id: 0x212B, address: 5290, fn: 4, count: 1, type: u16}  # string19_current
+- {id: 0x212C, address: 5291, fn: 4, count: 1, type: u16}  # string20_voltage
+- {id: 0x212D, address: 5292, fn: 4, count: 1, type: u16}  # string20_current
+- {id: 0x212E, address: 5293, fn: 4, count: 1, type: u16}  # string21_voltage
+- {id: 0x212F, address: 5294, fn: 4, count: 1, type: u16}  # string21_current
+- {id: 0x2130, address: 5295, fn: 4, count: 1, type: u16}  # string22_voltage
+- {id: 0x2131, address: 5296, fn: 4, count: 1, type: u16}  # string22_current
+- {id: 0x2132, address: 5297, fn: 4, count: 1, type: u16}  # string23_voltage
+- {id: 0x2133, address: 5298, fn: 4, count: 1, type: u16}  # string23_current
+- {id: 0x2134, address: 5299, fn: 4, count: 1, type: u16}  # string24_voltage
+- {id: 0x2135, address: 5300, fn: 4, count: 1, type: u16}  # string24_current
+- {id: 0x2136, address: 5301, fn: 4, count: 1, type: u16}  # string25_voltage
+- {id: 0x2137, address: 5302, fn: 4, count: 1, type: u16}  # string25_current
+- {id: 0x2138, address: 5303, fn: 4, count: 1, type: u16}  # string26_voltage
+- {id: 0x2139, address: 5304, fn: 4, count: 1, type: u16}  # string26_current
+- {id: 0x213A, address: 5305, fn: 4, count: 1, type: u16}  # string27_voltage
+- {id: 0x213B, address: 5306, fn: 4, count: 1, type: u16}  # string27_current
+- {id: 0x213C, address: 5307, fn: 4, count: 1, type: u16}  # string28_voltage
+- {id: 0x213D, address: 5308, fn: 4, count: 1, type: u16}  # string28_current
+- {id: 0x213E, address: 5309, fn: 4, count: 1, type: u16}  # string29_voltage
+- {id: 0x213F, address: 5310, fn: 4, count: 1, type: u16}  # string29_current
+- {id: 0x2140, address: 5311, fn: 4, count: 1, type: u16}  # string30_voltage
+- {id: 0x2141, address: 5312, fn: 4, count: 1, type: u16}  # string30_current
+- {id: 0x2142, address: 5313, fn: 4, count: 1, type: u16}  # string31_voltage
+- {id: 0x2143, address: 5314, fn: 4, count: 1, type: u16}  # string31_current
+- {id: 0x2144, address: 5315, fn: 4, count: 1, type: u16}  # string32_voltage
+- {id: 0x2145, address: 5316, fn: 4, count: 1, type: u16}  # string32_current
+- {id: 0x2146, address: 5317, fn: 4, count: 1, type: u16}  # string33_voltage
+- {id: 0x2147, address: 5318, fn: 4, count: 1, type: u16}  # string33_current
+- {id: 0x2148, address: 5319, fn: 4, count: 1, type: u16}  # string34_voltage
+- {id: 0x2149, address: 5320, fn: 4, count: 1, type: u16}  # string34_current
+- {id: 0x214A, address: 5321, fn: 4, count: 1, type: u16}  # string35_voltage
+- {id: 0x214B, address: 5322, fn: 4, count: 1, type: u16}  # string35_current
+- {id: 0x214C, address: 5323, fn: 4, count: 1, type: u16}  # string36_voltage
+- {id: 0x214D, address: 5324, fn: 4, count: 1, type: u16}  # string36_current
+- {id: 0x214E, address: 5325, fn: 4, count: 1, type: u16}  # string37_voltage
+- {id: 0x214F, address: 5326, fn: 4, count: 1, type: u16}  # string37_current
+- {id: 0x2150, address: 5327, fn: 4, count: 1, type: u16}  # string38_voltage
+- {id: 0x2151, address: 5328, fn: 4, count: 1, type: u16}  # string38_current
+- {id: 0x2152, address: 5329, fn: 4, count: 1, type: u16}  # string39_voltage
+- {id: 0x2153, address: 5330, fn: 4, count: 1, type: u16}  # string39_current
+- {id: 0x2154, address: 5331, fn: 4, count: 1, type: u16}  # string40_voltage
+- {id: 0x2155, address: 5332, fn: 4, count: 1, type: u16}  # string40_current
+- {id: 0x2040, address: 5333, fn: 4, count: 1, type: u16}  # mppt1_voltage
+- {id: 0x2041, address: 5334, fn: 4, count: 1, type: u16}  # mppt1_current
+- {id: 0x2042, address: 5335, fn: 4, count: 1, type: u16}  # mppt2_voltage
+- {id: 0x2043, address: 5336, fn: 4, count: 1, type: u16}  # mppt2_current
+- {id: 0x2044, address: 5337, fn: 4, count: 1, type: u16}  # mppt3_voltage
+- {id: 0x2045, address: 5338, fn: 4, count: 1, type: u16}  # mppt3_current
+- {id: 0x2046, address: 5339, fn: 4, count: 1, type: u16}  # mppt4_voltage
+- {id: 0x2047, address: 5340, fn: 4, count: 1, type: u16}  # mppt4_current
+- {id: 0x2048, address: 5341, fn: 4, count: 1, type: u16}  # mppt5_voltage
+- {id: 0x2049, address: 5342, fn: 4, count: 1, type: u16}  # mppt5_current
+- {id: 0x204A, address: 5343, fn: 4, count: 1, type: u16}  # mppt6_voltage
+- {id: 0x204B, address: 5344, fn: 4, count: 1, type: u16}  # mppt6_current
+- {id: 0x204C, address: 5345, fn: 4, count: 1, type: u16}  # mppt7_voltage
+- {id: 0x204D, address: 5346, fn: 4, count: 1, type: u16}  # mppt7_current
+- {id: 0x204E, address: 5347, fn: 4, count: 1, type: u16}  # mppt8_voltage
+- {id: 0x204F, address: 5348, fn: 4, count: 1, type: u16}  # mppt8_current
+- {id: 0x2050, address: 5349, fn: 4, count: 1, type: u16}  # mppt9_voltage
+- {id: 0x2051, address: 5350, fn: 4, count: 1, type: u16}  # mppt9_current
+- {id: 0x2052, address: 5351, fn: 4, count: 1, type: u16}  # mppt10_voltage
+- {id: 0x2053, address: 5352, fn: 4, count: 1, type: u16}  # mppt10_current
+- {id: 0x2054, address: 5353, fn: 4, count: 1, type: u16}  # mppt11_voltage
+- {id: 0x2055, address: 5354, fn: 4, count: 1, type: u16}  # mppt11_current
+- {id: 0x2056, address: 5355, fn: 4, count: 1, type: u16}  # mppt12_voltage
+- {id: 0x2057, address: 5356, fn: 4, count: 1, type: u16}  # mppt12_current
+- {id: 0x20DE, address: 5357, fn: 4, count: 1, type: u16}  # mppt13_voltage
+- {id: 0x20DF, address: 5358, fn: 4, count: 1, type: u16}  # mppt13_current
+- {id: 0x20E0, address: 5359, fn: 4, count: 1, type: u16}  # mppt14_voltage
+- {id: 0x20E1, address: 5360, fn: 4, count: 1, type: u16}  # mppt14_current
+- {id: 0x20E2, address: 5361, fn: 4, count: 1, type: u16}  # mppt15_voltage
+- {id: 0x20E3, address: 5362, fn: 4, count: 1, type: u16}  # mppt15_current
+- {id: 0x20E4, address: 5363, fn: 4, count: 1, type: u16}  # mppt16_voltage
+- {id: 0x20E5, address: 5364, fn: 4, count: 1, type: u16}  # mppt16_current
+- {id: 0x20E6, address: 5365, fn: 4, count: 1, type: u16}  # mppt17_voltage
+- {id: 0x20E7, address: 5366, fn: 4, count: 1, type: u16}  # mppt17_current
+- {id: 0x20E8, address: 5367, fn: 4, count: 1, type: u16}  # mppt18_voltage
+- {id: 0x20E9, address: 5368, fn: 4, count: 1, type: u16}  # mppt18_current
+- {id: 0x20EA, address: 5369, fn: 4, count: 1, type: u16}  # mppt19_voltage
+- {id: 0x20EB, address: 5370, fn: 4, count: 1, type: u16}  # mppt19_current
+- {id: 0x20EC, address: 5371, fn: 4, count: 1, type: u16}  # mppt20_voltage
+- {id: 0x20ED, address: 5372, fn: 4, count: 1, type: u16}  # mppt20_current
+- {id: 0x0004, address: 5373, fn: 4, count: 1, type: u16}  # device_type_code
+- {id: 0x2000, address: 5374, fn: 4, count: 1, type: u16}  # rated_active_power
+- {id: 0x2003, address: 5375, fn: 4, count: 1, type: u16}  # output_type
+- {id: 0x20DC, address: 5376, fn: 4, count: 1, type: u16}  # rated_reactive_power
+- {id: 0x2001, address: 5377, fn: 4, count: 1, type: u16}
+- {id: 0x0002, address: 5378, fn: 4, count: 10, type: str}  # serial_number
+- {id: 0x200C, address: 5388, fn: 4, count: 15, type: str}
+- {id: 0x200D, address: 5403, fn: 4, count: 15, type: str}
+- {id: 0x200E, address: 5418, fn: 4, count: 15, type: str}
+- {id: 0x200F, address: 5433, fn: 4, count: 15, type: str}
+- {id: 0x2156, address: 5448, fn: 4, count: 25, type: str}
+- {id: 0x219B, address: 5475, fn: 4, count: 1, type: u16}
+- {id: 0x219C, address: 5476, fn: 4, count: 1, type: u16}
+- {id: 0x216D, address: 5479, fn: 4, count: 1, type: u16}
+- {id: 0x216E, address: 5480, fn: 4, count: 1, type: u16}
+- {id: 0x216F, address: 5481, fn: 4, count: 1, type: u16}
+- {id: 0x2170, address: 5482, fn: 4, count: 1, type: u16}
+- {id: 0x2171, address: 5483, fn: 4, count: 1, type: u16}
+- {id: 0x2172, address: 5484, fn: 4, count: 1, type: u16}
+- {id: 0x2005, address: 5485, fn: 4, count: 1, type: u16}
+- {id: 0x2372, address: 5486, fn: 4, count: 1, type: u16}
+- {id: 0x2173, address: 5487, fn: 4, count: 2, type: u32}  # function_flags
+- {id: 0x2178, address: 5489, fn: 4, count: 2, type: u32}  # function_flags_2
+- {id: 0x2093, address: 5495, fn: 4, count: 1, type: u16}
+- {id: 0x2094, address: 5496, fn: 4, count: 1, type: u16}
+- {id: 0x2058, address: 5497, fn: 4, count: 1, type: u16}
+- {id: 0x2059, address: 5498, fn: 4, count: 1, type: u16}
+- {id: 0x2179, address: 5499, fn: 4, count: 2, type: u32}
+- {id: 0x217A, address: 5501, fn: 4, count: 2, type: u32}
+- {id: 0x217B, address: 5503, fn: 4, count: 1, type: u16}  # drm_state
+- {id: 0x2800, address: 5505, fn: 4, count: 1, type: u16}
+- {id: 0x2090, address: 5506, fn: 4, count: 1, type: u16}  # power_limit_reason
+- {id: 0x217C, address: 5507, fn: 4, count: 1, type: u16}  # reactive_power_mode
+- {id: 0x217D, address: 5508, fn: 4, count: 1, type: u16}
+- {id: 0x217E, address: 5509, fn: 4, count: 2, type: u32}  # active_power_limit_setpoint
+- {id: 0x217F, address: 5511, fn: 4, count: 2, type: s32}
+- {id: 0x2180, address: 5513, fn: 4, count: 1, type: s16}
+- {id: 0x2186, address: 5514, fn: 4, count: 1, type: u16}
+- {id: 0x2181, address: 5520, fn: 4, count: 60, type: str}
+- {id: 0x2182, address: 5601, fn: 4, count: 2, type: s32}  # meter_active_power
+- {id: 0x2183, address: 5603, fn: 4, count: 2, type: s32}  # meter_phase_a_active_power
+- {id: 0x2184, address: 5605, fn: 4, count: 2, type: s32}  # meter_phase_b_active_power
+- {id: 0x2185, address: 5607, fn: 4, count: 2, type: s32}  # meter_phase_c_active_power
+- {id: 0x2503, address: 5609, fn: 4, count: 2, type: u32}  # daily_export_energy
+- {id: 0x2504, address: 5611, fn: 4, count: 2, type: u32}  # total_export_energy
+- {id: 0x2505, address: 5613, fn: 4, count: 2, type: u32}  # daily_import_energy
+- {id: 0x2506, address: 5615, fn: 4, count: 2, type: u32}  # total_import_energy
+- {id: 0x2507, address: 5617, fn: 4, count: 2, type: u32}  # daily_direct_consumption_energy
+- {id: 0x2508, address: 5619, fn: 4, count: 2, type: u32}  # total_direct_consumption_energy
+- {id: 0x2509, address: 5622, fn: 4, count: 1, type: u16}  # export_power_limit_min
+- {id: 0x250A, address: 5623, fn: 4, count: 1, type: u16}  # export_power_limit_max
+- {id: 0x250B, address: 5624, fn: 4, count: 1, type: u16}
+- {id: 0x250C, address: 5625, fn: 4, count: 1, type: u16}
+- {id: 0x250D, address: 5626, fn: 4, count: 1, type: u16}
+- {id: 0x250E, address: 5627, fn: 4, count: 1, type: u16}
+- {id: 0x250F, address: 5628, fn: 4, count: 1, type: u16}  # bdc_rated_power
+- {id: 0x2510, address: 5629, fn: 4, count: 1, type: u16}  # battery_type
+- {id: 0x2511, address: 5630, fn: 4, count: 1, type: u16}  # battery_voltage
+- {id: 0x2512, address: 5631, fn: 4, count: 1, type: s16}  # battery_current
+- {id: 0x2513, address: 5632, fn: 4, count: 1, type: s16}  # battery_temperature
+- {id: 0x2514, address: 5633, fn: 4, count: 1, type: u16}  # battery_soc
+- {id: 0x2515, address: 5634, fn: 4, count: 1, type: u16}  # battery_soh
+- {id: 0x2516, address: 5635, fn: 4, count: 1, type: u16}  # bms_max_charge_current
+- {id: 0x2517, address: 5636, fn: 4, count: 1, type: u16}  # bms_max_discharge_current
+- {id: 0x2518, address: 5637, fn: 4, count: 2, type: u32}  # bms_total_discharge_energy
+- {id: 0x227A, address: 5640, fn: 4, count: 1, type: u16}
+- {id: 0x227E, address: 5641, fn: 4, count: 2, type: u32}
+- {id: 0x256A, address: 5643, fn: 4, count: 1, type: u16}
+- {id: 0x2519, address: 5660, fn: 4, count: 1, type: u16}  # daily_pv_yield
+- {id: 0x251A, address: 5661, fn: 4, count: 2, type: u32}  # total_pv_yield
+- {id: 0x251B, address: 5663, fn: 4, count: 1, type: u16}  # daily_pv_export_energy
+- {id: 0x251C, address: 5664, fn: 4, count: 2, type: u32}  # total_pv_export_energy
+- {id: 0x251D, address: 5666, fn: 4, count: 1, type: u16}  # daily_battery_charge_from_pv
+- {id: 0x251E, address: 5667, fn: 4, count: 2, type: u32}  # total_battery_charge_from_pv
+- {id: 0x251F, address: 5669, fn: 4, count: 1, type: u16}  # daily_battery_discharge_energy
+- {id: 0x2520, address: 5670, fn: 4, count: 2, type: u32}  # total_battery_discharge_energy
+- {id: 0x2521, address: 5672, fn: 4, count: 1, type: u16}  # daily_battery_charge_energy
+- {id: 0x2522, address: 5673, fn: 4, count: 2, type: u32}  # total_battery_charge_energy
+- {id: 0x2523, address: 5675, fn: 4, count: 1, type: u16}  # daily_self_consumption_rate
+- {id: 0x2530, address: 5676, fn: 4, count: 1, type: u16}  # daily_ac_output_energy
+- {id: 0x2531, address: 5677, fn: 4, count: 2, type: u32}  # total_ac_output_energy
+- {id: 0x2532, address: 5679, fn: 4, count: 1, type: u16}  # daily_ac_input_energy
+- {id: 0x2533, address: 5680, fn: 4, count: 2, type: u32}  # total_ac_input_energy
+- {id: 0x2222, address: 5730, fn: 4, count: 1, type: u16}
+- {id: 0x20A3, address: 5738, fn: 4, count: 2, type: s32}  # meter_reactive_power
+- {id: 0x20B7, address: 5740, fn: 4, count: 1, type: s16}
+- {id: 0x2524, address: 5800, fn: 4, count: 15, type: str}  # certification_version
+- {id: 0x2525, address: 5815, fn: 4, count: 15, type: str}
+- {id: 0x2526, address: 5830, fn: 4, count: 15, type: str}
+- {id: 0x2527, address: 5845, fn: 4, count: 15, type: str}
+- {id: 0x2528, address: 5860, fn: 4, count: 15, type: str}
+- {id: 0x2529, address: 5875, fn: 4, count: 15, type: str}
+- {id: 0x252A, address: 5890, fn: 4, count: 15, type: str}
+- {id: 0x252B, address: 5905, fn: 4, count: 15, type: str}
+- {id: 0x221A, address: 5920, fn: 4, count: 16, type: str}
+- {id: 0x221C, address: 5936, fn: 4, count: 32, type: str}
+- {id: 0x227B, address: 5999, fn: 4, count: 1, type: u16}
+- {id: 0x227C, address: 6007, fn: 4, count: 1, type: u16}
+- {id: 0x2308, address: 7816, fn: 4, count: 2, type: u32}
+- {id: 0x2309, address: 7818, fn: 4, count: 2, type: u32}
+- {id: 0x230E, address: 7828, fn: 4, count: 2, type: u32}
+- {id: 0x254D, address: 7919, fn: 4, count: 1, type: u16}
+- {id: 0x23BC, address: 8047, fn: 4, count: 1, type: u16}
+- {id: 0x23BD, address: 8048, fn: 4, count: 1, type: u16}
+- {id: 0x23BE, address: 8049, fn: 4, count: 1, type: u16}
+- {id: 0x23BF, address: 8050, fn: 4, count: 1, type: u16}
+- {id: 0x2348, address: 8150, fn: 4, count: 1, type: u16}
+- {id: 0x2349, address: 8151, fn: 4, count: 1, type: u16}
+- {id: 0x234A, address: 8152, fn: 4, count: 1, type: u16}
+- {id: 0x234B, address: 8153, fn: 4, count: 1, type: u16}
+- {id: 0x011B, address: 8156, fn: 4, count: 2, type: s32}
+- {id: 0x011C, address: 8158, fn: 4, count: 2, type: u32}
+- {id: 0x2353, address: 8160, fn: 4, count: 1, type: u16}
+- {id: 0x2259, address: 8173, fn: 4, count: 2, type: s32}
+- {id: 0x225A, address: 8175, fn: 4, count: 2, type: s32}
+- {id: 0x225B, address: 8177, fn: 4, count: 2, type: s32}
+- {id: 0x2005, address: 30051, fn: 3, count: 1, type: u16}
+- {id: 0x2554, address: 31034, fn: 3, count: 1, type: u16}
+- {id: 0x2555, address: 31035, fn: 3, count: 1, type: u16}
+- {id: 0x2553, address: 31036, fn: 3, count: 1, type: u16}
+- {id: 0x227D, address: 31037, fn: 3, count: 1, type: u16}
+- {id: 0x234C, address: 31204, fn: 3, count: 1, type: u16}
+- {id: 0x5858, address: 31205, fn: 3, count: 1, type: u16}
+- {id: 0x234D, address: 31213, fn: 3, count: 1, type: u16}
+- {id: 0x20C2, address: 31216, fn: 3, count: 1, type: u16}
+- {id: 0x2328, address: 31221, fn: 3, count: 1, type: u16}
+- {id: 0x219E, address: 31227, fn: 3, count: 1, type: u16}
+- {id: 0x2252, address: 31452, fn: 3, count: 1, type: u16}
+- {id: 0x2192, address: 31997, fn: 3, count: 2, type: u32}
+- {id: 0x2227, address: 32303, fn: 3, count: 1, type: u16}
+- {id: 0x2228, address: 32304, fn: 3, count: 1, type: u16}
+- {id: 0x2229, address: 32305, fn: 3, count: 1, type: u16}
+- {id: 0x2230, address: 32306, fn: 3, count: 1, type: u16}
+- {id: 0x2257, address: 32907, fn: 3, count: 1, type: u16}
+- {id: 0x2305, address: 32909, fn: 3, count: 1, type: u16}
+- {id: 0x2306, address: 32910, fn: 3, count: 1, type: u16}
+- {id: 0x2327, address: 33002, fn: 3, count: 1, type: u16}
+- {id: 0x2251, address: 33050, fn: 3, count: 1, type: u16}
+- {id: 0x234E, address: 33146, fn: 3, count: 1, type: u16}
+- {id: 0x0112, address: 34300, fn: 3, count: 32, type: str}
+- {id: 0x0113, address: 34332, fn: 3, count: 10, type: str}
+- {id: 0x0114, address: 34342, fn: 3, count: 1, type: u16}
+- {id: 0x0115, address: 34343, fn: 3, count: 8, type: str}
+- {id: 0x0116, address: 34351, fn: 3, count: 15, type: str}
+- {id: 0x0117, address: 34366, fn: 3, count: 15, type: str}
+- {id: 0x0119, address: 34382, fn: 3, count: 1, type: u16}
+- {id: 0x2350, address: 34781, fn: 3, count: 1, type: u16}
+- {id: 0x2351, address: 34782, fn: 3, count: 1, type: u16}
+- {id: 0x2352, address: 33509, fn: 3, count: 1, type: u16}
+- {id: 0x2373, address: 32311, fn: 3, count: 1, type: u16}
+- {id: 0x0101, address: 4874, fn: 16, count: 1, type: u16}  # comm_address
+- {id: 0x0107, address: 5006, fn: 16, count: 1, type: u16}
+- {id: 0x12A5, address: 5007, fn: 16, count: 2, type: u32}
+- {id: 0x12A4, address: 5039, fn: 16, count: 1, type: u16}
+- {id: 0x12A8, address: 5036, fn: 16, count: 2, type: u32}
+- {id: 0x12A7, address: 5040, fn: 16, count: 1, type: s16}
+- {id: 0x12A6, address: 5019, fn: 16, count: 1, type: s16}
+- {id: 0x2552, address: 6005, fn: 4, count: 1, type: u16, cycle: 1}
+- {id: 0x2107, address: 7013, fn: 4, count: 1, type: u16}  # string1_current
+- {id: 0x2109, address: 7014, fn: 4, count: 1, type: u16}  # string2_current
+- {id: 0x210B, address: 7015, fn: 4, count: 1, type: u16}  # string3_current
+- {id: 0x210D, address: 7016, fn: 4, count: 1, type: u16}  # string4_current
+- {id: 0x210F, address: 7017, fn: 4, count: 1, type: u16}  # string5_current
+- {id: 0x2111, address: 7018, fn: 4, count: 1, type: u16}  # string6_current
+- {id: 0x2113, address: 7019, fn: 4, count: 1, type: u16}  # string7_current
+- {id: 0x2115, address: 7020, fn: 4, count: 1, type: u16}  # string8_current
+- {id: 0x2117, address: 7021, fn: 4, count: 1, type: u16}  # string9_current
+- {id: 0x2119, address: 7022, fn: 4, count: 1, type: u16}  # string10_current
+- {id: 0x211B, address: 7023, fn: 4, count: 1, type: u16}  # string11_current
+- {id: 0x211D, address: 7024, fn: 4, count: 1, type: u16}  # string12_current
+- {id: 0x211F, address: 7025, fn: 4, count: 1, type: u16}  # string13_current
+- {id: 0x2121, address: 7026, fn: 4, count: 1, type: u16}  # string14_current
+- {id: 0x2123, address: 7027, fn: 4, count: 1, type: u16}  # string15_current
+- {id: 0x2125, address: 7028, fn: 4, count: 1, type: u16}  # string16_current
+- {id: 0x2127, address: 7029, fn: 4, count: 1, type: u16}  # string17_current
+- {id: 0x2129, address: 7030, fn: 4, count: 1, type: u16}  # string18_current
+- {id: 0x212B, address: 7031, fn: 4, count: 1, type: u16}  # string19_current
+- {id: 0x212D, address: 7032, fn: 4, count: 1, type: u16}  # string20_current
+- {id: 0x212F, address: 7033, fn: 4, count: 1, type: u16}  # string21_current
+- {id: 0x2131, address: 7034, fn: 4, count: 1, type: u16}  # string22_current
+- {id: 0x2133, address: 7035, fn: 4, count: 1, type: u16}  # string23_current
+- {id: 0x2135, address: 7036, fn: 4, count: 1, type: u16}  # string24_current
+- {id: 0x2563, address: 7100, fn: 4, count: 16, type: u16}
+- {id: 0x2564, address: 7196, fn: 4, count: 31, type: u16}
+- {id: 0x2565, address: 7227, fn: 4, count: 12, type: u16}
+- {id: 0x2566, address: 7239, fn: 4, count: 40, type: u32}
+- {id: 0x2567, address: 7279, fn: 4, count: 96, type: u16}
+- {id: 0x2568, address: 7375, fn: 4, count: 31, type: u16}
+- {id: 0x2571, address: 7406, fn: 4, count: 12, type: u16}
+- {id: 0x2572, address: 7418, fn: 4, count: 40, type: u32}
+- {id: 0x2573, address: 7458, fn: 4, count: 96, type: u16}
+- {id: 0x2574, address: 7554, fn: 4, count: 31, type: u16}
+- {id: 0x2575, address: 7585, fn: 4, count: 12, type: u16}
+- {id: 0x2576, address: 7597, fn: 4, count: 40, type: u32}
+- {id: 0x522E, address: 7637, fn: 4, count: 96, type: u16}
+- {id: 0x522F, address: 7733, fn: 4, count: 31, type: u16}
+- {id: 0x5230, address: 7764, fn: 4, count: 12, type: u16}
+- {id: 0x5231, address: 7776, fn: 4, count: 40, type: u32}
+- {id: 0x231B, address: 7860, fn: 4, count: 20, type: str}
+- {id: 0x2340, address: 7890, fn: 4, count: 1, type: u16}
+- {id: 0x1002, address: 30644, fn: 3, count: 1, type: u16}
+- {id: 0x2300, address: 33284, fn: 3, count: 1, type: u16}
+- {id: 0x2301, address: 33285, fn: 3, count: 1, type: u16}
+- {id: 0x2302, address: 33286, fn: 3, count: 1, type: u16}
+- {id: 0x2303, address: 33287, fn: 3, count: 1, type: u16}
+- {id: 0x2304, address: 33288, fn: 3, count: 1, type: u16}
+shared:
+- {id: 0x2093, address: 5150, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 99,101); identical rows, harmless"}
+- {id: 0x2094, address: 5151, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 100,102); identical rows, harmless"}
+- {id: 0x2107, address: 7013, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 111,450); identical rows, harmless"}
+- {id: 0x2109, address: 7014, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 112,451); identical rows, harmless"}
+- {id: 0x210B, address: 7015, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 113,452); identical rows, harmless"}
+- {id: 0x210D, address: 7016, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 114,453); identical rows, harmless"}
+- {id: 0x210F, address: 7017, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 115,454); identical rows, harmless"}
+- {id: 0x2111, address: 7018, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 116,455); identical rows, harmless"}
+- {id: 0x2113, address: 7019, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 117,456); identical rows, harmless"}
+- {id: 0x2115, address: 7020, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 118,457); identical rows, harmless"}
+- {id: 0x2117, address: 7021, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 119,458); identical rows, harmless"}
+- {id: 0x2119, address: 7022, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 120,459); identical rows, harmless"}
+- {id: 0x211B, address: 7023, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 121,460); identical rows, harmless"}
+- {id: 0x211D, address: 7024, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 122,461); identical rows, harmless"}
+- {id: 0x211F, address: 7025, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 123,462); identical rows, harmless"}
+- {id: 0x2121, address: 7026, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 124,463); identical rows, harmless"}
+- {id: 0x2123, address: 7027, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 125,464); identical rows, harmless"}
+- {id: 0x2125, address: 7028, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 126,465); identical rows, harmless"}
+- {id: 0x2127, address: 7029, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 127,466); identical rows, harmless"}
+- {id: 0x2129, address: 7030, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 128,467); identical rows, harmless"}
+- {id: 0x212B, address: 7031, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 129,468); identical rows, harmless"}
+- {id: 0x212D, address: 7032, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 130,469); identical rows, harmless"}
+- {id: 0x212F, address: 7033, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 131,470); identical rows, harmless"}
+- {id: 0x2131, address: 7034, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 132,471); identical rows, harmless"}
+- {id: 0x2133, address: 7035, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 133,472); identical rows, harmless"}
+- {id: 0x2135, address: 7036, fn: 4, evidence: "same sigid listed twice in the export map (CSV idx 134,473); identical rows, harmless"}
