@@ -39,7 +39,7 @@ jobs:
         run: pip install "esphome==${ESPHOME_VERSION}" -r tools/requirements.txt
       - name: Example secrets (debug entries only; the pre-built entries use none)
         run: cp secrets.yaml.example secrets.yaml
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: |
             ~/.platformio
