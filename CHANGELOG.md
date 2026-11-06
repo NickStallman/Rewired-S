@@ -49,6 +49,9 @@ All notable changes to Rewired-S are recorded here. The format follows
   Assistant, contributing; sample dashboards under `dashboards/`.
 
 ### Changed
+- `docs/compatibility.md`: every inverter class with its firmware line, reads, controls,
+  power-stage ranges and hardware verification; WiNet-S2 Ethernet and the stock-updater route
+  recorded as verified (#9, #10, #11).
 - `common/base.yaml` no longer carries `api:`, `ota:` (native) and `web_server.auth`; they come
   from `common/access_secrets.yaml`, which every compiled entry includes (resulting configuration
   unchanged).

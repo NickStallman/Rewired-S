@@ -21,7 +21,8 @@ The pin assignments the firmware uses on each dongle. They are set as substituti
 | PSRAM | octal, 8 MB, 80 MHz |
 
 GPIO19 and GPIO20 are the USB D- / D+ pins and carry LEDs, so the logger runs on UART0, not
-USB-Serial-JTAG.
+USB-Serial-JTAG. The W5500 takes the chip's base MAC + 3 as its Ethernet address (IDF's
+`ESP_MAC_ETH` slot), so the dongle's wired and Wi-Fi addresses differ by three.
 
 **Supervisor feed.** An external supervisor resets the WiNet-S2 unless it is kicked.
 `sungrow_board: watchdog:` runs this sequence as the first statement of the generated `setup()`,
@@ -84,3 +85,21 @@ flash, other NVS namespaces or the app partitions.
 A fault is a found RS485 device (one with a register table) that is offline, ignored for the
 first 60 s after boot, or a cloud uplink that is enabled and in error (down for more than 60 s,
 connect failed, or no usable identity).
+
+## Other boards
+
+The firmware is written for the two dongles, but nothing in it needs Sungrow's silicon: the
+inverter's COM port (RJ45) carries RS485 and the dongle's supply, so any ESP32 or ESP32-S3
+development board with an RS485 transceiver on a UART can run it. What a new board needs:
+
+- its own `boards/<board>.yaml` with the RS485 pins (`rs485_tx_pin`, `rs485_rx_pin`,
+  `rs485_de_pin`), the LEDs and button if any, and no `watchdog:` block (the supervisor feed is
+  a WiNet-S2 thing), plus a partition table that fits its flash;
+- a cloud identity, if the iSolarCloud uplink is wanted: the dongles read theirs from the
+  external NOR (`sungrow_extflash`); a dev board has to be given one (see
+  [cloud_identity.md](cloud_identity.md));
+- the pin-out of the inverter-side RJ45 (which pins carry RS485 A/B and the supply) is not
+  documented here; the SG-Docs hardware pages cover the dongle side only.
+
+The `winet_s` and `winet_s2` variants of `sungrow_board` are the only ones the component
+validates today, so a dev board starts from a copy of the closest board file.
