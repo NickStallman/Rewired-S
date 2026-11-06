@@ -2,7 +2,8 @@
 """The release version agrees everywhere it is written down.
 
 common/base.yaml `project_version` (the ESPHome project version), the SPA's package.json
-`version` and the newest released `## [x.y.z]` heading of CHANGELOG.md must be the same string.
+`version`, the newest released `## [x.y.z]` heading of CHANGELOG.md and tools/pyproject.toml must be
+the same string.
 """
 import json
 import os
@@ -27,6 +28,12 @@ def web_version():
         return json.load(f)["version"]
 
 
+def tools_version():
+    import tomllib
+    with open(os.path.join(ROOT, "tools", "pyproject.toml"), "rb") as f:
+        return tomllib.load(f)["project"]["version"]
+
+
 def changelog_version():
     with open(os.path.join(ROOT, "CHANGELOG.md"), encoding="utf-8") as f:
         for line in f:
@@ -39,7 +46,8 @@ def changelog_version():
 def main():
     versions = {"common/base.yaml": base_version(),
                 "web/package.json": web_version(),
-                "CHANGELOG.md": changelog_version()}
+                "CHANGELOG.md": changelog_version(),
+                "tools/pyproject.toml": tools_version()}
     if len(set(versions.values())) != 1:
         print("FAIL version mismatch: %s" % ", ".join("%s %s" % kv for kv in versions.items()))
         return 1

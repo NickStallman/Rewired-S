@@ -12,9 +12,9 @@ Pinout and board details: [WiNet-S hardware](https://github.com/NickStallman/SG-
 
 - A 3.3 V USB-serial adapter (never 5 V on the data lines), three or four wires, a resistor of
   about 470 Ω, and a small Phillips screwdriver.
-- `esptool` (`pip install esptool`) or ESP Web Tools on the
+- `esptool` (`pipx install esptool`) or ESP Web Tools on the
   [install page](https://nickstallman.github.io/Rewired-S/). Port names and
-  drivers per operating system: [running the tools](tools_setup.md).
+  drivers per operating system: [installing the tools](tools_setup.md).
 - The image: `winet-s-prebuilt-<version>.ota.bin` or `winet-s-ethernet-prebuilt-…` from the
   [releases](https://github.com/NickStallman/Rewired-S/releases), or your own
   `.esphome/build/<name>/build/firmware.ota.bin`.

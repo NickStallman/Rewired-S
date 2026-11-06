@@ -124,7 +124,7 @@ def stock_version(sgu_blob: bytes) -> str:
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Signed .sgu from an ESPHome app image (tools/sgu.py)")
+    ap = argparse.ArgumentParser(description="Signed .sgu from an ESPHome app image (rewired-s-sgu / tools/sgu.py)")
     ap.add_argument("--app", required=True, help="firmware.ota.bin (app image, 0xE9)")
     ap.add_argument("--board", choices=sorted(BOARDS), default="s")
     ap.add_argument("--build", type=int, default=901, help="P-number of the package version (default 901)")

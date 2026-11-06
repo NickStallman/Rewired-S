@@ -37,7 +37,7 @@ esp32:
   flash_size: 16MB
   # partitions_winet_s2.stock.csv is the device's on-flash table (@0x8000). It sets the build-time
   # size check (app slots 0x380000); IDF apps read the on-flash table at runtime.
-  partitions: boards/partitions_winet_s2.stock.csv
+  partitions: partitions_winet_s2.stock.csv   # next to this file (works from a fetched package too)
   framework:
     advanced:
       # On: the valid mark sticks on the S2 (safe_mode sets it after boot_is_good_after), so an

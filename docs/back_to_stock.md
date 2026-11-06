@@ -34,8 +34,8 @@ iSolarCloud portal or the update server the dongle normally uses; the project ca
 it.
 
 ```sh
-python3 -I tools/sgu.py info    WINET-SV300.001.03.P032.sgu                 # version, parts, integrity
-python3 -I tools/sgu.py extract WINET-SV300.001.03.P032.sgu --out-dir stock  # stock/<version>.app.bin, stock/<version>.oemdata.bin
+rewired-s-sgu info    WINET-SV300.001.03.P032.sgu                 # version, parts, integrity
+rewired-s-sgu extract WINET-SV300.001.03.P032.sgu --out-dir stock  # stock/<version>.app.bin, stock/<version>.oemdata.bin
 ```
 
 `extract` writes the type-2 part, which is the ESP-IDF app image exactly as the dongle's updater
@@ -46,8 +46,11 @@ descriptor (`WINET-SV300.001.03.P032…`, project `WiNet-S2`).
 Then send the stock app with ESPHome's OTA, which writes the inactive slot and switches to it:
 
 ```sh
-.venv/bin/esphome upload sites/<name>.yaml --device 192.0.2.50 --file stock/WINET-SV300.001.03.P032.app.bin
+esphome upload my-dongle.yaml --device 192.0.2.50 --file stock/WINET-SV300.001.03.P032.app.bin
 ```
+
+`my-dongle.yaml` is your ESPHome configuration ([ESPHome](esphome.md#your-configuration)); for a
+pre-built image, a file holding only the `packages:` line of its pre-built entry is enough.
 
 The stock app boots from that slot and marks itself valid. The Rewired-S image stays in the other
 slot; the stock firmware will overwrite it with its next own update.
@@ -77,7 +80,7 @@ esptool --chip esp32 -p /dev/ttyUSB0 write_flash 0x110000 stock/WINET-SV200.001.
 ```
 
 Wiring and download mode: [install over serial](install_serial.md). The network backup made by
-the debug build (`tools/flash_backup.py`) assembles the same kind of restore image with the
+the debug build (`rewired-s-flash-backup`) assembles the same kind of restore image with the
 stock app put back.
 
 ## What survives, what does not

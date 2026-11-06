@@ -1,28 +1,26 @@
 # Compiling your own image with ESPHome
 
-Rewired-S is a set of ESPHome packages. An **entry** picks the board and the network and pulls
-in the feature packages; a **site file** sits on top of an entry with the values that belong to
-one real dongle. The pre-built images are the four `*-prebuilt.yaml` entries compiled without
-secrets ([pre-built images](prebuilt.md)) and need none of this. Compile your own for compiled-in
-Wi-Fi, API key and MQTT, a site file with your own options, the native-entities alternative to
-MQTT, or the debug build.
+Rewired-S is a set of ESPHome packages that ESPHome fetches from GitHub. Compile your own image
+for compiled-in Wi-Fi, API key and MQTT, your own options, or the native-entities alternative to
+MQTT. The [pre-built images](prebuilt.md) need none of this; a configuration for one only changes
+its defaults or sends an ESPHome OTA. Your whole configuration is one short YAML file and a
+`secrets.yaml`, with no clone of the repository.
 
-## Setup
+## Your configuration
 
-Python 3.11+ and a C compiler toolchain are the only requirements; ESPHome installs the ESP-IDF
-toolchain itself on the first compile (a few GB under `~/.platformio` and `.esphome/`). On
-Windows use PowerShell or `cmd`, not Git Bash ([running the tools](tools_setup.md)).
+Make an **empty folder** with two files. `my-dongle.yaml` names the dongle and pulls in an
+[entry](#entries) at a release:
 
-```sh
-git clone https://github.com/NickStallman/Rewired-S.git && cd Rewired-S
-python3 -m venv .venv && .venv/bin/pip install esphome==2026.9.1 -r tools/requirements.txt
-cp secrets.yaml.example secrets.yaml      # Wi-Fi, API key, web login, MQTT broker
-make config                               # validates every entry
+```yaml
+substitutions:
+  name: house-inverter
+  friendly_name: House Inverter
+packages:
+  rewired_s: github://NickStallman/Rewired-S/winet-s2.yaml@v0.9.1
 ```
 
-Site files need one more link for the secrets ([sites/README.md](../sites/README.md)).
-
-`secrets.yaml` (git-ignored):
+`secrets.yaml` holds the nine keys of
+[`secrets.yaml.example`](https://github.com/NickStallman/Rewired-S/blob/main/secrets.yaml.example):
 
 | Secret | Used by |
 |---|---|
@@ -30,23 +28,46 @@ Site files need one more link for the secrets ([sites/README.md](../sites/README
 | `api_encryption_key`, `web_username`, `web_password` | `common/access_secrets.yaml` (native API and web login; the same key encrypts ESPHome OTA) |
 | `mqtt_broker`, `mqtt_username`, `mqtt_password` | `common/mqtt_ha.yaml` |
 
+A pre-built entry needs no secrets; this alone is a valid configuration:
+
+```yaml
+packages:
+  rewired_s: github://NickStallman/Rewired-S/winet-s2-prebuilt.yaml@v0.9.1
+```
+
+The ESPHome dashboard's **Adopt** button writes this kind of file for a pre-built image, pinned to
+the release the dongle runs.
+
+- **Pin a release.** `@v0.9.1` is the documented form; `@main` tracks development. ESPHome keeps
+  the fetched copy under `.esphome/packages/` and refreshes it daily; the long form
+  (`rewired_s: {url: https://github.com/NickStallman/Rewired-S, ref: v0.9.1, files:
+  [winet-s2.yaml], refresh: 1d}`) sets `refresh:`.
+- **Keep the folder empty otherwise.** A `components/` or `boards/` folder next to your file
+  shadows the package's own.
+- The [substitutions](#substitutions) and [options](#options-worth-knowing) below go into the same
+  file.
+
 ## Build and install
 
+Python 3.11+ is the only requirement; ESPHome installs the ESP-IDF toolchain itself on the first
+compile (a few GB under `~/.platformio` and `.esphome/`). On Windows use PowerShell or `cmd`, not
+Git Bash.
+
 ```sh
-.venv/bin/esphome compile sites/<name>.yaml        # or make compile for every entry
+python3 -m venv .venv && .venv/bin/pip install esphome==2026.9.1
+.venv/bin/esphome compile my-dongle.yaml
 ```
 
 The image is `.esphome/build/<name>/build/firmware.ota.bin`. Getting it onto a dongle:
 
-- **Dongle still on stock firmware:** package and sign it (`make sgu-keys` once, then
-  `make sgu APP=<firmware.ota.bin> SGU_BOARD=s|s2 SGU_BUILD=<P-number>`) and install it through
-  the stock updater with your own public key ([installing through the updater](install_ota.md),
-  "Build your own package"); or, on a WiNet-S, write it over the
-  [serial pads](install_serial.md).
-- **Dongle already on Rewired-S:** `make deploy NODE=sites/<name> DEVICE=<ip>` runs a native
-  ESPHome OTA, streams the logs across the reboot and exits 0 once the new build runs and is
-  marked valid. A pre-built image accepts the OTA with the web login password until Home
-  Assistant has adopted it, then with the API key.
+- **Dongle still on stock firmware:** package and sign it with the
+  [tools](tools_setup.md) and install it through the stock updater with your own public key
+  ([installing through the updater](install_ota.md#build-your-own-package)); or, on a WiNet-S,
+  write it over the [serial pads](install_serial.md).
+- **Dongle already on Rewired-S:** `esphome run my-dongle.yaml --device <ip>` compiles and
+  installs with a native ESPHome OTA; `esphome upload my-dongle.yaml --device <ip>` installs the
+  last build. A pre-built image accepts the OTA with the web login password until Home Assistant
+  has adopted it, then with the API key.
 
 ## Entries
 
@@ -62,7 +83,8 @@ The image is `.esphome/build/<name>/build/firmware.ota.bin`. Getting it onto a d
 ESPHome runs Wi-Fi or Ethernet, not both, so the network is part of the entry. The app descriptor
 version carries `+wifi` / `+ethernet`, which the Boot slots card and the fallback read.
 
-An entry is a list of packages:
+An entry is a list of packages; leaving one out or adding one (the commented lines) needs a
+[checkout](#developing-on-a-checkout) or your own copy of the entry:
 
 ```yaml
 substitutions:
@@ -94,12 +116,7 @@ external_components:
       path: components
 ```
 
-## Site files
-
-A site file describes one dongle, includes an entry and sets the substitutions below; it is
-git-ignored. Setup, an example and the deploy commands are in [sites/README.md](../sites/README.md).
-
-### Substitutions
+## Substitutions
 
 | Substitution | Default | Meaning |
 |---|---|---|
@@ -114,7 +131,7 @@ git-ignored. Setup, an example and the deploy commands are in [sites/README.md](
 Board substitutions (pins, PSRAM mode, LED polarity, button pull-up) are in `boards/*.yaml` and
 documented in [board pins](board_pins.md); you should not need to change them.
 
-### Options worth knowing
+## Options worth knowing
 
 - **Control profile.** The firmware attaches the hybrid or string profile from the inverter's
   device type; the profile decides which controls exist. Fixed devices and profiles can be
@@ -127,7 +144,9 @@ documented in [board pins](board_pins.md); you should not need to change them.
   `max_clients`, `allowed_ips` and `passthrough`; `write_allowed_ips` is in `common/control.yaml`.
 - **MQTT or native entities.** Use `mqtt_ha` or `common/native_entities.yaml`, not both
   ([Home Assistant](home_assistant.md#why-mqtt-and-not-just-esphome-entities)).
-- **Network fallback.** `fallback: !include common/ethernet_fallback.yaml` (`sungrow_board:
+- **Network fallback.** On a compiled Ethernet entry, add
+  `fallback: github://NickStallman/Rewired-S/common/ethernet_fallback.yaml@v0.9.1` to `packages:`
+  (in a checkout: `!include common/ethernet_fallback.yaml`; it sets `sungrow_board:
   network_fallback:` with `timeout` 3min, `phy_failed_timeout` 60s, `allow_stock` false). A build
   that never gets a network boots the other slot, but only into a Rewired-S image that is not an
   Ethernet build. The state shows on Settings → Boot slots.
@@ -135,7 +154,24 @@ documented in [board pins](board_pins.md); you should not need to change them.
 - **Fast loop.** `sungrow_modbus: fast_loop: true` tightens the reply detection at some CPU cost
   ([update rates](update_rates.md)).
 
-## Make targets
+## Developing on a checkout
+
+A clone is for changing the firmware: the `make` targets, site files under `sites/` and the
+[debug build](debug_build.md). Python 3.11+ and a C compiler toolchain are the requirements.
+
+```sh
+git clone https://github.com/NickStallman/Rewired-S.git && cd Rewired-S
+python3 -m venv .venv && .venv/bin/pip install esphome==2026.9.1 -r tools/requirements.txt
+cp secrets.yaml.example secrets.yaml      # Wi-Fi, API key, web login, MQTT broker
+make config                               # validates every entry
+```
+
+A site file under `sites/` includes an entry from the checkout instead of fetching it
+([sites/README.md](../sites/README.md)); `make deploy NODE=sites/<name> DEVICE=<ip>` runs a native
+ESPHome OTA, streams the logs across the reboot and exits 0 once the new build runs and is marked
+valid.
+
+### Make targets
 
 ```sh
 make                 # = make test: generated files fresh, every host suite, the web suite

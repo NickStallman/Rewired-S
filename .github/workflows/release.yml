@@ -77,7 +77,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r tools/requirements.txt
+      - run: pip install -r tools/requirements.txt build
       - uses: actions/download-artifact@v4
         with:
           pattern: image-*
@@ -115,6 +115,8 @@ jobs:
             cp "$d/manifest.json" "release/$entry-manifest.json"
           done
           ls -l release
+      - name: Tools wheel
+        run: python3 -m build --wheel --outdir release tools
       - name: Pages site
         run: |
           mkdir -p site/firmware
@@ -139,6 +141,7 @@ jobs:
             release/*-WINET-*.bin
             release/*.zip
             release/publicKey_V1.pem
+            release/*.whl
 
   pages:
     name: Publish GitHub Pages

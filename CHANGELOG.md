@@ -5,6 +5,21 @@ All notable changes to Rewired-S are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+- `tools/pyproject.toml`: the install tools as a pip package
+  (`pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=tools"`):
+  `rewired-s-deploy`, `rewired-s-iconfig-server`, `rewired-s-sgu`, `rewired-s-package-sgu`,
+  `rewired-s-flash-backup`, `rewired-s-read-identity`.
+
+### Changed
+- The entries work as ESPHome remote packages
+  (`packages: x: github://NickStallman/Rewired-S/<entry>.yaml@v0.9.1`): the board files name their
+  partition tables relative to themselves, the `sites/` and `tests/config/` links are gone, and
+  `dashboard_import` pins the running release.
+
+### Fixed
+- The ESPHome dashboard's adoption of a pre-built image failed on the partition-table path.
+
 ## [0.9.1] - 2026-11-07
 
 Feedback round after the first public release: the SH15T (SH-T line) verified on hardware,

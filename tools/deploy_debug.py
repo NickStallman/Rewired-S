@@ -26,6 +26,7 @@ SAFETY
   * After a successful upload our app boots PENDING_VERIFY; safe_mode marks it valid after ~30 s,
     else the stock bootloader reverts to the stock app in the other OTA slot.
 
+Installed from the tools package this is the `rewired-s-deploy` command (same arguments).
 Build the inputs first (Ethernet dongle shown):
     .venv/bin/esphome compile winet-s-debug-ethernet.yaml
     make sgu APP=.esphome/build/winet-s-debug-eth/build/firmware.ota.bin

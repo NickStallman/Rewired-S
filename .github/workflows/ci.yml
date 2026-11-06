@@ -82,6 +82,8 @@ jobs:
         run: cp secrets.yaml.example secrets.yaml
       - name: make config
         run: make config ESPHOME=esphome
+      - name: make config-remote (every entry as an ESPHome remote package)
+        run: make config-remote ESPHOME=esphome
 
   compile:
     name: Compile ${{ matrix.entry }}

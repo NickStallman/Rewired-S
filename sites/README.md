@@ -1,9 +1,10 @@
 # Site configurations
 
-A site file is the configuration of one real dongle: its name, the firmware version its stock
-image reported, and any option that differs from the generic entry. Everything else comes from
-the entry it includes. Site files are git-ignored (only this README and the two links are
-tracked) because they describe your installation.
+A site file is the configuration of one real dongle in a repository checkout: its name, the
+firmware version its stock image reported, and any option that differs from the generic entry.
+Everything else comes from the entry it includes. Site files are git-ignored (only this README is
+tracked) because they describe your installation. Without a checkout, the same file pulls the
+entry from GitHub instead ([ESPHome](../docs/esphome.md#your-configuration)).
 
 ```yaml
 # sites/house.yaml
@@ -16,13 +17,9 @@ packages:
   entry: !include ../winet-s2.yaml
 ```
 
-ESPHome resolves `!secret`, the partition table and the `components/` path against the
-directory of the file it is given, so `sites/` carries two tracked links (`boards`, `components`)
-and needs one you create once for your secrets:
-
-```sh
-ln -s ../secrets.yaml sites/secrets.yaml
-```
+The entries find their components and partition tables next to themselves. `!secret` is read
+from the directory of the file you compile, so link the repository's secrets once:
+`ln -s ../secrets.yaml sites/secrets.yaml` (git-ignored).
 
 Build, validate and deploy it like an entry:
 

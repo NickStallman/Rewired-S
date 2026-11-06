@@ -52,7 +52,7 @@ make compile-debug DEBUG_ENTRY=winet-s2-debug.yaml
 The image to install is `.esphome/build/<name>/build/firmware.ota.bin`;
 `firmware.factory.bin` is never flashed. `esp32: flash_size: 16MB` is mandatory (IDF sizes the
 usable flash from the app header); `esptool --chip esp32 image_info firmware.ota.bin` shows
-*Flash size: 16MB, DIO*. `tools/package_sgu.py` refuses an image larger than the smaller stock
+*Flash size: 16MB, DIO*. `rewired-s-package-sgu` refuses an image larger than the smaller stock
 app slot (0x309000 bytes on the WiNet-S, 0x33B000 on the WiNet-S2).
 
 `substitutions: debug_log_port: "2323"` enables a plain-TCP log stream (`nc <ip> 2323`). It has no
@@ -80,12 +80,12 @@ make sgu APP=.esphome/build/winet-s-debug-eth/build/firmware.ota.bin SGU_BOARD=s
 A self-built package must carry a build number above the installed one: releases use P99x
 (`tools/sgu_build_number.py`), so use `SGU_BUILD=992` or higher on a dongle running a release, and
 raise it for each new package. The package and your public key land in `dist/`;
-`tools/sgu.py info|extract|verify` inspect any package.
+`rewired-s-sgu info|extract|verify` inspect any package.
 
 ## 5. Install through the stock pull route
 
 Follow [install through the updater](install_ota.md) §1-4 with your own key
-(`--pubkey dist/publicKey_V1.pem`) and `python3 -I tools/fake_iconfig_server.py --dist dist`.
+(`--pubkey dist/publicKey_V1.pem`) and `rewired-s-iconfig-server --dist dist`.
 Log in as admin from a browser on the host running the server; open **System → System
 maintenance → System update → iConfig update package** (not the device-update dialog) and start.
 
@@ -98,10 +98,10 @@ Each gate must pass before the next step. A failed gate means stop and restore (
 
 | Gate | Pass when |
 |---|---|
-| Before packaging | `deploy_debug.py status` answers; Secure Boot and flash encryption are off (serial check, WiNet-S) or the stock updater accepts signed packages (WiNet-S2) |
-| Before installing | `package_sgu.py` reports every check passed; the key import succeeded |
+| Before packaging | `rewired-s-deploy status` answers; Secure Boot and flash encryption are off (serial check, WiNet-S) or the stock updater accepts signed packages (WiNet-S2) |
+| Before installing | `rewired-s-package-sgu` reports every check passed; the key import succeeded |
 | After the first boot | the dongle joins the network, the ESPHome API and web server answer, "Running partition" names the slot the updater wrote, and safe mode was not entered |
-| Before the first native OTA | `tools/flash_backup.py all` finished with every region verified (except `nvs`, which may change while it is read) and `extflash.bin` is stored twice |
+| Before the first native OTA | `rewired-s-flash-backup all` finished with every region verified (except `nvs`, which may change while it is read) and `extflash.bin` is stored twice |
 | Before the production image | the checklist below is clean for an hour: no unexpected reset, the identity read, the inverter discovered and decoding sensibly |
 
 ### First-boot checklist
@@ -142,7 +142,7 @@ Each download carries `Content-Length`, `X-SHA256` and `X-Region-Offset/-Size` a
 in 4 KB chunks; RS485 polling keeps running. One dump runs at a time (503 otherwise).
 
 ```sh
-python3 -I tools/flash_backup.py all --host 192.0.2.50 --user admin --out backup/ \
+rewired-s-flash-backup all --host 192.0.2.50 --user admin --out backup/ \
         --stock-sgu <stock .sgu>
 ```
 

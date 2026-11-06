@@ -52,10 +52,10 @@ SGU_OUT     ?= dist
 # Python suites not run by a sub-Makefile: tests/Makefile's own python3 lines are read from it,
 # tests/extflash runs test_read_identity.py, tests/isolarcloud integration runs local_broker_test.py.
 SUB_PY_TESTS := $(addprefix tests/,$(shell sed -n 's/^\tpython3[^ ]* \(-I \)\{0,1\}\(test_[A-Za-z0-9_]*\.py\).*/\2/p' tests/Makefile))
-PY_TESTS := $(filter-out $(SUB_PY_TESTS),$(wildcard tests/test_*.py))
+PY_TESTS := $(filter-out $(SUB_PY_TESTS) tests/test_remote_package.py,$(wildcard tests/test_*.py))
 
 .PHONY: all test test-host datamodel modbus modbus_tcp control capture debug extflash board analytics settings \
-        isolarcloud isolarcloud-integration python web web-assets check-web-assets gen check-gen config \
+        isolarcloud isolarcloud-integration python web web-assets check-web-assets gen check-gen config config-remote \
         config-prebuilt compile compile-debug sgu sgu-keys hygiene deploy syslog clean
 all: test
 
@@ -151,6 +151,12 @@ check-gen:
 
 config:
 	@set -e; for y in $(ENTRIES) $(PREBUILT_ENTRIES) $(DEBUG_ENTRIES) $(CONFIG_TESTS); do echo "== esphome config $$y"; $(ESPHOME) config $$y > /dev/null; done
+
+# Every entry must also validate when ESPHome fetches it as a remote package (a user's YAML with
+# `packages: x: github://NickStallman/Rewired-S/<entry>.yaml@<ref>`): tests/test_remote_package.py
+# includes each entry by absolute path from an empty directory, which resolves paths the same way.
+config-remote:
+	ESPHOME=$(ESPHOME) $(PYTHON) -I tests/test_remote_package.py
 
 # The prebuilt entries must validate without any secrets.yaml: it is moved aside for the run and
 # put back whatever happens (the sites/ and tests/config/ links to it dangle meanwhile).

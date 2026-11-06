@@ -3,6 +3,8 @@
 .esphome/
 build/
 /dist/
+/tools/dist/
+*.egg-info/
 .scratch/
 __pycache__/
 *.pyc
@@ -22,8 +24,6 @@ tests/*/build/
 secrets.yaml
 /sites/*
 !/sites/README.md
-!/sites/boards
-!/sites/components
 # tests/config/secrets.yaml links to ../../secrets.yaml (site files read secrets from their own directory).
 !/tests/config/secrets.yaml
 

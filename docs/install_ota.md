@@ -19,8 +19,9 @@ in SG-Docs.
   [releases page](https://github.com/NickStallman/Rewired-S/releases), or one you build and sign
   yourself (below). The key file must keep the
   `publicKey_V<n>.pem` name: the stock updater derives the key version from it.
-- Python 3.11+ with `pip install -r tools/requirements.txt`. Per-platform setup (Windows
-  PowerShell, macOS, Linux), firewall notes and the exact commands: [running the tools](tools_setup.md).
+- Python 3.11+ and the tools package (`pipx install
+  "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=tools"`). Per-platform
+  setup (Windows, macOS, Linux) and firewall notes: [installing the tools](tools_setup.md).
 
 > [!NOTE]
 > The release packages are **app-only**: they contain the Rewired-S app and nothing else, so the
@@ -34,7 +35,7 @@ in SG-Docs.
 ## 1. Read the dongle and note its firmware version
 
 ```sh
-python3 -I tools/deploy_debug.py status --host 192.0.2.50
+rewired-s-deploy status --host 192.0.2.50
 ```
 
 It prints the serial number, the versions and the inverter it sees. Write down the **firmware
@@ -48,20 +49,20 @@ and is never printed.
 ## 2. Import the public key (once)
 
 ```sh
-python3 -I tools/deploy_debug.py import-key --host 192.0.2.50 --pubkey publicKey_V1.pem
+rewired-s-deploy import-key --host 192.0.2.50 --pubkey publicKey_V1.pem
 ```
 
 The tool asks for a typed `yes`. The stock firmware stores the key on its external flash and from
 then on verifies packages against it. The key survives stock cloud updates, so a dongle that had
 it imported before answers a second import with `result_code=120`:
-the tool reports that as "already stored" and the install can go ahead (`fake_iconfig_server.py
+the tool reports that as "already stored" and the install can go ahead (`rewired-s-iconfig-server
 --no-key` skips offering the key again). For a self-signed package use your own public key, named
-`publicKey_V<n>.pem` as `tools/package_sgu.py` writes it (`dist/publicKey_V1.pem`).
+`publicKey_V<n>.pem` as `rewired-s-package-sgu` writes it (`dist/publicKey_V1.pem`).
 
 ## 3. Serve the package
 
 ```sh
-python3 -I tools/fake_iconfig_server.py --dist <dir>
+rewired-s-iconfig-server --dist <dir>
 ```
 
 `--dist <dir>`: a directory holding only your entry's `.zip` (and `publicKey_V1.pem`).
@@ -83,12 +84,12 @@ moving.
 > [!CAUTION]
 > The same page has a second, similar dialog for updating the **inverter** (device update). It
 > asks the package server for the inverter's model and would send what it gets to the inverter
-> over RS485. Use only the **System update** dialog. `tools/fake_iconfig_server.py` refuses a
+> over RS485. Use only the **System update** dialog. `rewired-s-iconfig-server` refuses a
 > request that does not name a WiNet (it answers an empty package list and logs `refused`), so
 > the wrong dialog ends with "no package found" rather than an inverter update attempt.
 
-On stock firmware old enough to still offer a browser upload, `tools/deploy_debug.py upload
---sgu <package>.sgu` does steps 3 and 4 in one go.
+On stock firmware old enough to still offer a browser upload, `rewired-s-deploy upload --sgu
+<package>.sgu` does steps 3 and 4 in one go.
 
 ## 5. First boot
 
@@ -114,8 +115,8 @@ discovered. Add the dongle to Home Assistant from the ESPHome integration's disc
 
 | Gate | Pass when |
 |---|---|
-| Before importing the key | `deploy_debug.py status` answers and shows your inverter |
-| Before starting the update | `tools/sgu.py verify <pkg>.sgu --sig <pkg>.bin --pubkey <key>.pem` passes every check |
+| Before importing the key | `rewired-s-deploy status` answers and shows your inverter |
+| Before starting the update | `rewired-s-sgu verify <pkg>.sgu --sig <pkg>.bin --pubkey <key>.pem` passes every check |
 | After the first boot | the dongle is on the network, the web UI answers, the Settings page shows the running slot, and no reset within the first minute |
 | Before the first ESPHome OTA | you have a backup of the stock app (flash backup or extracted image) |
 | Before enabling inverter writes | the Devices page values agree with the inverter display; the control you want to use is listed for your model in [compatibility](compatibility.md) |
@@ -124,19 +125,27 @@ discovered. Add the dongle to Home Assistant from the ESPHome integration's disc
 
 ```sh
 make sgu-keys                                   # once: keys/rewired-s_priv.pem (keep it) and keys/rewired-s_pub.pem
-make compile                                    # or .venv/bin/esphome compile sites/<name>.yaml
+make compile                                    # or esphome compile <your>.yaml
 make sgu APP=.esphome/build/<name>/build/firmware.ota.bin SGU_BOARD=s2 SGU_BUILD=992
 #   SGU_STOCK=<official .sgu>   adds the stock web-UI part (only if the app-only package is refused)
 ```
 
-On Windows use PowerShell, not Git Bash ([running the tools](tools_setup.md#common-problems)).
+The `make` targets run in a [repository checkout](esphome.md#developing-on-a-checkout). Outside
+one, the tools package does the same:
 
-`tools/package_sgu.py` checks the image (ESP magic, chip id, 16 MB header, size against the OTA
-slot, a version above the installed one), builds the package with the in-file trailer the
-WiNet-S2 requires, signs it with your key, and writes `dist/<version>.sgu`, the detached `.bin`
-signature, `Version_signature.xml`, your public key and the `.zip` the updater expects. Raise
-`SGU_BUILD` for every new package you install: the updater refuses a version that is not above
-the running one.
+```sh
+rewired-s-sgu keygen --out-dir keys             # once
+rewired-s-package-sgu --app <firmware.ota.bin> --board s2 --build 992 --key keys/rewired-s_priv.pem --zip
+```
+
+On Windows use PowerShell, not Git Bash ([installing the tools](tools_setup.md#common-problems)).
+
+The packager checks the image (ESP magic, chip id, 16 MB header, size against the OTA slot, a
+version above the installed one), builds the package with the in-file trailer the WiNet-S2
+requires, signs it with your key, and writes `dist/<version>.sgu`, the detached `.bin` signature,
+`Version_signature.xml`, your public key and the `.zip` the updater expects. Raise the build
+number (`SGU_BUILD`, `--build`) for every new package you install: the updater refuses a version
+that is not above the running one. `--stock-sgu` (`SGU_STOCK`) adds the stock web-UI part.
 
 ## Updates after the first install
 
@@ -148,5 +157,7 @@ the running one.
   non-Ethernet Rewired-S image. The WiNet-S has no rollback, so keep a serial adapter in reach.
 - Pre-built images also take an ESPHome OTA (`esphome upload … --device <ip>`) authenticated with
   the web login password, or with the API key after Home Assistant adoption.
-- Compiled images: `make deploy NODE=sites/<name> DEVICE=<ip>` runs a native ESPHome OTA,
-  streams the logs across the reboot and exits 0 only when the new build is up and marked valid.
+- Compiled images: `esphome run <your>.yaml --device <ip>` builds and installs with a native
+  ESPHome OTA ([ESPHome](esphome.md#build-and-install)); in a checkout, `make deploy
+  NODE=sites/<name> DEVICE=<ip>` also streams the logs across the reboot and exits 0 only when
+  the new build is up and marked valid.

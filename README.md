@@ -81,13 +81,13 @@ the way back.
    [latest release](https://github.com/NickStallman/Rewired-S/releases) into an empty folder.
    Entries: `winet-s-prebuilt`, `winet-s-ethernet-prebuilt`, `winet-s2-prebuilt`,
    `winet-s2-ethernet-prebuilt`.
-2. On a computer on the same network (Python 3.11+):
+2. On a computer on the same network, install the tools with [pipx](https://pipx.pypa.io/)
+   (Python 3.11+), import the key and serve the package:
 
    ```sh
-   git clone https://github.com/NickStallman/Rewired-S.git && cd Rewired-S
-   python3 -m venv .venv && source .venv/bin/activate && pip install -r tools/requirements.txt
-   python3 -I tools/deploy_debug.py import-key --host <dongle-ip> --pubkey <folder>/publicKey_V1.pem
-   python3 -I tools/fake_iconfig_server.py --dist <folder>
+   pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=tools"
+   rewired-s-deploy import-key --host <dongle-ip> --pubkey <folder>/publicKey_V1.pem
+   rewired-s-iconfig-server --dist <folder>
    ```
 
 3. From a browser **on that computer**, log in to the dongle's stock web UI as `admin` and open
@@ -99,13 +99,14 @@ the way back.
    the Settings page. Home Assistant discovers the inverter, batteries and meter.
 
 Details, checks and recovery: [installing through the updater](docs/install_ota.md); Windows,
-macOS and Linux setup of the tools: [running the tools](docs/tools_setup.md); what the pre-built
-images do: [pre-built images](docs/prebuilt.md).
+macOS and Linux setup of the tools: [installing the tools](docs/tools_setup.md); what the
+pre-built images do: [pre-built images](docs/prebuilt.md).
 
 Other ways in: over the [serial pads](docs/install_serial.md) (WiNet-S only; the
 [install page](https://nickstallman.github.io/Rewired-S/) has ESP Web Tools for it), or
-[compile your own image with ESPHome](docs/esphome.md) for compiled-in credentials, a site file
-with your own options, the native-entities alternative to MQTT, or the debug build.
+[compile your own image with ESPHome](docs/esphome.md) for compiled-in credentials, your own
+options, the native-entities alternative to MQTT, or the debug build. Your own image needs no
+clone: a short YAML file pulls the configuration from GitHub.
 
 ## Home Assistant
 
@@ -126,7 +127,7 @@ Three ways, none of which touches the dongle's identity or settings:
 
 1. **Boot other slot** on the web UI, while the stock app is still in the other slot.
 2. Extract the app image from an official Sungrow package you download yourself
-   (`tools/sgu.py extract`) and send it with ESPHome's OTA (not yet run on hardware).
+   (`rewired-s-sgu extract`) and send it with ESPHome's OTA (not yet run on hardware).
 3. Over serial on the WiNet-S, from your backup or from that extracted image.
 
 Details and what is preserved: [docs/back_to_stock.md](docs/back_to_stock.md).
@@ -154,9 +155,9 @@ compatibility chart this report is everything needed to add it. Full description
 | [Compatibility](docs/compatibility.md) | dongles, inverter families, batteries and accessories, with status |
 | [Install through the updater](docs/install_ota.md) | signed package, key import, LAN pull route, go / no-go checks |
 | [Install over serial](docs/install_serial.md) | WiNet-S pads, backup, flashing, ESP Web Tools |
-| [Running the tools](docs/tools_setup.md) | Python setup and the tool commands on Windows, macOS and Linux |
+| [Installing the tools](docs/tools_setup.md) | the install commands and their setup on Windows, macOS and Linux |
 | [Pre-built images](docs/prebuilt.md) | setup network, default login, MQTT settings, updates |
-| [ESPHome](docs/esphome.md) | compiling your own image: setup, entries, site files, secrets, options, make targets |
+| [ESPHome](docs/esphome.md) | compiling your own image: your configuration, secrets, entries, options, make targets |
 | [Home Assistant](docs/home_assistant.md) | MQTT discovery, entity names, the dongle's own entities, dashboards |
 | [Control](docs/control.md) | every writable setting, the safety model, the write paths |
 | [Back to stock](docs/back_to_stock.md) | three ways back and what is preserved |

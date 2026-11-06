@@ -36,7 +36,7 @@ esp32:
   # partition-table.bin are layout-correct for a direct serial flash. For OTA this CSV only sets
   # the build-time size check (IDF apps are slot-position-independent and read the on-flash table
   # at runtime).
-  partitions: boards/partitions_winet_s.stock.csv
+  partitions: partitions_winet_s.stock.csv   # next to this file (works from a fetched package too)
   framework:
     advanced:
       # Off: the dongle keeps its stock bootloader, which rolls a pending-verify slot back on the

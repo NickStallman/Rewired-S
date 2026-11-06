@@ -47,7 +47,7 @@ sungrow_web:
 
 # Lets the ESPHome dashboard adopt the dongle with the matching source entry.
 dashboard_import:
-  package_import_url: github://NickStallman/Rewired-S/${prebuilt_entry}.yaml@main
+  package_import_url: github://NickStallman/Rewired-S/${prebuilt_entry}.yaml@v${project_version}
   import_full_config: false
 
 # Firmware updates from the published release manifest: an Update entity in Home Assistant

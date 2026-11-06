@@ -125,4 +125,4 @@ The identity lives in `/usrdataout/log/sigdata/dev_file_247_<productType>_2` (Wi
   blanked record cannot strand the dongle.
 
 `decode_identity()` in `components/sungrow_extflash/sigdata.cpp` implements the decoding;
-`tools/read_identity.py` decodes a dumped identity file the same way.
+`rewired-s-read-identity` decodes a dumped identity file the same way.

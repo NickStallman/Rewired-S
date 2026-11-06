@@ -62,6 +62,10 @@ plaintext on the LAN, so adopt the dongle soon after installing it. A device ado
 keeps its key across updates; the 30 s reset (below) drops it, after which Home Assistant adopts
 it again.
 
+Adopting it in the ESPHome dashboard writes a configuration that fetches the pre-built entry from
+GitHub as a remote package, pinned to the release the dongle runs
+([ESPHome](esphome.md#your-configuration)).
+
 ### The inverter, batteries and meter (MQTT)
 
 Each device on the RS485 bus becomes its own Home Assistant device through MQTT discovery
@@ -82,8 +86,8 @@ at `https://nickstallman.github.io/Rewired-S/firmware/<entry>/manifest.json` eve
 installs the next release over HTTPS when you press *Install*. This path works before the dongle
 is adopted, needs no key or password, and is the normal way to update a pre-built image. The
 native OTA port (3232) is also open: it asks for the web login password until the dongle is
-adopted and accepts the API key as well after that (`esphome upload --password`, or a site file
-with `ota: password:` set to your web password).
+adopted and accepts the API key as well after that (`esphome upload --password`, or a
+[configuration](esphome.md#your-configuration) with `ota: password:` set to your web password).
 
 ## The version reported to iSolarCloud
 
