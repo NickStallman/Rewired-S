@@ -1261,6 +1261,9 @@ void SungrowMqttComponent::backfill_write_configs_() {
       // unsupported register answers the 0xFFFF sentinel, e.g. 33149/33150 on the SH10RS).
       if (!this->dm_->store().is_valid(d.index, ents[i].sigid))
         continue;
+      // Battery controls stay out while the inverter reports "No battery".
+      if (ents[i].requires_battery && !sungrow_datamodel::has_battery(this->dm_->store(), d.index))
+        continue;
       if (!this->outbox_has_room_())
         return;  // resume next loop
       if (this->publish_write_config_(d, ents[i])) {

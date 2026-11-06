@@ -65,6 +65,10 @@ struct Signal {
   std::vector<uint8_t> ext_;
 };
 
+/// Battery type of an inverter (enum signal; 2 = "No battery").
+constexpr uint16_t SIG_BATTERY_TYPE = 0x2510;
+constexpr uint32_t BATTERY_TYPE_NONE = 2;
+
 class SignalStore {
  public:
   using Listener = std::function<void(const Signal &)>;
@@ -173,6 +177,13 @@ class SignalStore {
   bool float_scale_{false};
   bool expand_bitfields_{false};
 };
+
+/// False only when the device's battery type reads "No battery"; an unknown or invalid battery
+/// type counts as present (nothing is hidden on missing data).
+inline bool has_battery(const SignalStore &store, uint8_t device) {
+  const Signal *b = store.get(device, SIG_BATTERY_TYPE);
+  return b == nullptr || !b->valid || b->bits() != BATTERY_TYPE_NONE;
+}
 
 }  // namespace sungrow_datamodel
 }  // namespace esphome

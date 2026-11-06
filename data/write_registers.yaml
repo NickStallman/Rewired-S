@@ -19,6 +19,9 @@
 #   address_by_protocol      {protocol type: address} - the register on devices of that
 #               protocol type instead of `address` (allow-list, entity and read-back follow it)
 #   interval    read-back poll period in s (fn 3 by sungrow_control)
+#   requires    optional: `battery` = meaningless without a battery; the web Devices page and
+#               MQTT discovery leave the control out when the inverter's battery type (0x2510)
+#               reads "No battery" (the native-API packages are static and keep it)
 #   mkaiser     what mkaiser / the HA packages use for it (wire address, entities)
 #   confidence  confirmed = two independent sources agree on address, encoding and range;
 #               likely = one good source; guess = inferred
@@ -62,6 +65,7 @@ registers:
   - {value: 0xAA, label: "Forced charge"}
   - {value: 0xBB, label: "Forced discharge"}
   interval: 10
+  requires: battery
   mkaiser: "wire 13050 fn 6; select.battery_forced_charge_discharge / input_select.set_sg_battery_forced_charge_discharge_cmd; readback sensor.battery_forced_charge_discharge_cmd(_raw)"
   confidence: confirmed
   evidence: "MK :2216-2257; UP :652-658, 825-853, text :523-538; SGT charge_discharge_command 13051"
@@ -76,6 +80,7 @@ registers:
   unit: W
   step: 1
   interval: 10
+  requires: battery
   mkaiser: "wire 13051 fn 6, W; number.battery_forced_charge_discharge_power / input_number.set_sg_forced_charge_discharge_power (0-10000 step 100); readback sensor.battery_forced_charge_discharge_power"
   confidence: confirmed
   evidence: "MK :1677-1697 (W on SH*RT, 0..max_power); UP :597-601, 1010-1025 (0-10000 W); SGT charge_discharge_power 13052 U16 W. Range: the inverter clamps to its own rating. The SH10RS power stage receives the value in 10 W units and clamps the request to the BMS limits and 33047/33048, so W is the unit on this model (https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/control-and-ems.md)"
@@ -90,6 +95,7 @@ registers:
   unit: "%"
   step: 1
   interval: 10
+  requires: battery
   mkaiser: "wire 13057 fn 6, value x10; number.battery_max_soc / input_number.set_sg_max_soc (50-100); readback sensor.battery_max_soc / sensor.max_soc"
   confidence: confirmed
   evidence: "MK :1581-1598; UP :585, 726-741 (both 50-100 %, raw x10)"
@@ -104,6 +110,7 @@ registers:
   unit: "%"
   step: 1
   interval: 10
+  requires: battery
   mkaiser: "wire 13058 fn 6, value x10; number.battery_min_soc / input_number.set_sg_min_soc (0-50); readback sensor.battery_min_soc / sensor.min_soc"
   confidence: confirmed
   evidence: "MK :1559-1576; UP :579, 759-774 (both 0-50 %, raw x10)"
@@ -162,6 +169,7 @@ registers:
   unit: "%"
   step: 1
   interval: 10
+  requires: battery
   mkaiser: "wire 13099 fn 6, 1 %; number.battery_reserved_soc_for_backup / input_number.set_sg_reserved_soc_for_backup; readback sensor.reserved_soc_for_backup"
   confidence: confirmed
   evidence: "MK :1603-1620; UP :591, 792-807; SGT soc_reserve 13100 %"
@@ -178,6 +186,7 @@ registers:
   number_min: 10
   number_max: 15000
   interval: 10
+  requires: battery
   mkaiser: "wire 33046 fn 6, W/10; number.battery_max_charge_power / input_number.set_sg_battery_max_charge_power (100-10000); readback sensor.battery_max_charge_power (x10)"
   confidence: confirmed
   evidence: "MK :1702-1719; UP :603, 1043-1058; SGT battery_max_charge_power 33047 accuracy 10 W"
@@ -194,6 +203,7 @@ registers:
   number_min: 10
   number_max: 15000
   interval: 10
+  requires: battery
   mkaiser: "wire 33047 fn 6, W/10; number.battery_max_discharge_power / input_number.set_sg_battery_max_discharge_power; readback sensor.battery_max_discharge_power (x10)"
   confidence: confirmed
   evidence: "MK :1724-1741; UP :609, 1076-1091; SGT battery_max_discharge_power 33048"
@@ -208,6 +218,7 @@ registers:
   unit: W
   step: 10
   interval: 30
+  requires: battery
   mkaiser: "wire 33148 fn 6, W/10; number.battery_charging_start_power / input_number.set_sg_battery_charging_start_power (0-1000 W)"
   confidence: likely
   evidence: "MK :1630-1650; UP :615, 1109-1124 (same address and scale; no third source)"
@@ -222,6 +233,7 @@ registers:
   unit: W
   step: 10
   interval: 30
+  requires: battery
   mkaiser: "wire 33149 fn 6, W/10; number.battery_discharging_start_power / input_number.set_sg_battery_discharging_start_power (0-1000 W)"
   confidence: likely
   evidence: "MK :1652-1675; UP :621, 1142-1157"

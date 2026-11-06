@@ -182,6 +182,10 @@ sungrow_modbus_tcp:
 
 - `select` entities use mkaiser's option strings and raw values. The options list only the
   writable values.
+- Controls marked `requires: battery` in `data/write_registers.yaml` (SOC limits, forced
+  charge/discharge, battery power limits) are left out of MQTT discovery and the web Devices page
+  on a hybrid whose battery type reads "No battery"; the native-API packages are static and keep
+  them.
 - `number` entities have units, ranges and steps from `data/write_registers.yaml`. The value
   is converted as `raw = round(value / scale)` and checked against the allow-list.
 - **State is never optimistic.** Every entity shows the read-back signal, i.e. what the

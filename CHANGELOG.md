@@ -49,6 +49,8 @@ All notable changes to Rewired-S are recorded here. The format follows
   Assistant, contributing; sample dashboards under `dashboards/`.
 
 ### Changed
+- Battery controls (`requires: battery` in `data/write_registers.yaml`) are left out of MQTT
+  discovery and the web Devices page on a hybrid that reports "No battery" (#9).
 - `common/base.yaml` no longer carries `api:`, `ota:` (native) and `web_server.auth`; they come
   from `common/access_secrets.yaml`, which every compiled entry includes (resulting configuration
   unchanged).
