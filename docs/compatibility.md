@@ -85,7 +85,7 @@ native-API packages keep them). Model names are the strings the inverter reports
 | | Status |
 |---|---|
 | Home Assistant with an MQTT broker (Mosquitto add-on) | ✅ |
-| Home Assistant without MQTT (native entities compiled in) | 🟡 compiles; see `docs/configuration.md` |
+| Home Assistant without MQTT (native entities compiled in) | 🟡 compiles; see [ESPHome](esphome.md) |
 | mkaiser's Modbus integration and SunGather over port 502 | ✅ reads on the SH10RS; writes gated |
 | iSolarCloud app and portal | ✅ the installer app's local connection is not supported |
 | Grid-code setup profiles | ✅ Australia (country code 6) only; other regions need their profile added (`docs/data_format.md`) |

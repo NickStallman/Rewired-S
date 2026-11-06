@@ -12,7 +12,7 @@ the Winet Extractor add-on used; the cost is an MQTT broker (the Mosquitto add-o
 
 If you do not want a broker, `common/native_entities.yaml` compiles the inverter (and optionally a
 battery stack and a meter) into the dongle's native-API device instead
-([configuration](configuration.md)). These native-API control packages are static: they keep the
+([ESPHome](esphome.md)). These native-API control packages are static: they keep the
 battery controls whatever battery the inverter reports. Devices beyond those are then only visible
 in the web UI and over Modbus-TCP.
 

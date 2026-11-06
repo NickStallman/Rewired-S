@@ -12,7 +12,7 @@ image are:
 
 They need Python **3.11 or newer** and the two packages in `tools/requirements.txt`
 (`cryptography`, `pyyaml`). Nothing else: no Docker, no ESPHome, no compiler. ESPHome is only
-needed to compile your own image ([configuration](configuration.md)).
+needed to compile your own image ([ESPHome](esphome.md)).
 
 > [!TIP]
 > Every command below is run from the repository directory (the folder that contains `tools/`).

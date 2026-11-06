@@ -1,14 +1,21 @@
-# Configuration
+# Compiling your own image with ESPHome
 
 Rewired-S is a set of ESPHome packages. An **entry** picks the board and the network and pulls
 in the feature packages; a **site file** sits on top of an entry with the values that belong to
-one real dongle. Pre-built images are the four `*-prebuilt.yaml` entries compiled without
-secrets ([pre-built images](prebuilt.md)); everything below is for compiling your own.
+one real dongle. The pre-built images are the four `*-prebuilt.yaml` entries compiled without
+secrets ([pre-built images](prebuilt.md)) and need none of this. Compile your own for compiled-in
+Wi-Fi, API key and MQTT, a site file with your own options, the native-entities alternative to
+MQTT, or the debug build.
 
 ## Setup
 
+Python 3.11+ and a C compiler toolchain are the only requirements; ESPHome installs the ESP-IDF
+toolchain itself on the first compile (a few GB under `~/.platformio` and `.esphome/`). On
+Windows use PowerShell or `cmd`, not Git Bash ([running the tools](tools_setup.md)).
+
 ```sh
-python3 -m venv .venv && .venv/bin/pip install esphome -r tools/requirements.txt   # ESPHome 2026.9.x
+git clone https://github.com/NickStallman/Rewired-S.git && cd Rewired-S
+python3 -m venv .venv && .venv/bin/pip install esphome==2026.9.1 -r tools/requirements.txt
 cp secrets.yaml.example secrets.yaml      # Wi-Fi, API key, web login, MQTT broker
 make config                               # validates every entry
 ```
@@ -22,6 +29,24 @@ Site files need one more link for the secrets ([sites/README.md](../sites/README
 | `wifi_ssid`, `wifi_password`, `fallback_ap_password` | `common/wifi.yaml` |
 | `api_encryption_key`, `web_username`, `web_password` | `common/access_secrets.yaml` (native API and web login; the same key encrypts ESPHome OTA) |
 | `mqtt_broker`, `mqtt_username`, `mqtt_password` | `common/mqtt_ha.yaml` |
+
+## Build and install
+
+```sh
+.venv/bin/esphome compile sites/<name>.yaml        # or make compile for every entry
+```
+
+The image is `.esphome/build/<name>/build/firmware.ota.bin`. Getting it onto a dongle:
+
+- **Dongle still on stock firmware:** package and sign it (`make sgu-keys` once, then
+  `make sgu APP=<firmware.ota.bin> SGU_BOARD=s|s2 SGU_BUILD=<P-number>`) and install it through
+  the stock updater with your own public key ([installing through the updater](install_ota.md),
+  "Build your own package"); or, on a WiNet-S, write it over the
+  [serial pads](install_serial.md).
+- **Dongle already on Rewired-S:** `make deploy NODE=sites/<name> DEVICE=<ip>` runs a native
+  ESPHome OTA, streams the logs across the reboot and exits 0 once the new build runs and is
+  marked valid. A pre-built image accepts the OTA with the web login password until Home
+  Assistant has adopted it, then with the API key.
 
 ## Entries
 

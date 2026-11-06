@@ -71,49 +71,41 @@ string inverters, SBR batteries and a DTSU666 on the meter port are ✅; the SH1
 SH-RT and SG-RT models, SBH batteries, meters on their own RS485 address, EV chargers and the
 Energy Bridge are 🟡/⚪.
 
-## Getting started
+## Quick start
 
-Two ways in. Both leave the stock bootloader, the partition table and the dongle's external
-flash (its identity and cloud settings) untouched, and both keep the stock app in the other OTA
-slot so you can go back.
-
-### 1. Through the dongle's own updater, no tools or soldering (both dongles)
-
-The stock firmware accepts a signed update package served from your LAN. Rewired-S ships as
-such a package, signed with the project's release key, which you import into the dongle once.
+Pre-built image through the dongle's own updater, no tools on the dongle, no soldering, both
+dongles. The stock app stays in the other slot; **Settings → Boot slots → Boot other slot** is
+the way back.
 
 1. Download your entry's `.zip` package and `publicKey_V1.pem` from the
-   [latest release](https://github.com/NickStallman/Rewired-S/releases), or build your own
-   ([docs/install_ota.md](docs/install_ota.md)).
-2. Import the public key and serve the package with the tools in `tools/`, then start the update
-   from the stock web UI. The dongle writes the new image into its inactive slot and reboots into
-   it. The web UI's **Boot other slot** button is the way back on both dongles (the WiNet-S2's
-   stock bootloader is expected to roll a crashing image back by itself, which is not yet
-   confirmed on hardware).
-3. Join the `rewired-s-xxxxxx` setup network (Wi-Fi images), enter your Wi-Fi, open the web UI
-   and set the MQTT broker and a new web password.
+   [latest release](https://github.com/NickStallman/Rewired-S/releases) into an empty folder.
+   Entries: `winet-s-prebuilt`, `winet-s-ethernet-prebuilt`, `winet-s2-prebuilt`,
+   `winet-s2-ethernet-prebuilt`.
+2. On a computer on the same network (Python 3.11+):
 
-Full procedure, checks and recovery: **[docs/install_ota.md](docs/install_ota.md)**. The tools run
-on Windows, macOS and Linux with nothing but Python: **[docs/tools_setup.md](docs/tools_setup.md)**.
+   ```sh
+   git clone https://github.com/NickStallman/Rewired-S.git && cd Rewired-S
+   python3 -m venv .venv && source .venv/bin/activate && pip install -r tools/requirements.txt
+   python3 -I tools/deploy_debug.py import-key --host <dongle-ip> --pubkey <folder>/publicKey_V1.pem
+   python3 -I tools/fake_iconfig_server.py --dist <folder>
+   ```
 
-### 2. Over the serial pads (WiNet-S only)
+3. From a browser **on that computer**, log in to the dongle's stock web UI as `admin` and open
+   **System → System maintenance → System update → iConfig update package**. Start it and wait
+   two to three minutes; the dongle reboots into Rewired-S.
+4. Wi-Fi images: join the `rewired-s-xxxxxx` network (password `rewired-s-setup`) and enter your
+   Wi-Fi. Ethernet images take a DHCP lease.
+5. Open `http://<dongle>/` (`admin` / `rewired-s`), set the MQTT broker and a new password on
+   the Settings page. Home Assistant discovers the inverter, batteries and meter.
 
-Two screws open the WiNet-S. With a 3.3 V USB-serial adapter on the UART pads and GPIO0 held low
-at reset, `esptool` writes the image into the first OTA slot, exactly as for any ESP32 project.
-Take a full flash backup first; it is the definitive way back. The
-[install page](https://nickstallman.github.io/Rewired-S/) offers ESP Web Tools for this route.
+Details, checks and recovery: [installing through the updater](docs/install_ota.md); Windows,
+macOS and Linux setup of the tools: [running the tools](docs/tools_setup.md); what the pre-built
+images do: [pre-built images](docs/prebuilt.md).
 
-Full procedure: **[docs/install_serial.md](docs/install_serial.md)**.
-
-### Pre-built or compile your own?
-
-- **Pre-built images** (the release assets) need no toolchain. Wi-Fi is set through the setup
-  network, the MQTT broker and the web login on the Settings page, the native API key when Home
-  Assistant adopts the dongle, and updates arrive through the **Firmware** update entity. See
-  [docs/prebuilt.md](docs/prebuilt.md).
-- **Compile your own** when you want Wi-Fi, MQTT and the API key compiled in, a site file with
-  your own options, the native-entities alternative to MQTT, or the debug build:
-  [docs/configuration.md](docs/configuration.md).
+Other ways in: over the [serial pads](docs/install_serial.md) (WiNet-S only; the
+[install page](https://nickstallman.github.io/Rewired-S/) has ESP Web Tools for it), or
+[compile your own image with ESPHome](docs/esphome.md) for compiled-in credentials, a site file
+with your own options, the native-entities alternative to MQTT, or the debug build.
 
 ## Home Assistant
 
@@ -164,7 +156,7 @@ compatibility chart this report is everything needed to add it. Full description
 | [Install over serial](docs/install_serial.md) | WiNet-S pads, backup, flashing, ESP Web Tools |
 | [Running the tools](docs/tools_setup.md) | Python setup and the tool commands on Windows, macOS and Linux |
 | [Pre-built images](docs/prebuilt.md) | setup network, default login, MQTT settings, updates |
-| [Configuration](docs/configuration.md) | entries, site files, secrets, substitutions, native entities |
+| [ESPHome](docs/esphome.md) | compiling your own image: setup, entries, site files, secrets, options, make targets |
 | [Home Assistant](docs/home_assistant.md) | MQTT discovery, entity names, the dongle's own entities, dashboards |
 | [Control](docs/control.md) | every writable setting, the safety model, the write paths |
 | [Back to stock](docs/back_to_stock.md) | three ways back and what is preserved |
