@@ -5,21 +5,6 @@ All notable changes to Rewired-S are recorded here. The format follows
 
 ## [Unreleased]
 
-### Added
-- `tools/pyproject.toml`: the install tools as a pip package
-  (`pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=tools"`):
-  `rewired-s-deploy`, `rewired-s-iconfig-server`, `rewired-s-sgu`, `rewired-s-package-sgu`,
-  `rewired-s-flash-backup`, `rewired-s-read-identity`.
-
-### Changed
-- The entries work as ESPHome remote packages
-  (`packages: x: github://NickStallman/Rewired-S/<entry>.yaml@v0.9.1`): the board files name their
-  partition tables relative to themselves, the `sites/` and `tests/config/` links are gone, and
-  `dashboard_import` pins the running release.
-
-### Fixed
-- The ESPHome dashboard's adoption of a pre-built image failed on the partition-table path.
-
 ## [0.9.1] - 2026-11-07
 
 Feedback round after the first public release: the SH15T (SH-T line) verified on hardware,
@@ -36,6 +21,10 @@ network fallback for the Ethernet images, and a privacy fix in the diagnostics l
   image (#11). The app descriptor's version carries the network kind (`0.9.1+wifi` / `+ethernet`).
 - Network fallback state on Settings → Boot slots and in the diagnostics report.
 - `docs/board_pins.md` "Other boards": what an ESP32 or ESP32-S3 board needs to run the firmware.
+- `tools/pyproject.toml`: the install tools as a pip package
+  (`pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=tools"`):
+  `rewired-s-deploy`, `rewired-s-iconfig-server`, `rewired-s-sgu`, `rewired-s-package-sgu`,
+  `rewired-s-flash-backup`, `rewired-s-read-identity`.
 
 ### Changed
 - Battery controls (`requires: battery` in `data/write_registers.yaml`) are left out of MQTT
@@ -45,6 +34,10 @@ network fallback for the Ethernet images, and a privacy fix in the diagnostics l
   recorded as verified (#9, #10, #11).
 - The analytics `uncatalogued` check uses `dsp_model_for(dev_code, model)`: a device is
   unrecognised only when no range table matches its code or model string.
+- The entries work as ESPHome remote packages
+  (`packages: x: github://NickStallman/Rewired-S/<entry>.yaml@v0.9.1`): the board files name their
+  partition tables relative to themselves, the `sites/` and `tests/config/` links are gone, and
+  `dashboard_import` pins the running release.
 
 ### Fixed
 - Diagnostics: values ESPHome logs as secrets (Wi-Fi password, API key) enter the log tail as
@@ -56,6 +49,7 @@ network fallback for the Ethernet images, and a privacy fix in the diagnostics l
 - The release public key is published as `publicKey_V1.pem`, the name the stock updater's key
   import requires; the install guide names the exact menu path, warns about the device-update
   dialog, and notes the browser-address and PowerShell requirements.
+- The ESPHome dashboard's adoption of a pre-built image failed on the partition-table path.
 
 ## [0.9.0] - 2026-10-31
 
