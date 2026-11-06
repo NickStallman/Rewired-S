@@ -105,7 +105,8 @@ jobs:
             done
           done
           rm -f /tmp/release_key.pem
-          cp tools/release_key_pub.pem release/rewired-s-release-public-key.pem
+          # Named as the stock updater's key import requires (publicKey_V<n>.pem); the same file is in every package zip.
+          cp tools/release_key_pub.pem release/publicKey_V1.pem
       - name: Flatten the image assets
         run: |
           for d in release/image-*; do
@@ -137,7 +138,7 @@ jobs:
             release/*.sgu
             release/*-WINET-*.bin
             release/*.zip
-            release/rewired-s-release-public-key.pem
+            release/publicKey_V1.pem
 
   pages:
     name: Publish GitHub Pages

@@ -83,7 +83,8 @@ def spa_pubkey_version(pem_path: str, product_name: str) -> str:
     """
     base = os.path.basename(pem_path)
     if not re.match(r"^publicKey_V\d+\.pem$", base):
-        raise ValueError("public key file must be named publicKey_V<n>.pem, got %r" % base)
+        raise ValueError("public key file must be named publicKey_V<n>.pem (the release ships it as "
+                         "publicKey_V1.pem, also inside the package zip), got %r" % base)
     stem = base[:-len(".pem")]
     return "%s_%s" % (product_name, stem)
 
@@ -343,10 +344,26 @@ def cmd_import_key(host, token, pem_path, version):
     body = {"import": "1", "public_key_data": encode_pubkey(pem),
             "public_key_version": version, "token": token, "lang": LANG}
     resp = _http(host, "/system/importPublicKey", token, method="POST", json_body=body)
-    if resp.get("result_code") == 1:
+    return report_import_key(resp, version)
+
+
+# 120: the same key version is already stored (it lives on the external flash and survives stock updates).
+IMPORT_KEY_ALREADY = (120, "120")
+
+
+def report_import_key(resp, version):
+    """Print the outcome of an importPublicKey reply; True when the key is usable afterwards."""
+    code = resp.get("result_code")
+    if code == 1 or code == "1":
         print("public key imported OK (version %s)" % version)
         return True
-    print("import FAILED: result_code=%s msg=%s" % (resp.get("result_code"), resp.get("result_msg")))
+    if code in IMPORT_KEY_ALREADY:
+        print("import answered result_code=120 (%s): the dongle usually says this when the same key "
+              "version is already stored (it survives stock updates). Continuing; if the install "
+              "later fails its signature check, import under a higher --pubkey-version."
+              % resp.get("result_msg"))
+        return True
+    print("import FAILED: result_code=%s msg=%s" % (code, resp.get("result_msg")))
     return False
 
 

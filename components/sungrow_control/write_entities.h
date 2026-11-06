@@ -43,6 +43,9 @@ struct WriteEntity {
   int32_t raw_max;
   const WriteOptionText *options;
   uint8_t noptions;
+  /// Meaningless without a battery: MQTT discovery and the web Devices page leave it out when the
+  /// inverter's battery type (sungrow_datamodel::SIG_BATTERY_TYPE) reads "No battery".
+  bool requires_battery{false};
 };
 
 /// Writable entities of a profile (nullptr + *count 0 for Profile::NONE / unknown).

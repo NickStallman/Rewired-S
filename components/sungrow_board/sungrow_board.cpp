@@ -13,8 +13,15 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#include "esphome/core/application.h"
 #include "esphome/core/helpers.h"
 #include "esphome/core/log.h"
+#ifdef USE_SUNGROW_NET_FALLBACK
+#include "esphome/components/network/util.h"
+#ifdef USE_ETHERNET
+#include "esphome/components/ethernet/ethernet_component.h"
+#endif
+#endif
 
 #include "diag.h"
 #ifdef USE_SUNGROW_WDOG
@@ -262,6 +269,9 @@ void SungrowBoard::setup() {
   this->load_cloud_version_();
   this->detect_other_slot_version_();
   this->resolve_cloud_version_();
+#ifdef USE_SUNGROW_NET_FALLBACK
+  this->net_fallback_setup_();
+#endif
 #ifdef USE_SUNGROW_DIAG
   diag_setup(this->diag_cfg_);
 #ifdef USE_TEXT_SENSOR
@@ -281,9 +291,103 @@ void SungrowBoard::setup() {
 #endif
 }
 
+void SungrowBoard::loop() {
 #ifdef USE_SUNGROW_DIAG
-void SungrowBoard::loop() { diag_loop(); }
+  diag_loop();
 #endif
+#ifdef USE_SUNGROW_NET_FALLBACK
+  const uint32_t now = millis();
+  if (now - this->net_fallback_last_ms_ >= 1000) {
+    this->net_fallback_last_ms_ = now;
+    this->net_fallback_loop_(now);
+  }
+#endif
+}
+
+// ---- network fallback (net_fallback.h) ----
+
+#ifdef USE_SUNGROW_NET_FALLBACK
+// Build id: the first four bytes of the running app's ELF SHA-256 (changes with every build).
+static uint32_t running_build_id() {
+  const esp_app_desc_t *d = esp_app_get_description();
+  if (d == nullptr)
+    return 0;
+  uint32_t id = 0;
+  std::memcpy(&id, d->app_elf_sha256, sizeof(id));
+  return id;
+}
+
+void SungrowBoard::net_fallback_setup_() {
+  this->net_fallback_pref_ =
+      global_preferences->make_preference<NetFallbackPref>(fnv1_hash("sungrow_board_net_fallback"), true);
+  if (!this->net_fallback_pref_.load(&this->net_fallback_data_))
+    this->net_fallback_data_ = NetFallbackPref{};
+  if (net_fallback_begin(&this->net_fallback_data_, running_build_id())) {
+    ESP_LOGI(TAG, "Network fallback armed for this build: the other slot boots after %" PRIu32
+                  " s without a network (%" PRIu32 " s when the Ethernet driver fails)",
+             this->net_fallback_cfg_.timeout_ms / 1000, this->net_fallback_cfg_.phy_failed_timeout_ms / 1000);
+    if (this->net_fallback_pref_.save(&this->net_fallback_data_))
+      global_preferences->sync();
+  } else if (!net_fallback_armed(this->net_fallback_data_)) {
+    ESP_LOGD(TAG, "Network fallback disarmed: this build has connected before");
+  }
+}
+
+bool SungrowBoard::net_fallback_connected_() const { return network::is_connected(); }
+
+bool SungrowBoard::net_fallback_phy_failed_() const {
+#ifdef USE_ETHERNET
+  return ethernet::global_eth_component != nullptr && ethernet::global_eth_component->is_failed();
+#else
+  return false;
+#endif
+}
+
+FallbackTarget SungrowBoard::net_fallback_target_() const {
+  const esp_app_desc_t *self = esp_app_get_description();
+  char project[sizeof(self->project_name) + 1] = "";
+  if (self != nullptr) {
+    std::memcpy(project, self->project_name, sizeof(self->project_name));
+    project[sizeof(self->project_name)] = '\0';
+  }
+  return check_fallback_target(read_other_slot(), project, this->net_fallback_cfg_.allow_stock);
+}
+
+void SungrowBoard::net_fallback_loop_(uint32_t now) {
+  if (this->net_fallback_fired_ || !net_fallback_armed(this->net_fallback_data_))
+    return;
+  const NetFallbackAction a = net_fallback_step(this->net_fallback_cfg_, &this->net_fallback_data_,
+                                                this->net_fallback_connected_(), this->net_fallback_phy_failed_(), now);
+  if (a == NetFallbackAction::CONNECTED) {
+    ESP_LOGI(TAG, "Network up: fallback disarmed for this build");
+    if (this->net_fallback_pref_.save(&this->net_fallback_data_))
+      global_preferences->sync();
+    return;
+  }
+  if (a != NetFallbackAction::FALL_BACK)
+    return;
+  this->net_fallback_fired_ = true;  // one attempt per boot, whatever the outcome
+  const FallbackTarget t = this->net_fallback_target_();
+  if (t != FallbackTarget::OK) {
+    ESP_LOGE(TAG, "No network after %" PRIu32 " s and no fallback target: %s", now / 1000, fallback_target_text(t));
+    return;
+  }
+  ESP_LOGW(TAG, "No network after %" PRIu32 " s%s: booting the other slot", now / 1000,
+           this->net_fallback_phy_failed_() ? " (Ethernet driver failed to start)" : "");
+  this->boot_other_slot(/*confirmed=*/true);
+}
+#endif
+
+std::string SungrowBoard::network_fallback_status() const {
+#ifdef USE_SUNGROW_NET_FALLBACK
+  char buf[160];
+  net_fallback_status(this->net_fallback_cfg_, this->net_fallback_data_, this->net_fallback_connected_(),
+                      this->net_fallback_phy_failed_(), millis(), this->net_fallback_target_(), buf, sizeof(buf));
+  return buf;
+#else
+  return "";
+#endif
+}
 
 void SungrowBoard::dump_config() {
   ESP_LOGCONFIG(TAG,
@@ -296,6 +400,9 @@ void SungrowBoard::dump_config() {
                 cloud_version_source_name(this->version_source_), this->version_floor_);
   if (this->version_pref_data_.detected[0] != '\0')
     ESP_LOGCONFIG(TAG, "  Stock version detected in the other slot: %s", this->version_pref_data_.detected);
+#ifdef USE_SUNGROW_NET_FALLBACK
+  ESP_LOGCONFIG(TAG, "  Network fallback: %s", this->network_fallback_status().c_str());
+#endif
 #ifdef USE_SUNGROW_WDOG
   ESP_LOGCONFIG(TAG, "  External watchdog: %s, kick GPIO%d, enable GPIO%d, every %" PRIu32 " ms, %" PRIu32 " edges",
                 watchdog_running() ? "running" : "FAILED", wd_kick, wd_enable, wd_interval_ms,

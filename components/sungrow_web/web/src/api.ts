@@ -382,6 +382,7 @@ export interface BootSlotInfo {
   other: SlotJson | null; // null: no other OTA slot
   armed: boolean; // the "Allow boot switch" switch is on
   can_switch: boolean; // the other slot holds a valid image
+  fallback?: string; // network fallback state (Ethernet images with common/ethernet_fallback.yaml)
 }
 
 const tok = (confirm: string) => encodeURIComponent(confirm);

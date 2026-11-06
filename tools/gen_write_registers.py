@@ -32,7 +32,8 @@ TYPES = {"u16": (4, 0, 0xFFFF), "s16": (3, -0x8000, 0x7FFF)}
 FIELDS_REQ = {"profile", "key", "name", "address", "type", "min", "max", "interval", "confidence",
               "evidence", "mkaiser"}
 FIELDS_OPT = {"values", "options", "scale", "unit", "step", "number_min", "number_max",
-              "address_by_protocol"}
+              "address_by_protocol", "requires"}
+REQUIRES = {"battery"}
 CONFIDENCE = {"confirmed", "likely", "guess"}
 
 
@@ -75,6 +76,8 @@ def load(path=SRC):
             fail(e, "type must be one of %s" % sorted(TYPES))
         if e["confidence"] not in CONFIDENCE:
             fail(e, "confidence must be one of %s" % sorted(CONFIDENCE))
+        if "requires" in e and e["requires"] not in REQUIRES:
+            fail(e, "requires must be one of %s" % sorted(REQUIRES))
         if e["key"] in keys:
             fail(e, "duplicate key %s" % e["key"])
         keys.add(e["key"])
@@ -84,7 +87,7 @@ def load(path=SRC):
             "max": _int(e, "max"), "interval": _int(e, "interval"),
             "confidence": e["confidence"], "evidence": str(e["evidence"]),
             "mkaiser": str(e["mkaiser"]), "scale": _float(e, "scale", 1.0),
-            "unit": str(e.get("unit") or ""),
+            "unit": str(e.get("unit") or ""), "requires": str(e.get("requires") or ""),
         }
         if (r["profile"], r["address"]) in addrs:
             fail(e, "duplicate address %d in profile %s" % (r["address"], r["profile"]))
@@ -346,7 +349,7 @@ def gen_meta(rows):
     for r in rows:
         d = {k: r[k] for k in ("profile", "name", "address", "type", "min", "max", "values",
                                "scale", "unit", "step", "number_min", "number_max", "sigid",
-                               "interval", "confidence", "address_by_protocol")}
+                               "interval", "confidence", "address_by_protocol", "requires")}
         d["options"] = r["options"]
         out.append("    %r: %r," % (r["key"], d))
     out += ["}", ""]

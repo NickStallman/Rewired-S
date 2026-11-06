@@ -5,6 +5,12 @@ All notable changes to Rewired-S are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-11-07
+
+Feedback round after the first public release: the SH15T (SH-T line) verified on hardware,
+the WiNet-S2 install route and Ethernet build verified, the install tooling and docs fixed, a
+network fallback for the Ethernet images, and a privacy fix in the diagnostics log tail.
+
 ### Added
 - Anonymous usage reporting (`sungrow_analytics`): a daily ping with versions, board, network
   kind, feature state and the connected device models, plus throttled error events. On in every
@@ -17,6 +23,13 @@ All notable changes to Rewired-S are recorded here. The format follows
   it locally.
 - `unsupported_device` reporting when discovery finds a device without a register table or
   catalogue entry.
+- Power-stage acceptance ranges for the SH-T line (`data/dsp_params/sh15t.csv`, PEARL-H). The
+  range tables are keyed by firmware line and matched by device code or devinfo model string, so
+  every listed SH-RS, SG-RS and SH-T model gets them (#9).
+- Network fallback (`sungrow_board` `network_fallback:`, `common/ethernet_fallback.yaml`, on in
+  the pre-built Ethernet entries): a build that has never had a network boots the other OTA slot
+  after 3 min (1 min when the Ethernet driver fails), if that slot holds a non-Ethernet Rewired-S
+  image (#11). The app descriptor's version carries the network kind (`0.9.1+wifi` / `+ethernet`).
 - Pre-built images (`winet-s-prebuilt.yaml`, `winet-s-ethernet-prebuilt.yaml`,
   `winet-s2-prebuilt.yaml`, `winet-s2-ethernet-prebuilt.yaml`; `docs/prebuilt.md`): Wi-Fi from
   the captive portal (Improv Serial on the WiNet-S), the API key from Home Assistant at adoption,
@@ -49,6 +62,11 @@ All notable changes to Rewired-S are recorded here. The format follows
   Assistant, contributing; sample dashboards under `dashboards/`.
 
 ### Changed
+- Battery controls (`requires: battery` in `data/write_registers.yaml`) are left out of MQTT
+  discovery and the web Devices page on a hybrid that reports "No battery" (#9).
+- `docs/compatibility.md`: every inverter class with its firmware line, reads, controls,
+  power-stage ranges and hardware verification; WiNet-S2 Ethernet and the stock-updater route
+  recorded as verified (#9, #10, #11).
 - `common/base.yaml` no longer carries `api:`, `ota:` (native) and `web_server.auth`; they come
   from `common/access_secrets.yaml`, which every compiled entry includes (resulting configuration
   unchanged).
@@ -61,6 +79,17 @@ All notable changes to Rewired-S are recorded here. The format follows
   read them through `tools/datalib.py` (PyYAML, `tools/requirements.txt`); the generated tables
   are unchanged apart from their header comments. `tools/extract_init_param_xml.py` and
   `tools/fetch_grid_profiles.py` convert a dongle's grid-code files into that format.
+
+### Fixed
+- Diagnostics: values ESPHome logs as secrets (Wi-Fi password, API key) enter the log tail as
+  `<secret>`; the report scrubber replaces the Wi-Fi and MQTT passwords (`<psk>`, `<mqtt-password>`).
+- `tools/fake_iconfig_server.py` offers the package only to a request that names a WiNet (the
+  stock device-update dialog asks with the inverter's model) and matches `/web/<name>` with or
+  without the `/v2` prefix (stock `P016`) (#10).
+- `tools/deploy_debug.py import-key` treats `result_code=120` as "key already stored" and continues.
+- The release public key is published as `publicKey_V1.pem`, the name the stock updater's key
+  import requires; the install guide names the exact menu path, warns about the device-update
+  dialog, and notes the browser-address and PowerShell requirements.
 
 ### Removed
 - The stock-format inputs (`data/register_map/*.csv`, `bitfields.csv`, `mqtt_point_table.csv`,

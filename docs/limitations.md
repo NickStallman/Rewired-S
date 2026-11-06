@@ -14,8 +14,9 @@ are not confirmed on hardware.
   verified.
 - The WiNet-S RS485 driver-enable pin (GPIO12) is also the flash-voltage strap; whether the
   transceiver pulls it at reset is not verified.
-- The W5500 reset pin (GPIO5) of the WiNet-S2 Ethernet variant is not verified; Ethernet on the
-  WiNet-S2 is untested.
+- Whether the WiNet-S2's stock bootloader really rolls back an image that resets within 30 s
+  is not confirmed on hardware (ESPHome cannot read that bootloader's descriptor); the Ethernet
+  images carry a network fallback instead, the Wi-Fi images rely on **Boot other slot**.
 - The timeout of the WiNet-S2 external supervisor is not known. A supervisor reset clears RTC
   memory, so the reset journal of such a boot is lost.
 - On a brownout the firmware does not switch the WiNet-S2 supervisor off.
@@ -65,9 +66,10 @@ are not confirmed on hardware.
   protocol-4 string inverter, 5006 otherwise; neither of the first two is tested on such a unit.
 - There is no fault-clear command: the stock fault-clear and self-check are equipment-layer
   commands, not holding registers.
-- Power-stage acceptance ranges are known for the SH10RS and SG5.0RS only
-  (`data/dsp_params/models.yaml`); other models are checked against the installer catalogue
-  ranges only.
+- Power-stage acceptance ranges are known for the SH-RS, SG-RS and SH-T lines only
+  (`data/dsp_params/models.yaml`); the SH-RT, SG-RT and every other line are checked against
+  the installer catalogue ranges only. The SH-RS and SG-RS tables were read on the SH10RS and
+  SG5.0RS, the SH-T table on the SH15T's firmware; their siblings share the power-stage image.
 - A 100 ms settle gap follows every write and each register is rate-limited to one write per
   second; both are fixed.
 - Polling continues while writes are queued; writes go out between poll transactions (the stock

@@ -6,6 +6,8 @@
 - `diagnostics:` keeps a reset journal and log tail in RTC memory, switches the supervisor off on
   a panic, and reports how the previous boot ended (diag.h).
 - `coredump: true` writes an IDF core dump to the `coredump` partition on a crash.
+- `network_fallback:` boots the other OTA slot when this build has never had a network
+  (net_fallback.h; the Ethernet images' way back without a UART).
 - `boot_slot:` the "Allow boot switch" switch (never restored) and the "Boot other slot" button
   that boots the other OTA slot (normally the stock app; docs/back_to_stock.md).
 """
@@ -61,6 +63,10 @@ CONF_COREDUMP = "coredump"
 CONF_BOOT_SLOT = "boot_slot"
 CONF_ALLOW = "allow"
 CONF_BOOT_OTHER = "boot_other"
+CONF_NETWORK_FALLBACK = "network_fallback"
+CONF_TIMEOUT = "timeout"
+CONF_PHY_FAILED_TIMEOUT = "phy_failed_timeout"
+CONF_ALLOW_STOCK = "allow_stock"
 
 VARIANT_WINET_S = "winet_s"
 VARIANT_WINET_S2 = "winet_s2"
@@ -188,6 +194,22 @@ BOOT_SLOT_SCHEMA = cv.Schema(
     }
 )
 
+# Network fallback (net_fallback.h, common/ethernet_fallback.yaml): an image that has never had a
+# network since it was installed boots the other OTA slot after `timeout` (sooner when the
+# Ethernet driver failed to start), provided that slot holds a Rewired-S image that is not an
+# Ethernet build (or the stock app, with allow_stock).
+NETWORK_FALLBACK_SCHEMA = cv.Schema(
+    {
+        cv.Optional(CONF_TIMEOUT, default="3min"): cv.All(
+            cv.positive_time_period_milliseconds, cv.Range(min=cv.TimePeriod(seconds=30))
+        ),
+        cv.Optional(CONF_PHY_FAILED_TIMEOUT, default="60s"): cv.All(
+            cv.positive_time_period_milliseconds, cv.Range(min=cv.TimePeriod(seconds=10))
+        ),
+        cv.Optional(CONF_ALLOW_STOCK, default=False): cv.boolean,
+    }
+)
+
 CONFIG_SCHEMA = cv.All(
     cv.Schema(
         {
@@ -205,6 +227,7 @@ CONFIG_SCHEMA = cv.All(
             # Needs a `coredump` data partition in the partition table.
             cv.Optional(CONF_COREDUMP, default=False): cv.boolean,
             cv.Optional(CONF_BOOT_SLOT): BOOT_SLOT_SCHEMA,
+            cv.Optional(CONF_NETWORK_FALLBACK): NETWORK_FALLBACK_SCHEMA,
         }
     ).extend(cv.COMPONENT_SCHEMA),
     cv.only_on_esp32,
@@ -278,6 +301,15 @@ async def _register_component(config):
         if conf := bs.get(CONF_BOOT_OTHER):
             btn = await button.new_button(conf)
             await cg.register_parented(btn, var)
+    if (nf := config.get(CONF_NETWORK_FALLBACK)) is not None:
+        cg.add_define("USE_SUNGROW_NET_FALLBACK")
+        cg.add(
+            var.set_network_fallback(
+                nf[CONF_TIMEOUT].total_milliseconds,
+                nf[CONF_PHY_FAILED_TIMEOUT].total_milliseconds,
+                nf[CONF_ALLOW_STOCK],
+            )
+        )
     if (diag := config.get(CONF_DIAGNOSTICS)) is not None:
         cfg = cg.StructInitializer(
             sungrow_board_ns.struct("DiagConfig"),

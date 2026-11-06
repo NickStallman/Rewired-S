@@ -204,23 +204,38 @@ inline void ring_append(RingHeader &h, char *data, size_t cap, const char *s, si
 }
 
 /// Append one log line: ANSI colour sequences and CR dropped, other control characters become
-/// spaces, cut at max_len, '\n' added.
+/// spaces, cut at max_len, '\n' added. An ANSI conceal span (ESC[8m .. ESC[28m or ESC[0m: what
+/// LOG_SECRET wraps around a password or key) becomes "<secret>".
 inline void ring_append_line(RingHeader &h, char *data, size_t cap, const char *msg, size_t len, size_t max_len = 200) {
   char line[256];
   if (max_len > sizeof(line) - 1)
     max_len = sizeof(line) - 1;
   size_t o = 0;
+  bool concealed = false;
   for (size_t i = 0; i < len && msg[i] != '\0' && o < max_len; i++) {
     const char c = msg[i];
-    if (c == '\033') {  // ESC [ ... letter
+    if (c == '\033') {  // ESC [ params letter
       i++;
-      if (i < len && msg[i] == '[')
+      if (i < len && msg[i] == '[') {
+        const size_t start = i + 1;
         while (i + 1 < len && !((msg[i + 1] >= 'A' && msg[i + 1] <= 'Z') || (msg[i + 1] >= 'a' && msg[i + 1] <= 'z')))
           i++;
-      i++;  // the final letter
+        i++;  // the final letter
+        if (i < len && msg[i] == 'm') {
+          const size_t n = i - start;
+          if (n == 1 && msg[start] == '8') {
+            concealed = true;
+            static const char MASK[] = "<secret>";
+            for (size_t k = 0; k < sizeof(MASK) - 1 && o < max_len; k++)
+              line[o++] = MASK[k];
+          } else if ((n == 2 && msg[start] == '2' && msg[start + 1] == '8') || (n == 1 && msg[start] == '0')) {
+            concealed = false;
+          }
+        }
+      }
       continue;
     }
-    if (c == '\r' || c == '\n')
+    if (concealed || c == '\r' || c == '\n')
       continue;
     line[o++] = static_cast<unsigned char>(c) < 0x20 ? ' ' : c;
   }

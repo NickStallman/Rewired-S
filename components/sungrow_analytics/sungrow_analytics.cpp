@@ -29,6 +29,9 @@
 #include "../sungrow_board/diag_journal.h"
 #include "../sungrow_board/sungrow_board.h"
 #endif
+#ifdef USE_SUNGROW_NET_FALLBACK
+#include "../sungrow_board/sungrow_board.h"
+#endif
 #ifdef SUNGROW_ANALYTICS_BIND_CONTROL
 #include "../sungrow_control/dsp_ranges.gen.h"
 #endif
@@ -549,10 +552,10 @@ void SungrowAnalytics::sample_(uint32_t now) {
       s.fails_primed = true;
     }
 #ifdef SUNGROW_ANALYTICS_BIND_CONTROL
-    // An inverter model without a row in the model manifest: known family, not catalogued.
+    // An inverter with no power-stage range table (neither its code nor its model string is listed).
     if (!s.catalogue_checked && d.discovered() && d.table() != nullptr && d.table()->family == dm::Family::INVERTER) {
       s.catalogue_checked = true;
-      if (sungrow_control::dsp_model(d.devinfo().dev_code) == nullptr) {
+      if (sungrow_control::dsp_model_for(d.devinfo().dev_code, d.devinfo().model) == nullptr) {
         char detail[64];
         std::snprintf(detail, sizeof(detail), "uncatalogued:%u/%u/%u", d.devinfo().dev_type,
                       d.devinfo().protocol, d.devinfo().dev_code);
@@ -726,8 +729,11 @@ void SungrowAnalytics::fill_scrubber_() {
     char ssid[wifi::SSID_BUFFER_SIZE] = "";
     wifi::global_wifi_component->wifi_ssid_to(ssid);
     this->scrubber_.add(ssid, "<ssid>");
+    this->scrubber_.add(wifi::global_wifi_component->get_sta().get_password().str(), "<psk>");
   }
 #endif
+  if (this->mqtt_ != nullptr)
+    this->scrubber_.add(this->mqtt_->settings().pass, "<mqtt-password>");
 }
 
 void SungrowAnalytics::fill_bundle_device_(const Device &d, uint32_t now, BundleDevice *out) const {
@@ -899,6 +905,13 @@ std::string SungrowAnalytics::build_bundle() {
     f.capture_present = true;
     f.capture_running = this->capture_->core().running();
     f.capture_kind = f.capture_running ? sungrow_capture::kind_name(this->capture_->core().running_kind()) : "";
+  }
+#endif
+#ifdef USE_SUNGROW_NET_FALLBACK
+  std::string net_fallback_line;
+  if (sungrow_board::global_board != nullptr) {
+    net_fallback_line = sungrow_board::global_board->network_fallback_status();
+    f.net_fallback = net_fallback_line.c_str();
   }
 #endif
   write_features(out, f);

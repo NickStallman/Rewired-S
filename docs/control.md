@@ -182,6 +182,10 @@ sungrow_modbus_tcp:
 
 - `select` entities use mkaiser's option strings and raw values. The options list only the
   writable values.
+- Controls marked `requires: battery` in `data/write_registers.yaml` (SOC limits, forced
+  charge/discharge, battery power limits) are left out of MQTT discovery and the web Devices page
+  on a hybrid whose battery type reads "No battery"; the native-API packages are static and keep
+  them.
 - `number` entities have units, ranges and steps from `data/write_registers.yaml`. The value
   is converted as `raw = round(value / scale)` and checked against the allow-list.
 - **State is never optimistic.** Every entity shows the read-back signal, i.e. what the
@@ -332,10 +336,11 @@ deadline after which unsent frames are dropped as failed. Progress and a result 
 only inside its own range and silently keeps the old value otherwise, while the control board
 acknowledges the write
 ([parameters](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/architecture.md)).
-The ranges are known for the SH10RS and the SG5.0RS: `data/dsp_params/models.yaml` lists each
-model with the device code it reports in its devinfo block, the power-stage firmware the ranges
-belong to and a CSV of ranges, and `dsp_ranges.gen.h` holds the generated tables. On a listed
-model the server applies those ranges on top of the checks above:
+The ranges are known for the SH-RS, SG-RS and SH-T lines: `data/dsp_params/models.yaml` lists
+each power-stage firmware line with the models it covers, the device codes seen so far, the
+power-stage firmware the ranges belong to and a CSV of ranges, and `dsp_ranges.gen.h` holds the
+generated tables. A device is matched by device code, else by its devinfo model string. On a
+listed model the server applies those ranges on top of the checks above:
 - an Installer value outside its range is refused (`BAD_VALUE`, detail `dsp_range:ADDR:MIN-MAX`);
 - a Setup profile item outside its range is left out of the batch with a WARN log and listed in
   the `note` of `/api/setup_preview` and `/api/setup_apply`; the rest of the profile is still

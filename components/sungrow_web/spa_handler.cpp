@@ -1476,8 +1476,10 @@ void SpaHandler::handle_boot_slot_get_(AsyncWebServerRequest *request) {
 #ifdef SUNGROW_WEB_HAVE_BOARD
   sungrow_board::SungrowBoard *b = sungrow_board::global_board;
   if (b != nullptr) {
+    const std::string fallback = b->network_fallback_status();
     send_json(request, sungrow_board::boot_slots_json(sungrow_board::read_running_slot(),
-                                                      sungrow_board::read_other_slot(), b->boot_switch_armed()));
+                                                      sungrow_board::read_other_slot(), b->boot_switch_armed(),
+                                                      fallback.c_str()));
     return;
   }
 #endif

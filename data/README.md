@@ -15,7 +15,7 @@ files (`make gen`) and checked for drift (`make check-gen`). The generators need
 | `installer_rules.yaml` | `tools/gen_installer_rules.py` (imported by `tools/gen_installer_settings.py`) | the value ranges, register relations and regulation rules in `installer_rules.gen.h` and `installer_settings.gen.ts` |
 | `installer_help.yaml` | `tools/gen_installer_settings.py` | the `help` tooltips of `installer_settings.gen.ts` |
 | `write_registers.yaml` | `tools/gen_write_registers.py` | `components/sungrow_control/write_registers.{h,cpp}`, `write_meta.py`: the write allow-list and its read-back table |
-| `dsp_params/models.yaml`, `dsp_params/*.csv` | `tools/gen_dsp_ranges.py` | `components/sungrow_control/dsp_ranges.gen.h`: the parameter acceptance ranges of each inverter model's power stage, keyed by device code |
+| `dsp_params/models.yaml`, `dsp_params/*.csv` | `tools/gen_dsp_ranges.py` | `components/sungrow_control/dsp_ranges.gen.h`: the parameter acceptance ranges of each power-stage firmware line (SH-RS, SG-RS, SH-T), matched by device code or model string |
 
 `tools/fetch_grid_profiles.py` downloads the current grid-code XML set from iSolarCloud into
 `fetched/grid_profiles/<region>/` (not tracked) and converts it to `grid_profiles/` format

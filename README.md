@@ -59,14 +59,17 @@ More screenshots: [devices](docs/images/devices.jpg), [installer settings](docs/
 | Dongle | SoC | Network | Status |
 |---|---|---|---|
 | WiNet-S (V200) | ESP32, 4 MB PSRAM | Wi-Fi or Ethernet (DP83848) | tested (Ethernet on the string inverter) |
-| WiNet-S2 (SV300) | ESP32-S3, 8 MB PSRAM | Wi-Fi | tested (on the hybrid inverter) |
-| WiNet-S2 (SV300) | ESP32-S3, 8 MB PSRAM | Ethernet (W5500) | compiles, untested |
+| WiNet-S2 (SV300) | ESP32-S3, 8 MB PSRAM | Wi-Fi | tested (on the hybrid inverter); pre-built image and stock-updater install verified by a user |
+| WiNet-S2 (SV300) | ESP32-S3, 8 MB PSRAM | Ethernet (W5500) | verified by a user (link, DHCP, MQTT, cloud over the cable) |
 
-Inverters and batteries: the [compatibility chart](docs/compatibility.md) lists every family the
-firmware knows about and how far each has been verified. In short: SH-RS hybrids and SG-RS string
-inverters with SBR batteries are the tested line; SH-RT, SH-T and SG-RT three-phase models, SBH
-batteries, meters, EV chargers and the Energy Bridge are polled from the same tables but
-unverified.
+Inverters and batteries: every inverter the WiNet-S supports works, because the firmware polls
+each device from the register table of the protocol type it reports rather than by model name;
+the [compatibility chart](docs/compatibility.md) lists every class, whether its power-stage
+acceptance ranges are known, and how far it has been verified. In short: SH-RS hybrids and SG-RS
+string inverters with SBR batteries are the tested line (daily use), the SH-T three-phase
+hybrids are verified for reads on an SH15T and carry their ranges too; SH-RT and SG-RT
+three-phase models, SBH batteries, meters, EV chargers and the Energy Bridge are polled from the
+same tables but nobody has reported on them yet.
 
 ## Getting started
 
@@ -79,13 +82,15 @@ slot so you can go back.
 The stock firmware accepts a signed update package served from your LAN. Rewired-S ships as
 such a package, signed with the project's release key, which you import into the dongle once.
 
-1. Download the `.sgu` package, its `.bin` signature and the public key for your dongle from the
+1. Download the `.sgu` package, its `.bin` signature and the release public key
+   (`publicKey_V1.pem`) from the
    [latest release](https://github.com/NickStallman/Rewired-S/releases), or build your own
    (`docs/install_ota.md`).
 2. Import the public key and serve the package with the tools in `tools/`, then start the update
    from the stock web UI. The dongle writes the new image into its inactive slot and reboots into
-   it. On the WiNet-S2 an image that fails within 30 s is rolled back automatically; on the
-   WiNet-S the web UI's **Boot other slot** button is the way back.
+   it. The web UI's **Boot other slot** button is the way back on both dongles (the WiNet-S2's
+   stock bootloader is expected to roll a crashing image back by itself, which is not yet
+   confirmed on hardware).
 3. Join the `rewired-s-xxxxxx` setup network (Wi-Fi images), enter your Wi-Fi, open the web UI
    and set the MQTT broker and a new web password.
 
