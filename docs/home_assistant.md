@@ -5,32 +5,23 @@ and every device on the RS485 bus as its own device through MQTT discovery.
 
 ## Why MQTT, and not just ESPHome entities
 
-ESPHome entities are decided when the firmware is compiled: each sensor, switch or select is an
-object in the binary with a fixed name and id. What hangs off a WiNet is only known at runtime:
-one inverter, or an inverter with one, two or more battery stacks, a meter, perhaps an EV
-charger, each with its own model and serial number, each discovered on the bus after boot.
-Pre-compiling an entity for every signal of every device that might appear would mean hundreds
-of hidden entity objects per possible device, and they would all belong to the one ESPHome
-device in Home Assistant, the dongle, rather than to the inverter or battery they describe.
+ESPHome entities are fixed when the firmware is compiled, but the devices on the bus (inverter,
+battery stacks, meter, charger) are only known at runtime. MQTT discovery publishes a Home
+Assistant device for each device actually found, keyed by model and serial, with the entity scheme
+the Winet Extractor add-on used; the cost is an MQTT broker (the Mosquitto add-on).
 
-MQTT discovery turns this around: the firmware publishes a Home Assistant device for each
-inverter, battery stack or meter it has actually found, keyed by model and serial, with exactly
-the entities that device serves, from a compact table in flash. The devices survive dongle
-reboots and firmware updates, and the entity scheme is the one the Winet Extractor add-on used,
-so dashboards and automations carry over. The cost is one extra service, an MQTT broker, which
-most Home Assistant installs already run (the Mosquitto add-on).
-
-If you really do not want a broker, `common/native_entities.yaml` compiles the inverter (and
-optionally a battery stack and a meter) into the dongle's native-API device instead
-([configuration](configuration.md)). Devices beyond those are then only visible in the web UI
-and over Modbus-TCP.
+If you do not want a broker, `common/native_entities.yaml` compiles the inverter (and optionally a
+battery stack and a meter) into the dongle's native-API device instead
+([configuration](configuration.md)). These native-API control packages are static: they keep the
+battery controls whatever battery the inverter reports. Devices beyond those are then only visible
+in the web UI and over Modbus-TCP.
 
 ## The dongle (ESPHome native API)
 
 Added through *Settings → Devices & services*, where the ESPHome integration discovers it.
 Pre-built images have no API key compiled in; Home Assistant generates one when it adopts the
-dongle ([pre-built images](prebuilt.md)). Entities, with `<dongle>` the node name
-(`house_inverter`):
+dongle (not yet verified, see [compatibility](compatibility.md); [pre-built images](prebuilt.md)).
+Entities, with `<dongle>` the node name (`house_inverter`):
 
 | Entity | Purpose |
 |---|---|
@@ -40,7 +31,7 @@ dongle ([pre-built images](prebuilt.md)). Entities, with `<dongle>` the node nam
 | `binary_sensor.<dongle>_cloud_connected` | uplink state |
 | `switch.<dongle>_modbus_tcp_server` | the port 502 server |
 | `switch.<dongle>_usage_reporting` | anonymous usage reporting ([usage reporting](analytics.md)) |
-| `switch.<dongle>_allow_boot_switch`, `button.<dongle>_boot_other_slot` | the way back to the app in the other OTA slot ([back to stock](back_to_stock.md)) |
+| `switch.<dongle>_allow_boot_switch`, `button.<dongle>_boot_other_slot` | the way back to the app in the other OTA slot, or Settings → Boot slots in the web UI ([back to stock](back_to_stock.md)) |
 | `binary_sensor.<dongle>_mqtt_connected` | the local MQTT connection (pre-built images) |
 | `sensor.<dongle>_last_reset`, write counters, uptime, versions | diagnostics |
 | `button.<dongle>_restart`, `_rs485_rescan` | actions (**Send diagnostics** is on the web UI's Settings page) |
@@ -56,13 +47,17 @@ its own device, linked to the dongle through `via_device`:
 
 | Device | Entities |
 |---|---|
-| Inverter (`SH10RS`, `SG5.0RS`, …) | power, voltages and currents per phase and per MPPT, grid import and export, load, energy counters, temperatures, operating status, a **Problem** binary sensor with the active fault codes and names as attributes, serial and firmware version, and the control profile's writable entities: `select` (EMS mode, forced charge/discharge command, start/stop), `number` (forced power, SOC limits, export limit, charge and discharge power limits, power limitation %), `switch` (export limit mode, power limitation) |
+| Inverter (`SH10RS`, `SG5.0RS`, …) | power, voltages and currents per phase and per MPPT, grid import and export, load, energy counters, temperatures, operating status, a **Problem** binary sensor with the active fault codes and names as attributes, serial and firmware version, and the control profile's writable entities: `select` (EMS mode, forced charge/discharge command, start/stop), `number` (forced power, max/min SOC, reserved SOC, export limit, battery max charge/discharge power, charging/discharging start power, power limitation % and kW), `switch` (export limit mode, backup mode, power limitation) |
 | Battery stack (`SBR192`, …) | SOC, SOH, voltage, current, temperature, cycle count, balancing status, highest and lowest cell voltage with module and cell index, cell voltage spread, warmest and coolest module, charge/discharge prohibited flags, active fault codes, a **Problem** sensor |
 | Meter | per-phase voltages, currents and active power, totals, frequency, import and export energy |
 
+Battery controls (forced charge/discharge, SOC limits, reserved SOC, battery power limits and
+start powers) are left out while the inverter reports battery type "No battery".
+
 Entity ids follow `<domain>.<model>_<serial>_<name>` with the model in lower case and dots
-replaced (`sh10rs`, `sg5_0rs`, `sbr192`) and the name slugified: `sensor.sh10rs_a2xxxxxxxxx_battery_soc`,
-`select.sh10rs_a2xxxxxxxxx_ems_mode`, `sensor.sbr192_s23xxxxxxxx_cell_voltage_spread`.
+replaced (`sh10rs`, `sg5_0rs`, `sbr192`), the serial in lower case and the name slugified:
+`sensor.sh10rs_a2xxxxxxxxx_battery_soc`, `select.sh10rs_a2xxxxxxxxx_ems_mode`,
+`sensor.sbr192_s23xxxxxxxx_cell_voltage_spread`.
 Each device has an availability topic, so entities go unavailable when the device drops off the
 bus or the dongle goes down. Values are published on change with a per-signal deadband
 ([update rates](update_rates.md)); the writable entities show the inverter's own read-back, so a
@@ -75,8 +70,9 @@ ranges as every other path, and are rate-limited to one write per register per s
 
 - Compiled images: `mqtt_broker`, `mqtt_username`, `mqtt_password` in `secrets.yaml`; port and
   discovery prefix in `common/mqtt_ha.yaml`.
-- Pre-built images: the **Home Assistant (MQTT)** card on the Settings page of the web UI; the
-  connection state and the last error are shown there and as `binary_sensor.<dongle>_mqtt_connected`.
+- Pre-built images: the **Home Assistant** card on the Settings page of the web UI; the
+  connection state and the last error are shown there and as
+  `binary_sensor.<dongle>_mqtt_connected`.
 
 ## Dashboards
 
@@ -94,5 +90,6 @@ The port 502 server speaks Sungrow's public register maps, so
 [mkaiser's integration](https://github.com/mkaiser/Sungrow-SHx-Inverter-Modbus-Home-Assistant)
 and [SunGather](https://github.com/bohdan-s/SunGather) work unchanged with the dongle as the host.
 Registers the firmware does not poll are forwarded to the inverter live. Writes (function 6 and
-16) pass the same gate and allow-list as MQTT; `write_allowed_ips` in `common/modbus_tcp.yaml`
-restricts who may write. Both paths can run at the same time.
+16) pass the same gate and allow-list as MQTT; `write_allowed_ips` under `sungrow_modbus_tcp:` in
+`common/control.yaml` (a commented example) restricts who may write. Both paths can run at the
+same time.

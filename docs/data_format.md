@@ -2,10 +2,11 @@
 
 Everything the generators read lives under `data/` in the project's own YAML schema. The files
 are plain data: every number is a Modbus register number, a scale, a code value or a poll
-parameter of the device interface, and every row carries its `evidence` (SG-Docs page, public
-Sungrow Modbus document, mkaiser / SunGather project or hardware observation). `tools/datalib.py`
-loads and validates them; the generators (`make gen`) turn them into the C++ / Python /
-TypeScript tables, and `make check-gen` fails when a generated file is stale.
+parameter of the device interface, and every signal, fix and read carries its `evidence` (SG-Docs
+page, public Sungrow Modbus document, mkaiser / SunGather project or hardware observation).
+`tools/datalib.py` loads and validates them; the generators (`make gen`) turn them into the C++ /
+Python / TypeScript tables, and `make check-gen` fails when a generated file is stale
+(`gen_tables.py` output is checked by `tests/test_gen_deterministic.py`).
 
 Conventions shared by every file:
 
@@ -48,7 +49,7 @@ signals:
   evidence: "st6100@4097 st6200@4097; SG-Docs meters.md; readings: 240.1 V on the test meter"
 fixes:                            # optional
 - {table: other_dev18_st6100, id: 0x210E, stock_address: 4161, address: 4163, confidence: confirmed, evidence: "..."}
-reads:                            # optional (inverter only today)
+reads:                            # optional (inverter only)
 - {key: over_voltage_recovery, name: "...", unit: V, scale: 0.1, fn: 3, address: 32318, dtype: u16, group: protection, priority: 510, confidence: confirmed, evidence: "..."}
 ```
 
@@ -74,7 +75,7 @@ Poll terms: a request node is one Modbus read. The builder walks the rows of one
 in order; a row joins the current node while the span from the node's first register stays
 within 120 registers (otherwise it starts a new node), a row with `end` closes the node after
 itself, and a row whose cycle differs from the node's first row is still merged (the node is
-polled at the first row's cycle; the one exception is register 0x396d, skipped in that case). The
+polled at the first row's cycle; the one exception is register 14701, skipped in that case). The
 reference implementation of these rules is `tests/fixtures/stock_request_nodes.py`;
 `tests/test_request_nodes.py` checks `tools/gen_tables.py`'s mirror of the C++ builder against
 it, and `tests/test_datamodel.cpp` the C++ builder itself.
@@ -96,6 +97,7 @@ packages (`devices/*.yaml`).
 | `group` | `realtime` (default), `static` (device facts, HA diagnostic), `protection` |
 | `accuracy` | display decimals (default: derived from the scale) |
 | `enum` | name of a decode table in `tools/gen_tables.py` `ENUMS` (raw code → text) |
+| `bits` | `{first, count}`: the signal is a status word whose bits are the signals `first + bit` (the bit definitions) |
 | `absent` | space-separated conditions under which a polled value is "not served": a raw value (`0xFFFF`), `single_phase` (the device reports output type 0), `no_meter` (no meter power valid) |
 | `confidence` | `confirmed` (an independent public source agrees, or two devices read it as named), `likely` (one good source), `guess` (inferred from layout; verify on hardware) |
 | `evidence` | where the id lives (`<table>@<address>`, `/fnN` for non-input rows) and the sources |
@@ -115,8 +117,9 @@ fallback list.
 - `shared` (under a table, mostly in the export maps): `{id, address, fn, evidence}` for two rows
   of the same id that legitimately share an address. Any other overlap fails the build.
 - `reads`: holding registers that are not polled (no table row, no id) but shown read-only:
-  `key, name, unit, scale, fn, address, dtype (u16 | s16), group, priority, enum, accuracy,
-  confidence, evidence`. They reach `register_meta.py` `READS` and the SPA's protection panel.
+  `key, name, unit, scale, device_class, state_class, fn, address, dtype (u16 | s16), group,
+  priority, enum, accuracy, confidence, evidence`. They reach `register_meta.py` `READS` and the
+  SPA's protection panel.
 
 Signals that the firmware derives (`total_yield`, per-MPPT power, fault lists, ...) are defined
 in `tools/gen_tables.py` (`DERIVED`), not here.
@@ -204,8 +207,8 @@ family → register → tooltip text.
 `min` / `max` (raw), `values` (the only raw values accepted), `options` (`{value, label}` for
 selects), `scale`, `unit`, `step`, `number_min` / `number_max` (display units), `interval`
 (read-back period in s), `requires` (`battery`: left out of MQTT discovery and the web Devices
-page while the inverter's battery type reads "No battery"), `mkaiser`, `confidence`, `evidence`. The header of the file documents
-each field.
+page while the inverter's battery type reads "No battery"), `mkaiser`, `confidence`, `evidence`.
+The header of the file documents each field.
 
 ## 6 Power-stage ranges: `data/dsp_params/`
 
@@ -215,9 +218,8 @@ power-stage image the ranges were read from), `csv`, `models` (the devinfo model
 line covers, as the inverter reports them: `SH5.0RS`, `SH15T`, `SH5.0RS-20`) and `dev_codes`
 (`{model: devinfo device code}` for the models a dongle has reported). The CSV
 (`doc_reg,count,min,max,label,unit`) gives one raw range per register (`count` 2 = U32). A device
-is matched by its device code first, then by its model string, so every model of a line gets the
-line's ranges; the same table applies to the whole line because the ranges live in the shared
-power-stage image (model-specific limits are dynamic clamps the table never held).
+is matched by device code, else by model string; behaviour in
+[device types §5.4](device_types_setup_installer.md#54-power-stage-acceptance-ranges).
 
 ## 7 Adding a new device family
 
@@ -235,7 +237,7 @@ Say a new RS485 device type 77 ("hub") appears with its own register map.
    values is the convention; derived signals use `0xF000+`).
 3. **Define the signals**: one `signals` entry per id with `key`, `name`, `unit`, `scale`,
    `device_class`, `state_class`, `category` (`core` for the main package), `confidence` and
-   `evidence`. Run `python3 tools/gen_tables.py -v` and read the data-quality notes: overlapping
+   `evidence`. Run `python3 -I tools/gen_tables.py -v` and read the data-quality notes: overlapping
    rows, unknown enums, missing ids and bad flags fail the build with the file and entry named.
 4. **Export map (optional)**: a `data/modbus_tcp/hub.yaml` with `table`, `family`,
    `device_types`, and the public rows.

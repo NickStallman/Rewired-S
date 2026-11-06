@@ -2,7 +2,8 @@
 
 `sungrow_control` lets Home Assistant, MQTT, LAN Modbus-TCP clients and the web UI write a
 curated set of inverter holding registers: EMS mode, forced charge/discharge, SOC limits, export
-limit, SG power limitation and start/stop. Its entities and write semantics match mkaiser's
+limit, backup mode, reserved SOC, battery max charge/discharge and charging/discharging start
+powers, SG power limitation and start/stop. Its entities and write semantics match mkaiser's
 [Sungrow-SHx-Inverter-Modbus-Home-Assistant], so existing automations and battery controllers
 work unchanged. Background on the inverter's control behaviour:
 [control and EMS](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/control-and-ems.md),
@@ -28,8 +29,9 @@ persistent baud rate and slave address) and 36099 (power-stage raw relay)
 [register windows](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/register-windows.md)).
 
 > [!WARNING]
-> The write paths are host-tested against a simulated inverter. Turn writes on only once you can
-> watch the inverter, and read the register-write entries in `docs/limitations.md` first.
+> Writes are off by default. Read the register-write entries in
+> [limitations](limitations.md#register-writes) before turning them on; per-model control status
+> is in [compatibility](compatibility.md).
 
 ## Files
 
@@ -42,16 +44,16 @@ persistent baud rate and slave address) and 36099 (power-stage raw relay)
 | `components/sungrow_control/grid_profiles.gen.{h,cpp}` | Generated run dictionary of the stock POWER_COMPANY profiles |
 | `components/sungrow_control/installer_allow.gen.h` | Generated protection-register allow-list per XML family |
 | `components/sungrow_control/installer_rules.gen.h` | Generated value ranges and register relations per settings family |
-| `components/sungrow_control/dsp_ranges.gen.h` | Generated power-stage acceptance ranges per inverter model |
+| `components/sungrow_control/dsp_ranges.gen.h` | Generated power-stage acceptance ranges per power-stage firmware line |
 | `components/sungrow_control/sungrow_control.*`, `*.py` | ESPHome glue: switch, `select`/`number`/`sensor`/`text_sensor` platforms, `sungrow_control.write_registers` action, profile auto-attach |
 | `components/sungrow_web/spa_handler.*` | Web endpoints: `/api/write`, `/api/confirm`, Installer (`/api/setup_write`, `/api/grid_read_start`, `/api/grid_read`) and Setup (`/api/setup_options`, `/api/setup_preview`, `/api/setup_apply`, `/api/setup_start`) |
 | `components/sungrow_web/web/src/views/setup.ts`, `views/installer.ts` | SPA Setup and Installer pages |
 | `components/sungrow_web/web/src/setup_logic.ts` | Pure SPA helpers: U32 word order, pending pairs, commit-first order, diff, range and regulation checks, frame groups. Tested by `setup_logic.test.ts` |
 | `data/write_registers.yaml` | Curated allow-list (register per protocol type via `address_by_protocol`) |
 | `tools/gen_write_registers.py` | Generates `components/sungrow_control/write_registers.{h,cpp}` and `write_meta.py` |
-| `tools/gen_grid_profiles.py` | Generates `grid_profiles.gen.{h,cpp}` and `web/src/setup_profiles.gen.ts` from `data/grid_profiles/` |
-| `tools/gen_installer_settings.py` | Generates `web/src/installer_settings.gen.ts`, `installer_allow.gen.h` and `installer_rules.gen.h` |
-| `tools/gen_dsp_ranges.py`, `data/dsp_params/` | Generates `dsp_ranges.gen.h` from the model manifest `models.yaml` and one range CSV per model |
+| `tools/gen_grid_profiles.py` | Generates `grid_profiles.gen.{h,cpp}` and `components/sungrow_web/web/src/setup_profiles.gen.ts` from `data/grid_profiles/` |
+| `tools/gen_installer_settings.py` | Generates `components/sungrow_web/web/src/installer_settings.gen.ts`, `installer_allow.gen.h` and `installer_rules.gen.h` |
+| `tools/gen_dsp_ranges.py`, `data/dsp_params/` | Generates `dsp_ranges.gen.h` from `models.yaml` (one row per firmware line: `models`, `dev_codes`, `csv`) and one range CSV per line |
 | `tools/gen_installer_rules.py`, `data/installer_rules.yaml` | Value rules → raw ranges, relations and regulation strings for the Installer catalogue |
 | `components/sungrow_modbus_tcp/mbtcp_core.*` | :502 fn 6 / fn 16 parsing, gate hook, echo replies |
 | `common/control.yaml` | Hub, `writes_enabled` switch, stats, the HA action, :502 gating |
@@ -182,10 +184,10 @@ sungrow_modbus_tcp:
 
 - `select` entities use mkaiser's option strings and raw values. The options list only the
   writable values.
-- Controls marked `requires: battery` in `data/write_registers.yaml` (SOC limits, forced
-  charge/discharge, battery power limits) are left out of MQTT discovery and the web Devices page
-  on a hybrid whose battery type reads "No battery"; the native-API packages are static and keep
-  them.
+- Controls marked `requires: battery` in `data/write_registers.yaml` (every hybrid control except
+  EMS mode, export limit (and its mode), backup mode and start/stop) are left out of MQTT discovery
+  and the web Devices page on a hybrid whose battery type reads "No battery"; the native-API
+  packages are static and keep them.
 - `number` entities have units, ranges and steps from `data/write_registers.yaml`. The value
   is converted as `raw = round(value / scale)` and checked against the allow-list.
 - **State is never optimistic.** Every entity shows the read-back signal, i.e. what the
@@ -283,11 +285,11 @@ Add any of them yourself under `registers:` if you need them.
 **Power-limit read-backs and the setpoint (0x217E).** The writable registers 5006/5007/5008 are
 re-read every 10 s (and immediately after a write) into the derived sigids 0xF143/0xF140/0xF141,
 and each MQTT write entity's `/state` follows its read-back within about 1 s via the post-write
-settle watch in `sungrow_mqtt`. The **active power-limit setpoint 5077 (0x217E)** is a
-read-only, live-polled signal (fn 4, published as a sensor). It reflects whatever the inverter
-reports: writing only the percent (5008) while the switch (5007) is Disabled leaves the limit
-inactive, so 0x217E stays at rated power; enable the switch for the setpoint to track the
-percent.
+settle watch in `sungrow_mqtt`. The **active power-limit setpoint** (signal 0x217E: 5509 on the
+private map, 5077 on the SG public map) is a read-only, live-polled signal (fn 4, published as a
+sensor). It reflects whatever the inverter reports: writing only the percent (5008) while the
+switch (5007) is Disabled leaves the limit inactive, so 0x217E stays at rated power; enable the
+switch for the setpoint to track the percent.
 
 **SG power limitation in one frame.** The string profile allows 5007 and 5008 in one fn 16, so
 switch and setting change together with no transient: `address: 5007, values: [170, 500]`
@@ -296,67 +298,16 @@ stage restarts; the re-assert below restores it.
 
 ## Setup and Installer (grid code and protection registers)
 
-Both pages are reached from an inverter's card on the Devices tab and are offered only when the
-device's grid-code XML family is `str_pv`, `res_es`, `res_new_pv` or `unit`. The family comes from
-the pair (inverter type = holding 30644 read at boot, protocol type), as in stock; dev_type plays
-no part. Full detail: `docs/device_types_setup_installer.md`; background:
+The Setup page applies a stock country / standard profile and the Installer page edits single
+protection settings of an inverter whose grid-code XML family is `str_pv`, `res_es`, `res_new_pv`
+or `unit`. Both are authorised by the web login and a single-use confirm token, not by the
+`writes_enabled` switch, and go through `ControlCore::setup_apply` (allow-list, ranges, relations,
+one batch at a time). Values outside a model's power-stage acceptance range are refused or skipped
+([device types §5.4](device_types_setup_installer.md#54-power-stage-acceptance-ranges)).
+Protection registers cannot be written over MQTT, :502 or the HA action unless a YAML
+`registers:` extra lists them. Steps, confirm tokens, server checks and per-model values:
+[device types, Setup and Installer](device_types_setup_installer.md); background:
 [grid codes and DRM](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/grid-codes-and-drm.md).
-
-**Setup** applies a stock country / standard profile, the way the stock dongle does:
-1. `GET /api/setup_options?device=D` reads input 5479 (machine type) and the country / standard
-   registers and returns the family's options (AS/NZS 4777.2:2015, and for `unit` also
-   4777.2:2020 Region A / B / C). Australia (country 6) is the only country.
-2. `GET /api/setup_preview?device=D&option=O` resolves the profile on the dongle: the descriptor's
-   country register (30500, 30643 or 32310) := 6, then on `unit` with feature bit W32B5 30036 :=
-   the option, then the option's `<set>` registers in XML order (the PV or ES variant chosen by
-   5479). It reads every target register and returns current vs new values.
-3. After a confirmation dialog, `POST /api/confirm?device=D&address=65534` and
-   `POST /api/setup_apply?device=D&option=O&confirm=T` write every register of the profile, in that
-   order, with the XML values as the stock dongle writes them. It needs a complete preview of the
-   same device and option from the last 60 s (`PREVIEW_REQUIRED` otherwise).
-4. Optional "Start inverter": `POST /api/confirm?address=65533` + `POST /api/setup_start` writes
-   0xCF to the descriptor's power-switch register (5006, 13000 or 30045).
-
-**Installer** edits single protection settings. It lists every editable register of the family's
-XML (`installer_settings.gen.ts`) with its current value (`/api/grid_read_start` +
-`/api/grid_read`), checks pending edits against the stock range and regulation rules, drops edits
-equal to the current value, and writes them as one batch: `POST /api/confirm?address=65535` +
-`POST /api/setup_write` (body `addr:val,…`; a U32 setting is two registers, low word first).
-
-**Server checks** (`ControlCore::setup_apply`): one batch at a time (BUSY); ≤ 128 registers; an
-unknown or offline device is rejected at once (OFFLINE); each protection register must be in the
-family's allow-list (NOT_ALLOWED); Installer batches also need each value inside its stock range
-and every relation with the other registers (batch values over the last read values) to hold
-(BAD_VALUE `range:A` / `relation:…`). Installer batches write the commit registers (country,
-grid code, 30036, 30037) first. Frames are fn 16 with a read-back verify; the batch has a 60 s
-deadline after which unsent frames are dropped as failed. Progress and a result per frame are in
-`GET /api/grid_read` (`setup.frames`).
-
-**Power-stage acceptance ranges.** The inverter's power stage accepts each protection parameter
-only inside its own range and silently keeps the old value otherwise, while the control board
-acknowledges the write
-([parameters](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/architecture.md)).
-The ranges are known for the SH-RS, SG-RS and SH-T lines: `data/dsp_params/models.yaml` lists
-each power-stage firmware line with the models it covers, the device codes seen so far, the
-power-stage firmware the ranges belong to and a CSV of ranges, and `dsp_ranges.gen.h` holds the
-generated tables. A device is matched by device code, else by its devinfo model string. On a
-listed model the server applies those ranges on top of the checks above:
-- an Installer value outside its range is refused (`BAD_VALUE`, detail `dsp_range:ADDR:MIN-MAX`);
-- a Setup profile item outside its range is left out of the batch with a WARN log and listed in
-  the `note` of `/api/setup_preview` and `/api/setup_apply`; the rest of the profile is still
-  applied, so a stock country profile stays applicable.
-
-A U32 setting is compared as one 32-bit value. Other models are checked against the installer
-catalogue only. Adding a model is a manifest row and a CSV (`make gen`).
-
-**Writes policy.** These endpoints are authorised by the web login and a confirm token bound to the
-device and the endpoint (65535 / 65534 / 65533, 20 s, single use); the `writes_enabled` switch does
-not apply to them. Protection registers cannot be written over MQTT, :502 or the HA action unless a
-YAML `registers:` extra lists them.
-
-**SG5.0RS values.** On an SG5.0RS (protocol 3, "AA10", tag "ZS") the family is `unit`, the
-country register is 32310 (Australia = 6), the standard is 30036, input 5479 = 1 selects the PV
-variant, feature bits W32B5 and W29B12 are set, and U32 protection pairs are low word first.
 
 ## Start/stop follow-up
 
@@ -419,7 +370,7 @@ web-authorised) and re-asserts it:
 Battery controllers and automations written for mkaiser's integration find the same controls
 under these names. Over MQTT each control is an entity of the inverter's own HA device; with
 `common/native_entities.yaml` they are native entities of the dongle, where `<n>` is the node's
-slug (`winet_s2` with the default friendly name "WiNet-S2"):
+slug (e.g. `winet_s2` for the compiled `winet-s2.yaml`):
 
 | mkaiser entity | Native entity | Values / units |
 |---|---|---|

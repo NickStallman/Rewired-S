@@ -19,25 +19,20 @@ One character takes 1.042 ms, a read request is 8 B (8.3 ms) and a reply of n re
 
 | Signal class | Period (both installations) | Inverter-side floor |
 |---|---|---|
-| **Fast**: PV W, AC W/V/Hz, grid/meter W, load W, battery W, operating state; per stack V/A/T/SOC/SOH | **1.0 s** | AC/battery/load/energy ≈ 0.6–0.8 s on the SH10RS, ≈ 0.4–0.5 s on the SG5.0RS (power-stage block rotation); meter ≈ 0.1–0.2 s; SBR stack 1 s (battery controller CAN pass). On the SH10RS in EMS mode 0/8 the power-flow registers hold ≈ 40 s means refreshed every 0.6–0.8 s; the meter block (5601+) is the responsive grid-power source (§7.1) |
-| **Live**: MPPT V/A, the inverter's battery V/A/T/SOC/SOH rows, states, faults, flags, limits, energies, backup port, meter detail, power flow | **5.0 s** | MPPT V/I and battery V/I are 4.9 s means inside the inverter (§7.1) |
+| **Fast**: PV W, AC W/V/Hz, grid/meter W, load W, battery W, operating state; per stack V/A/T/SOC/SOH | **1.0 s** | AC/battery/load/energy ≈ 0.6–0.8 s on the SH10RS, ≈ 0.4–0.5 s on the SG5.0RS (power-stage block rotation); meter ≈ 0.1–0.2 s; SBR stack 1 s (battery controller CAN pass). On the SH10RS in EMS mode 0/8 the power-flow registers hold ≈ 40 s means refreshed every 0.6–0.8 s; the meter block (5601+) is the responsive grid-power source (§7) |
+| **Live**: MPPT V/A, the inverter's battery V/A/T/SOC/SOH rows, states, faults, flags, limits, energies, backup port, meter detail, power flow | **5.0 s** | MPPT V/I and battery V/I are 4.9 s means inside the inverter (§7) |
 | **Slow**: settings, battery status/module SOC/balancing, SBR cell block, cloud-only blocks | **30 s** | some SBR fields 10 s |
 | **Static**: identity, versions, ratings, serials, capability bitmap, and every read that returns no values | **5 min** | – |
-| MQTT state publish | on change beyond the signal's deadband (`sungrow_mqtt/deadband.py`: 0.5 V, 0.2 A, 10 W, 0.01 kW, 0.03 Hz, 0.3 °C/%, 0.02 PF; counters/enums/strings on every change), ≤ 1/s per signal, 60 s forced refresh | – |
+| MQTT state publish | on change beyond the signal's deadband (`components/sungrow_mqtt/deadband.py`: 0.5 V (cells 0.002 V), 0.2 A, 10 W, 0.01 kW, 0.03 Hz, 0.3 °C/%, 0.02 PF; counters/enums/strings on every change), ≤ 1/s per signal, 60 s forced refresh | – |
 | Freshness marker | `/api/devices` `poll.fresh_age_ms` (shown as "data age" on each device card) | – |
 
 Bus load at 9600 baud (§4): hybrid ≈ 58 % (fast set ≈ 21 % inverter + 2 × 4.7 % stacks), string
 ≈ 30 %. The rest stays free for ad-hoc reads (Modbus-TCP, web UI, `sungrow_control` read-backs) and
 writes.
 
-**Compared with the stock dongle.** The stock dongle walks its full register table only at start-up,
-after a rescan and on a forced refresh (about 10–13 s per pass on an SH10RS with two stacks); in
-steady state it reads the inverter's proprietary fn 0x65 change stream, which re-sends a register
-only when it has moved beyond a per-register deadband (up to 50 raw units) or to or from zero, and it
-cycles through one battery node per round. Values that drift within their deadband therefore stay
-unchanged in its cache, and clients polling its websocket every 8–10 s see repeated values. Rewired-S
-reads every value with plain fn 3/4 reads on fixed tiers, so a fast value is never more than 1 s
-old.
+**Compared with the stock dongle**, which in steady state reads the inverter's deadbanded fn 0x65
+change stream, Rewired-S reads every value with plain fn 3/4 reads on fixed tiers, so a fast value
+is never more than 1 s old.
 
 ## 1. Refresh tiers
 
@@ -52,9 +47,9 @@ Every table row gets one of four tiers (YAML `poll_periods`, defaults below):
 | slow | 30 s | settings, slow or cloud-only blocks, SBR status/module SOC/balancing/cycles, SBR cell block |
 | static | 5 min | identity, versions, ratings, serials, capability bitmap; any read that returns no values |
 
-The tier comes from curated ranges per table and address; a row no range covers takes its stock
-group key: meter rows of key 1 are fast (a standalone meter is the grid reading), keys ≤ 5 s live,
-≤ 60 s slow, anything longer static.
+The tier comes from curated ranges per table and address; a row no range covers takes its `cycle`:
+≤ 5 s live, ≤ 60 s slow, longer static (meter rows at 100 ms are fast: a standalone meter is the
+grid reading).
 
 Ranges of the private map (`inv_proto2` / `inv_proto3`):
 
@@ -69,16 +64,16 @@ Ranges of the private map (`inv_proto2` / `inv_proto3`):
 | 5719+81 | live | backup port, meter frequency/reactive/phase V/I |
 | 6099+1 | live | power-flow flags |
 | 4950–5044, 5374–5447, 5520+60, 5800–5967, 7100–7815, 8801+120 | static | versions, ratings, serial, capability bitmap, version strings, per-cluster arrays |
-| 5968–6098, 6200–6501, 6950, 7816–8215, 10451+8, 10752+5, settings | slow | status words, fans, cloud-only source block, ground voltages, battery address list |
+| 5968–6098, 6200–6203, 6303–6501, 6950, 7816–8215, 10451+8, 10752+5, fn 3 31225, 31452–31461 (settings) | slow | status words, fans, cloud-only source block, ground voltages, battery address list |
 
 The public-map tables have their own fast ranges: `inv_proto1_4` 5003–5038 and 5083–5092 (meter and
 load power), `inv_proto5` 5003–5038 and 13000–13034.
 
-SBR stack (`battery`): fast 10740+6 (operation status, V, I, T, SOC, SOH); slow 5448+25 (fault list),
-10628–10710 (status, flags, module SOC, balancing, cycles, stack online), 10746+4 (lifetime energy),
-10789+2 (contactor, faulted modules) and the cell block 10757+24 (`sbr_interval`, 30 s); static the
-identity, module dates/serials and 19939+2 (a setting the inverter tunnels to the battery
-controller).
+SBR stack (`battery`): fast 10740+6 (operation status, V, I, T, SOC, SOH); slow 5448+25 (fault
+list), 10628–10699 and 10709–10710 (status, flags, module SOC, balancing, cycles, stack online),
+10746+4 (lifetime energy), 10789+2 (contactor, faulted modules) and the cell block 10757+24
+(`sbr_interval`, 30 s); static the identity, 10700–10708, module dates/serials and 19939+2 (a
+setting the inverter tunnels to the battery controller).
 
 `build_poll_plan()` groups the rows of one tier into reads in address order: at most 120 registers,
 at most 16 unlisted registers bridged (one register costs ~2 ms of wire, a separate read ~37 ms of
@@ -206,105 +201,45 @@ frames; heap steady (≈ 168 KB internal free on the WiNet-S2).
 
 ## 7. Inverter and battery-controller limits
 
-Background: [SG-Docs: SH10RS architecture](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/architecture.md),
-[SH10RS registers](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/registers.md),
+What the inverter and the battery controller can deliver bounds what faster polling can gain. The
+details are in SG-Docs:
+[SH10RS architecture](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/architecture.md),
+[SH10RS control and EMS](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/control-and-ems.md),
 [SG5.0RS architecture](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sg5rs/architecture.md),
-[SBR192 CAN bus](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/can-bus.md).
-
-### 7.1 How often the inverter's values change
-
-- The control board runs FreeRTOS with a 1 ms tick and 1 ms, 10 ms and 250 ms software timers; its
-  comm task serves the Modbus ports every 5 ms. There is no register image: an input-register read
-  returns the live variable behind it.
-- **Power-stage values** (AC V/I/Hz/PF, battery V/I/W, load, energy counters) come from the power
-  stage over an internal CAN link, in a rotating block read of one step per 100 ms. On the SH10RS
-  the rotation takes 6–7 steps (one more in master/slave mode), so **each block refreshes every
-  ≈ 0.6–0.8 s**; the SG5.0RS runs 4–5 steps, ≈ 0.4–0.5 s.
-- The per-MPPT PV V/A (docs 5011–5016) refresh with the main measurement block. The power stage
-  serves them as means over 250 of its 19.4 ms ticks (about 4.9 s), refreshed once per window, so
-  they step every ~5 s.
-- **Power flow is averaged in EMS modes 0 and 8.** Once per rotation the SH10RS replaces active
-  power, the negated meter power, DC power and battery power with a 60-sample boxcar mean, unless
-  the EMS mode (13050) is 2, 3 or 4 (Forced, External EMS, VPP). Affected registers: total active
-  power 5031-5032 / 13034-13035, export power 13010-13011, load power 13008-13009, total DC power
-  5017-5018, battery power 13022 / 5214-5215. They are **refreshed every 0.6–0.8 s, but hold ≈ 40 s
-  means**: a step shows ≈ 5 % at once, 50 % after 16–22 s and 100 % after 34–46 s.
-- Not averaged by the control board: MPPT V/I, AC V/I/Hz, battery V/I (5630/5631), the meter block
-  (5601 and following) and the energy counters. In the power stage the AC values are 8-tick (about
-  155 ms) means, the MPPT values and battery current 4.9 s means, and battery voltage is
-  instantaneous. **5601+ is the responsive grid-power source**; polling the averaged registers
-  faster does not make them more responsive. The cloud-parity derived values
-  (`update_hybrid_cloud` in `components/sungrow_datamodel/derived.cpp`) are built from the averaged
-  registers and inherit the lag.
-- Inside the power stage the control loops run at 18 kHz, the PLL at 9 kHz, RMS and power once per
-  grid cycle, the reactive set-point, limits and battery power ramp once per 19.4 ms tick, and the
-  MPPT voltage references move every 500 ticks (about 9.7 s). A change of the active-power limit or
-  the EMS power set-point acts within a tick plus the configured ramp; a PV operating-point change
-  needs several MPPT steps before the served 4.9 s means move
-  ([SG-Docs: control and EMS](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/control-and-ems.md)).
-- **Meter.** The inverter is the meter's master. The SH10RS requests every 100 ms (for some meter
-  families one slow request replaces every second fast one for 0.6–1 s in a round about every 5 s);
-  the SG5.0RS every 100 ms or 200 ms depending on the meter type. The power block is therefore
-  read every **≈ 0.1–0.2 s**. Meter polling stops in master/slave "slave" mode, when wire 36109 is
-  1, 2 or 3, when the stop flag at doc 30053 is 0xAA, and in Energy Bridge mode.
-- **SBR stack records** (slaves 200/201) are filled from the battery controller's CAN frames within
-  about 5 ms of arrival and time out after 20 s without frames. Battery V/I in the inverter's own
-  registers (5630/5631) are power-stage measurements, not battery-controller data.
-
-### 7.2 Battery-controller CAN cadence
-
-- The per-stack frames go out once per 1 s pass while the inverter is in battery mode; otherwise once
-  per 60 s. A group of status frames goes out every 10 s, and the module serial numbers every 61st
-  pass (about every 61 s).
-- The data are snapshotted once per second; the controller measures every 50 ms and reads the cells
-  every 200 ms.
-- **So stack values at the inverter change at most once per second**, some fields every 10 s and the
-  module serial numbers every 61 s.
-
-### 7.3 Inverter Modbus-slave behaviour
-
-Background: [SG-Docs: Modbus function codes](https://github.com/NickStallman/SG-Docs/blob/main/reference/protocols/modbus-function-codes.md),
+[SBR192 CAN bus](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/can-bus.md),
+[Modbus function codes](https://github.com/NickStallman/SG-Docs/blob/main/reference/protocols/modbus-function-codes.md),
 [RS485 master](https://github.com/NickStallman/SG-Docs/blob/main/reference/protocols/rs485-master.md).
 
-- **Accepted function codes.** SH10RS: 3, 4, 6, 0x10, 0x17, 0x20, 0x60, 0x65. SG5.0RS: 3, 4, 6,
-  0x10, 0x60, 0x65. Every other code (1, 2, 5, 15, ...) is dropped silently, with no exception 01.
-- **At most 125 registers per read** (fc 3/4/16/0x17). A longer request is silently dropped, so the
-  master sees a timeout; Rewired-S caps reads at 120. The cap is lifted only for the inverter's
-  firmware-update receiver.
-- **End of request.** SH10RS: an inter-character timeout of max(3, ⌊44000/baud⌋) ms, 4 ms at 9600.
-  SG5.0RS: a fixed 3 ms.
-- **Turnaround.** SH10RS about 4–10 ms (the end-of-request timeout, up to 5 ms of task delay, plus
-  processing); SG5.0RS roughly 6–13 ms (a 3 ms delay before every reply on top).
-- **Rate.** No rate limit or minimum gap, but no pipelining either: Rewired-S waits for each reply.
-  The SH10RS discards bytes left over after a frame; the SG5.0RS parses them on the next pass.
-- **Slaves 200/201** (SH10RS only): same task and latency, served from RAM, window doc 5200–12000.
-  Unmapped addresses inside the window read 0xFFFF; an unregistered stack never answers; 19101–20000
-  is tunnelled to the battery controller over CAN with an internal timeout of about 1.5 s (the
-  battery read 19939+2, `discharge_cutoff_soc`, is a static-tier read with the 2 s tunnel timeout).
-- **Unmapped start address.** fc 3/4: exception 02, sent only when the address byte is the
-  inverter's own or 0 (a broadcast read gets a reply; any other address, including 200–204, gets
-  silence). fc 6/0x10: the SH10RS sends no reply, the SG5.0RS answers exception 02.
-- **Ranges forwarded to the power stage.** SH10RS doc 16000–17500, 29500–29899 and 36702–38999
-  (36000–36701 is answered locally); SG5.0RS doc 16000–17500 and 29500–29900 only (a read above
-  doc 36449 gets exception 02). After a forward the inverter blocks its other ports and suspends its
-  own power-stage polling for a fixed countdown, so these ranges are not in the cyclic plan.
-- **Bus sharing.** The dongle has the inverter's RS485 port to itself; the inverter's meter, battery,
-  parallel and PLC links are separate ports.
+| Values | Refresh inside the inverter |
+|---|---|
+| Power-stage values (AC V/I/Hz/PF, battery V/I/W, load, energy counters) | every ≈ 0.6–0.8 s on the SH10RS, ≈ 0.4–0.5 s on the SG5.0RS (a rotating block read, one step per 100 ms) |
+| MPPT V/I (5011–5016), battery current | 4.9 s means, stepping every ~5 s |
+| SH10RS power flow in EMS modes 0 and 8: 5031-5032 / 13034-13035, 13008-13011, 5017-5018, 13022 / 5214-5215 | ≈ 40 s means refreshed every 0.6–0.8 s (50 % of a step after 16–22 s); not averaged in modes 2, 3, 4 |
+| Meter block 5601+ | every ≈ 0.1–0.2 s (the inverter polls the meter every 100–200 ms): the responsive grid-power source |
+| SBR stack records (slaves 200/201) | at most once per second in battery mode (60 s otherwise); some fields 10 s, module serial numbers 61 s |
 
-### 7.4 Options the firmware does not use
+The cloud-parity derived values (`update_hybrid_cloud` in
+`components/sungrow_datamodel/derived.cpp`) are built from the averaged registers and inherit their
+lag.
 
-- **115200 baud.** Both inverters accept a temporary rate change through doc 21004–21007 (u32 baud,
-  then the same value as confirmation) that reverts after 600 s without frames, after 5 consecutive
-  bad frames and at reboot. A persistent change through 30455–30458 survives a reboot on the
-  SG5.0RS. The stock dongle never switches on these models (its gate bit is a build-time constant
-  that is clear), and Rewired-S stays at 9600.
-- **Frame gap below 18 ms.** The inverter's end-of-request timeout is 3–4 ms, so a gap of t3.5
-  (≈ 4 ms) would save ≈ 14 ms per transaction; Rewired-S keeps the 18 ms gap the stock dongle uses.
-- **fn 0x65 change stream.** One request returns every live register that moved beyond its deadband
-  (at most 245 B per reply, the rest on later requests). Being deadbanded it cannot replace the exact
-  fast reads, so Rewired-S does not poll it.
+Modbus-slave limits that shape the poll plan:
 
-A control write delays the fast set by ≈ 100–150 ms (writes keep priority, then a 100 ms settle gap).
+- **Function codes.** SH10RS 3, 4, 6, 0x10, 0x17, 0x20, 0x60, 0x65; SG5.0RS 3, 4, 6, 0x10, 0x60,
+  0x65. Every other code is dropped silently.
+- **At most 125 registers per read**; a longer request is dropped silently. Rewired-S caps reads at
+  120.
+- **Turnaround** 4–10 ms (SH10RS) or 6–13 ms (SG5.0RS) after an end-of-request timeout of 3–4 ms;
+  no rate limit and no pipelining.
+- **Slaves 200/201** (SH10RS only) serve doc 5200–12000 from RAM; 19101–20000 is tunnelled to the
+  battery controller (about 1.5 s internal timeout).
+- **Ranges forwarded to the power stage** (SH10RS doc 16000–17500, 29500–29899, 36702–38999;
+  SG5.0RS 16000–17500, 29500–29900) block the inverter's other ports for a while, so they are not
+  in the cyclic plan.
+- **Not used:** 115200 baud (a temporary change reverts after 600 s without frames), a frame gap
+  below the stock 18 ms, and the deadbanded fn 0x65 change stream.
+
+A control write delays the fast set by ≈ 100–150 ms (writes keep priority, then a 100 ms settle
+gap).
 
 ## 8. Method
 

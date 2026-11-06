@@ -14,10 +14,10 @@ in SG-Docs.
 
 - The dongle on your LAN, reachable from a computer that can run Python 3. The stock web UI
   login (`admin` and the installer password; the default is in the dongle's manual).
-- A **package** for your dongle. Either the release package (`winet-s-prebuilt-…sgu` and so on,
-  with its `.bin` signature and the release public key `publicKey_V1.pem`, from the
-  [releases page](https://github.com/NickStallman/Rewired-S/releases); the key is also inside
-  every package `.zip`), or one you build and sign yourself (below). The key file must keep the
+- A **package** for your dongle. Either the release package `.zip` for your entry (e.g.
+  `winet-s2-prebuilt-WINET_B000.WINET-SV300.001.03.P991.zip`) and `publicKey_V1.pem`, from the
+  [releases page](https://github.com/NickStallman/Rewired-S/releases), or one you build and sign
+  yourself (below). The key file must keep the
   `publicKey_V<n>.pem` name: the stock updater derives the key version from it.
 - Python 3.11+ with `pip install -r tools/requirements.txt`. Per-platform setup (Windows
   PowerShell, macOS, Linux), firewall notes and the exact commands: [running the tools](tools_setup.md).
@@ -61,8 +61,10 @@ the tool reports that as "already stored" and the install can go ahead (`fake_ic
 ## 3. Serve the package
 
 ```sh
-python3 -I tools/fake_iconfig_server.py --dist release/     # the directory with the .sgu, .bin, Version_signature.xml or the .zip
+python3 -I tools/fake_iconfig_server.py --dist <dir>
 ```
+
+`--dist <dir>`: a directory holding only your entry's `.zip` (and `publicKey_V1.pem`).
 
 It answers the dongle's package-server requests over HTTPS on port 20001 with a self-signed
 certificate. Keep the dongle off the internet during the install so nothing else answers. The
@@ -93,10 +95,10 @@ On stock firmware old enough to still offer a browser upload, `tools/deploy_debu
 | | WiNet-S2 | WiNet-S |
 |---|---|---|
 | Boot test | the stock bootloader is expected to roll an image that resets within 30 s back to the stock slot (not yet confirmed on hardware: the first boot after an OTA logs `Bootloader rollback: supported` under `safe_mode` when it works; please report that line) | no automatic rollback (the stock bootloader would undo good images too); a bad image is recovered over UART |
-| No network after boot (Ethernet images) | the **network fallback** boots the other slot after 3 min (the Wi-Fi image or stock app that was there), see [prebuilt.md](prebuilt.md) | the same |
-| Way back while the stock app is in the other slot | **Settings → Boot other slot** in the web UI | the same button |
+| No network after boot (Ethernet images) | the **network fallback** boots the other slot after 3 min if it holds a non-Ethernet Rewired-S image (not yet seen firing on hardware), see [prebuilt.md](prebuilt.md) | the same |
+| Way back while the stock app is in the other slot | **Settings → Boot slots → Boot other slot** in the web UI | the same button |
 | Pre-built image | the `rewired-s-xxxxxx` setup network appears (Wi-Fi) or the dongle takes a DHCP lease (Ethernet) | the same |
-| Compiled image | joins the Wi-Fi from `secrets.yaml` | the same |
+| Compiled image | joins the Wi-Fi from `secrets.yaml` (Ethernet: DHCP) | the same |
 
 Then: open `http://<dongle>/`, log in (pre-built: `admin` / `rewired-s`, change it on the Settings
 page), set the MQTT broker, and watch the Devices page fill up as the inverter and batteries are
@@ -122,13 +124,12 @@ discovered. Add the dongle to Home Assistant from the ESPHome integration's disc
 
 ```sh
 make sgu-keys                                   # once: keys/rewired-s_priv.pem (keep it) and keys/rewired-s_pub.pem
-make compile                                    # or .venv/bin/esphome compile sites/house.yaml
-make sgu APP=.esphome/build/<name>/build/firmware.ota.bin SGU_BOARD=s2 SGU_BUILD=901
+make compile                                    # or .venv/bin/esphome compile sites/<name>.yaml
+make sgu APP=.esphome/build/<name>/build/firmware.ota.bin SGU_BOARD=s2 SGU_BUILD=992
 #   SGU_STOCK=<official .sgu>   adds the stock web-UI part (only if the app-only package is refused)
 ```
 
-On Windows run `esphome compile` from **PowerShell** or `cmd`, not from Git Bash or another
-MSYS/MinGW shell: ESP-IDF's installer stops with `MSys/Mingw is not supported` there.
+On Windows use PowerShell, not Git Bash ([running the tools](tools_setup.md#common-problems)).
 
 `tools/package_sgu.py` checks the image (ESP magic, chip id, 16 MB header, size against the OTA
 slot, a version above the installed one), builds the package with the in-file trailer the
@@ -139,16 +140,13 @@ the running one.
 
 ## Updates after the first install
 
-- Pre-built images: Home Assistant shows an **Update** entity for the dongle; the firmware
-  downloads the new image from the release page over HTTPS. The update lands in the other slot,
-  so it overwrites the stock app (or the Wi-Fi image) that was there. The WiNet-S2's bootloader is
-  expected to roll back an update that resets within 30 s; the Ethernet images also boot the
-  other slot when the new build never gets a network. The WiNet-S has neither, so keep a serial
-  adapter in reach.
+- Pre-built images: Home Assistant shows the **Firmware** update entity for the dongle; the
+  firmware downloads the new image from the release page over HTTPS. The update lands in the other
+  slot, so it overwrites the stock app (or the Wi-Fi image) that was there. The WiNet-S2's
+  bootloader is expected to roll back an update that resets within 30 s; the Ethernet images also
+  boot the other slot when the new build never gets a network, only if the other slot holds a
+  non-Ethernet Rewired-S image. The WiNet-S has no rollback, so keep a serial adapter in reach.
 - Pre-built images also take an ESPHome OTA (`esphome upload … --device <ip>`) authenticated with
   the web login password, or with the API key after Home Assistant adoption.
-- Compiled images: `make deploy NODE=sites/<name> DEVICE=<ip>` runs an encrypted ESPHome OTA,
+- Compiled images: `make deploy NODE=sites/<name> DEVICE=<ip>` runs a native ESPHome OTA,
   streams the logs across the reboot and exits 0 only when the new build is up and marked valid.
-
-Either way the first update overwrites the stock app in the other slot; see
-[back to stock](back_to_stock.md) for the ways back after that.

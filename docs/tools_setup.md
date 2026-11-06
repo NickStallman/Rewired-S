@@ -5,7 +5,7 @@ image are:
 
 | Tool | What it does |
 |---|---|
-| `tools/deploy_debug.py` | talks to the **stock** web UI: `status`, `import-key`, `upload` |
+| `tools/deploy_debug.py` | talks to the **stock** web UI: `status`, `import-key`, `upload`, `all` |
 | `tools/fake_iconfig_server.py` | serves a package to the dongle on the LAN (the pull route) |
 | `tools/sgu.py` | inspects, extracts, verifies and builds `.sgu` packages |
 | `tools/package_sgu.py` | packages your own compiled image |
@@ -38,7 +38,7 @@ needed to compile your own image ([configuration](configuration.md)).
    ```powershell
    python -I tools\deploy_debug.py status --host 192.168.1.50
    python -I tools\deploy_debug.py import-key --host 192.168.1.50 --pubkey publicKey_V1.pem
-   python -I tools\fake_iconfig_server.py --dist release
+   python -I tools\fake_iconfig_server.py --dist <folder with only your .zip>
    ```
 
    The first run of the package server asks Windows Defender Firewall whether Python may accept
@@ -46,10 +46,6 @@ needed to compile your own image ([configuration](configuration.md)).
    dongle's web UI in a browser **on this computer**: the dongle contacts the address of the
    browser that is logged in (check it with `ipconfig` if the dongle reports it cannot reach the
    server).
-
-   Stick to PowerShell (or `cmd`) for everything, including `esphome compile` if you build your
-   own image: ESP-IDF refuses to install from Git Bash / MSYS / MinGW shells
-   (`MSys/Mingw is not supported`).
 
 5. Serial flashing (WiNet-S only): `pip install esptool`, install the USB-serial driver your
    adapter needs (CP210x, CH340 or FTDI), find the port in Device Manager (`COM3` and so on) and
@@ -77,7 +73,7 @@ needed to compile your own image ([configuration](configuration.md)).
    ```sh
    python3 -I tools/deploy_debug.py status --host 192.168.1.50
    python3 -I tools/deploy_debug.py import-key --host 192.168.1.50 --pubkey publicKey_V1.pem
-   python3 -I tools/fake_iconfig_server.py --dist release
+   python3 -I tools/fake_iconfig_server.py --dist <folder with only your .zip>
    ```
 
    macOS asks once whether Python may accept incoming connections; allow it. Your address is
@@ -99,7 +95,7 @@ needed to compile your own image ([configuration](configuration.md)).
    pip install -r tools/requirements.txt
    python3 -I tools/deploy_debug.py status --host 192.168.1.50
    python3 -I tools/deploy_debug.py import-key --host 192.168.1.50 --pubkey publicKey_V1.pem
-   python3 -I tools/fake_iconfig_server.py --dist release
+   python3 -I tools/fake_iconfig_server.py --dist <folder with only your .zip>
    ```
 
    If a firewall is active (`ufw`, `firewalld`), open TCP 20001 for the LAN. Your address:
@@ -123,10 +119,10 @@ the same network.
 | `deploy_debug.py: connection refused` / timeout | wrong address, or the dongle is on another network; the stock web UI must open in a browser at `https://<address>/` |
 | `login failed` | the installer password; the stock default is in the dongle's manual, `--user` changes the account |
 | The dongle says it found no update | the web UI was opened from another computer than the one running the server, the firewall blocked 20001, `--dist` does not contain the `.zip`, or the **device**-update dialog was used (the server logs `refused: dev_model=…`) |
-| "iConfig tool not detected" | the server is not reachable from the dongle, or an older `tools/fake_iconfig_server.py` that only answered `/v2/web/…` (stock `P016` asks for `/web/…`) |
+| "iConfig tool not detected" | the server is not reachable from the dongle |
 | `import-key` answers `result_code=120` | the same key version is already stored on the dongle's external flash (it survives stock updates); the tool continues and the install can go ahead |
 | `MSys/Mingw is not supported` from `esphome compile` | run it from PowerShell or `cmd`, not Git Bash (Windows) |
-| The dongle reports an error 4104 or a signature failure | the public key was not imported, or the package was built with a different key |
+| The dongle reports error 4104 or a signature failure | 4104: package without the signed trailer (rebuild with `package_sgu.py`); a signature failure: key not imported or a different key |
 | `permission denied: /dev/ttyUSB0` | add your user to the `dialout` group (Linux) |
 
 On Windows, paths use backslashes (`tools\sgu.py`) and the interpreter is `python`; on macOS

@@ -2,7 +2,7 @@
 """Collect a compiled entry into a release directory with an ESP Web Tools / ESPHome manifest.
 
     python3 -I tools/release_manifest.py --entry winet-s-prebuilt --build-dir .esphome/build/rewired-s \
-        --version 0.9.0 --out-dir release/winet-s-prebuilt --base-url https://nickstallman.github.io/Rewired-S/firmware/winet-s-prebuilt
+        --version 0.9.1 --out-dir release/winet-s-prebuilt --base-url https://nickstallman.github.io/Rewired-S/firmware/winet-s-prebuilt
 
 Writes:
     <out-dir>/<entry>.ota.bin        the app image (ESPHome OTA, stock pull-OTA packaging, serial write to an OTA slot)

@@ -26,7 +26,7 @@ const char *poll_tier_name(PollTier t) {
   return "?";
 }
 
-// Evidence: docs/update_rates.md §4 (what the inverter refreshes how often, which values a
+// Evidence: docs/update_rates.md §7 (what the inverter refreshes how often, which values a
 // consumer needs fast) and live snapshots of the SH10RS + SBR stacks and the SG5.0RS (which
 // values move at all). Addresses are 1-based table addresses.
 //

@@ -39,7 +39,7 @@ sungrow_modbus:
   response_timeout: 1000ms  # discovery / inverter type / ad-hoc / verify reads
   retries: 0                # stock sends a Modbus request once
   # fast_loop: false         # default; true runs the main loop without its idle delay while a
-  #                          # transaction is pending (docs/update_rates.md §2.3)
+  #                          # transaction is pending (docs/update_rates.md §3)
   offline_after: 10         # consecutive lost frames ...
   offline_silence: 10s      # ... spanning at least this long
   # Each device's "Last update" signal (wall clock of its freshest read).

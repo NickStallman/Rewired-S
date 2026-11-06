@@ -57,9 +57,10 @@ guards the native OTA port (below).
 
 Home Assistant discovers `Rewired-S` through the ESPHome integration. The image is built with API
 encryption but no key: at adoption Home Assistant generates a key, stores it on the dongle and
-uses it from then on. Until then the native API is plaintext on the LAN, so adopt the dongle soon
-after installing it. A device adopted this way keeps its key across updates; the 30 s reset
-(below) drops it, after which Home Assistant adopts it again.
+uses it from then on (expected; not yet confirmed on hardware). Until then the native API is
+plaintext on the LAN, so adopt the dongle soon after installing it. A device adopted this way
+keeps its key across updates; the 30 s reset (below) drops it, after which Home Assistant adopts
+it again.
 
 ### The inverter, batteries and meter (MQTT)
 
@@ -127,18 +128,13 @@ remembered across restarts; *Send diagnostics* keeps working either way.
   you change it; the native OTA port shares that password.
 - **MQTT password in NVS.** The broker password is stored in the dongle's NVS in the clear (these
   dongles have no flash encryption). Use a broker account that can only do what the dongle needs.
-- **Rollback and the network fallback.** A pre-built image that fails to boot on a WiNet-S is
-  recovered over the UART pads ([install_serial.md](install_serial.md)). The WiNet-S2 keeps its
-  stock bootloader, which is expected to roll an image that resets within 30 s back to the
-  previous slot; this has not been proven on hardware yet (ESPHome logs `Bootloader too old for
-  OTA rollback`, which only says the bootloader predates the descriptor ESPHome reads), so treat
-  the way back as **Settings → Boot slots** first. An image that boots but never gets a network
-  is not caught by any rollback: the Ethernet pre-built images therefore carry the **network
-  fallback** (`common/ethernet_fallback.yaml`), which boots the other slot three minutes after
-  a boot without a network (one minute when the Ethernet driver fails to start) until the
-  running build has connected once. Right after the first Ethernet install that slot holds the
-  Wi-Fi image the install went through. The Boot slots card shows its state, and each image's
-  version carries its network kind (`0.9.1+wifi`, `0.9.1+ethernet`).
+- **Rollback and the network fallback.** WiNet-S: no rollback, recover over UART
+  ([install_serial.md](install_serial.md)). WiNet-S2: rollback expected, unconfirmed; use **Boot
+  other slot**. The Ethernet images' network fallback (`common/ethernet_fallback.yaml`; not yet
+  seen firing on hardware) boots the other slot when a new build never gets a network. The
+  fallback only boots a non-Ethernet Rewired-S image; with the stock app in the other slot it
+  stays idle. Details: [limitations.md](limitations.md#hardware).
 - **A second update overwrites the stock app.** The other slot holds the stock app only until the
-  next update lands in it. The detected cloud version is kept from the first boot; the way back to
-  stock after that is a stock package through the stock updater or a serial flash.
+  next update lands in it. The detected cloud version is kept from the first boot. The way back to
+  stock after that: the extracted stock app over ESPHome OTA (unverified) or, on the WiNet-S,
+  serial ([back_to_stock.md](back_to_stock.md)).

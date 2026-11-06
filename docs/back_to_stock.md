@@ -1,6 +1,6 @@
 # Going back to the stock firmware
 
-Rewired-S is designed so that the way back is always open. It never writes the bootloader, the
+Rewired-S leaves the way back open: it never writes the bootloader, the
 partition table or the `oemdata` partition (the stock web UI), it mounts the external flash that
 holds the dongle's serial number, cloud settings and grid profiles **read-only**, and it keeps
 its own settings in ESPHome's own NVS namespace. Whatever route you take back, the dongle comes
@@ -21,10 +21,10 @@ Stock firmware details: [flash layout](https://github.com/NickStallman/SG-Docs/b
 ## 1. Boot other slot (no tools)
 
 While the stock app is still in the other OTA slot, that is right after the first install and
-before any ESPHome OTA: open the web UI, **Settings → Boot other slot**, confirm. The firmware
-checks that the other slot holds a valid app image, points `otadata` at it and restarts. The
-stock app boots with everything as it was. (In the debug build this needs the **Allow boot
-switch** switch first.)
+before any ESPHome OTA: open the web UI, **Settings → Boot slots → Boot other slot**, confirm.
+The firmware checks that the other slot holds a valid app image, points `otadata` at it and
+restarts. The stock app boots with everything as it was. The debug build has no web UI: turn on
+its **Allow boot switch to other slot** switch, then press **Boot other slot (stock app)**.
 
 ## 2. Put the stock app back with an ESPHome OTA
 
@@ -46,20 +46,19 @@ descriptor (`WINET-SV300.001.03.P032…`, project `WiNet-S2`).
 Then send the stock app with ESPHome's OTA, which writes the inactive slot and switches to it:
 
 ```sh
-.venv/bin/esphome upload sites/house.yaml --device 192.0.2.50 --file stock/WINET-SV300.001.03.P032.app.bin
+.venv/bin/esphome upload sites/<name>.yaml --device 192.0.2.50 --file stock/WINET-SV300.001.03.P032.app.bin
 ```
 
 The stock app boots from that slot and marks itself valid. The Rewired-S image stays in the other
 slot; the stock firmware will overwrite it with its next own update.
 
 > [!NOTE]
-> This path has not been run on hardware yet (both development dongles have long since lost
-> their stock app to updates). The mechanism is the ordinary ESPHome OTA with a foreign app image;
-> whether the WiNet-S2's stock bootloader rolls a failed image back is itself unconfirmed (see
-> [prebuilt.md](prebuilt.md)), so count on **Boot other slot** rather than on a rollback; please
-> report your result. **Boot other slot** (route 1)
-> is verified on the WiNet-S. On pre-built images ESPHome's OTA accepts the web login password (or the
-> API key once Home Assistant has adopted the dongle); see [pre-built images](prebuilt.md).
+> This route is not yet run on hardware. The mechanism is the ordinary ESPHome OTA with a foreign
+> app image; whether the WiNet-S2's stock bootloader rolls a failed image back is unconfirmed (see
+> [limitations](limitations.md#hardware)), so count on **Boot other slot** rather than on a
+> rollback; please report your result. **Boot other slot** (route 1) is verified on the WiNet-S.
+> On pre-built images ESPHome's OTA accepts the web login password (or the API key once Home
+> Assistant has adopted the dongle); see [pre-built images](prebuilt.md).
 
 ## 3. Over serial (WiNet-S)
 

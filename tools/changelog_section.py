@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Print the CHANGELOG.md section of one version (release notes for the GitHub release).
 
-    python3 -I tools/changelog_section.py 0.9.0 [CHANGELOG.md]
+    python3 -I tools/changelog_section.py 0.9.1 [CHANGELOG.md]
 """
 import re
 import sys

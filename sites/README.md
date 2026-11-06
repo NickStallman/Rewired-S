@@ -2,15 +2,15 @@
 
 A site file is the configuration of one real dongle: its name, the firmware version its stock
 image reported, and any option that differs from the generic entry. Everything else comes from
-the entry it includes. Site files are git-ignored (only this README is tracked) because they
-describe your installation.
+the entry it includes. Site files are git-ignored (only this README and the two links are
+tracked) because they describe your installation.
 
 ```yaml
 # sites/house.yaml
 substitutions:
   name: house-inverter
   friendly_name: House Inverter
-  cloud_firmware_version: "WINET-SV300.001.03.P024"   # the version the dongle shipped with
+  cloud_firmware_version: "WINET-SV300.001.03.P032"   # the version the dongle shipped with
   # analytics: "false"                                 # no usage report or automatic diagnostics uploads
 packages:
   entry: !include ../winet-s2.yaml
@@ -30,6 +30,10 @@ Build, validate and deploy it like an entry:
 .venv/bin/esphome config sites/house.yaml
 make deploy NODE=sites/house DEVICE=192.0.2.10
 ```
+
+On a compiled Ethernet entry, add `fallback: !include ../common/ethernet_fallback.yaml` to the
+site's `packages:` to turn on the network fallback
+([configuration](../docs/configuration.md#options-worth-knowing)).
 
 A site file can also sit on top of a pre-built entry (`../winet-s2-prebuilt.yaml`): the runtime
 provisioning stays (captive portal, Settings-page login and broker, detected cloud version) and

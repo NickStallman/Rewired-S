@@ -52,80 +52,45 @@ make compile-debug DEBUG_ENTRY=winet-s2-debug.yaml
 The image to install is `.esphome/build/<name>/build/firmware.ota.bin`;
 `firmware.factory.bin` is never flashed. `esp32: flash_size: 16MB` is mandatory (IDF sizes the
 usable flash from the app header); `esptool --chip esp32 image_info firmware.ota.bin` shows
-*Flash size: 16MB, DIO*. The WiNet-S images are about 1.2 MB (Wi-Fi) and 0.8 MB (Ethernet); the
-smallest stock app slot is 0x309000 bytes on the WiNet-S and 0x33B000 on the WiNet-S2.
+*Flash size: 16MB, DIO*. `tools/package_sgu.py` refuses an image larger than the smaller stock
+app slot (0x309000 bytes on the WiNet-S, 0x33B000 on the WiNet-S2).
 
 `substitutions: debug_log_port: "2323"` enables a plain-TCP log stream (`nc <ip> 2323`). It has no
 authentication and is off by default.
 
 ## 3. Serial backup (WiNet-S, optional)
 
-The network backup in §7 covers the internal flash once the debug build runs. A serial backup
-taken before anything is written is the definitive restore.
-
-Wiring: ESP32 UART0 is GPIO1 (TX) / GPIO3 (RX), 115200 8N1, 3.3 V TTL. Connect adapter RX to TX,
-TX to RX and GND, and power the dongle from its own supply. Download mode needs GPIO0 low at reset;
-on the WiNet-S GPIO0 is also the 50 MHz RMII clock input, so hold it low through about 470 Ω and
-release it after reset.
-
-1. Passive boot log first: a terminal at 115200 and a power cycle print the partition table.
-2. In download mode:
-   ```sh
-   espefuse.py --chip esp32 -p /dev/ttyUSB0 summary     # Secure Boot and flash encryption must be off
-   esptool --chip esp32 -p /dev/ttyUSB0 flash_id        # 16 MB
-   esptool --chip esp32 -p /dev/ttyUSB0 -b 460800 read_flash 0 0x1000000 full_16MB.bin
-   ```
-   Keep `full_16MB.bin` in two places. If Secure Boot or flash encryption is on, stop: no custom
-   image boots.
-
-The external NOR is not reachable over UART; back it up with `/dump/extflash` (§7).
+A serial backup taken before anything is written is the definitive restore: wiring, download
+mode and the `read_flash` command are in [install over serial](install_serial.md) §2-3. The
+network backup (§7) covers the internal flash once the debug build runs; the external NOR is not
+reachable over UART, back it up with `/dump/extflash` (§7).
 
 ## 4. Package
 
+Package and sign the debug image as in
+[Build your own package](install_ota.md#build-your-own-package). Without `APP=`, `make sgu`
+packages the debug image of `SGU_BOARD` (`DEBUG_APP`, the `winet-<board>-debug` build):
+
 ```sh
-make sgu-keys                                            # once: keys/rewired-s_priv.pem + keys/rewired-s_pub.pem
-make sgu APP=.esphome/build/winet-s-debug/build/firmware.ota.bin SGU_BOARD=s SGU_BUILD=901
-#   SGU_BOARD=s|s2, SGU_BUILD=<P-number>, SGU_STOCK=<official .sgu> to add its web-UI part (only if the
-#   app-only package is refused)
+make sgu-keys                                  # once: keys/rewired-s_priv.pem + keys/rewired-s_pub.pem
+make sgu SGU_BOARD=s SGU_BUILD=992             # .esphome/build/winet-s-debug/build/firmware.ota.bin
+make sgu APP=.esphome/build/winet-s-debug-eth/build/firmware.ota.bin SGU_BOARD=s SGU_BUILD=992
 ```
 
-`tools/package_sgu.py` builds an app-only package (one type-2 part, nothing from a stock
-package) and signs it with your key (`keys/`, never printed or copied; the public key is written
-to `dist/publicKey_V1.pem`):
-- with `SGU_STOCK` the stock web UI is copied unchanged from that package as the type-3 part, so
-  the updater rewrites `oemdata` with identical content;
-- an in-file signature trailer follows the body (the WiNet-S2 updater requires it, the WiNet-S
-  ignores it);
-- before signing it checks the ESP image magic, the chip id (0 for the WiNet-S, 9 for the
-  WiNet-S2), the 16 MB header flash size, the app size against the smaller OTA slot, and that
-  the version (`WINET-SV200.001.00.P901`, `WINET-SV300.001.03.P901`) is above the installed one.
-  Raise `SGU_BUILD` for each new package.
-
-Output in `dist/`: `<version>.sgu`, its detached `.bin` signature, the public key and, with
-`--zip` (which `make sgu` passes), the `.zip` the stock web UI expects. The container format:
-[SGU container](https://github.com/NickStallman/SG-Docs/blob/main/reference/firmware-update/sgu-container.md);
+A self-built package must carry a build number above the installed one: releases use P99x
+(`tools/sgu_build_number.py`), so use `SGU_BUILD=992` or higher on a dongle running a release, and
+raise it for each new package. The package and your public key land in `dist/`;
 `tools/sgu.py info|extract|verify` inspect any package.
 
 ## 5. Install through the stock pull route
 
-1. **Read the dongle** (read-only): `python3 -I tools/deploy_debug.py status --host 192.0.2.50`
-   prints its serial number, versions and inverter. The password comes from `--password`,
-   `$WINET_WEB_PASSWORD` or a prompt and is never printed.
-2. **Import your public key** (one time):
-   `python3 -I tools/deploy_debug.py import-key --host 192.0.2.50 --pubkey dist/publicKey_V1.pem`.
-   It asks for a typed "yes". The stock firmware stores the key on its external flash.
-3. **Serve the package** on the LAN:
-   `python3 -I tools/fake_iconfig_server.py --dist dist` (HTTPS on :20001, self-signed
-   certificate). It answers the dongle's package-server requests from `dist/` and serves the `.zip`.
-   Keep the dongle off the internet during the install.
-4. **Start the update** in the stock web UI as admin: System update → iConfig update package →
-   the address of the host running the server. The dongle downloads the package, verifies it
-   against the imported key, writes our app into the inactive slot, rewrites `oemdata` and
-   otadata, and reboots into our app.
-   On stock firmware that still exposes a browser upload (`/system/upgradeCheck`),
-   `tools/deploy_debug.py upload --sgu dist/<version>.sgu` does the same in one step.
-5. **Do not run a native OTA yet.** It writes the inactive slot, which now holds the stock app.
-   Take the network backup (§7) first.
+Follow [install through the updater](install_ota.md) §1-4 with your own key
+(`--pubkey dist/publicKey_V1.pem`) and `python3 -I tools/fake_iconfig_server.py --dist dist`.
+Log in as admin from a browser on the host running the server; open **System → System
+maintenance → System update → iConfig update package** (not the device-update dialog) and start.
+
+**Do not run a native OTA yet.** It writes the inactive slot, which now holds the stock app.
+Take the network backup (§7) first.
 
 ## 6. Go / no-go
 
@@ -165,7 +130,7 @@ The debug build serves `/dump/*` on port 80 behind the web login:
 |---|---|
 | `/dump/index` | JSON: every region with offset, size and SHA-256 (`?sha=0` skips hashing) |
 | `/dump/report`, `/dump/ptable.csv` | the flash report / the partition table as gen_esp32part CSV |
-| `/dump/bootloader`, `/dump/ptable` | 0x1000..0x8000 / 0x8000 + 0xC00 |
+| `/dump/bootloader`, `/dump/ptable` | 0x1000..0x8000 (WiNet-S) / 0x0..0x8000 (WiNet-S2); 0x8000 + 0xC00 |
 | `/dump/nvs`, `/dump/otadata`, `/dump/phy`, `/dump/coredump`, `/dump/oemdata` | by subtype or label from the on-flash table |
 | `/dump/inactive_app` | the other OTA slot: the stock app after the first install |
 | `/dump/running_app` | the running build |
@@ -190,13 +155,11 @@ starts from it.
 
 ## 8. Back to stock
 
-1. **Without serial:** turn on **Allow boot switch to other slot**, then press **Boot other slot
-   (stock app)**. It verifies the other slot's image, rewrites otadata and reboots. The switch is
-   off after every boot. Use it only while the other slot holds the stock app.
-2. **Serial, from the serial backup:** `esptool --chip esp32 -p /dev/ttyUSB0 write_flash 0x0 full_16MB.bin`.
-3. **Serial, from the network backup:** `write_flash 0x0 backup/restore_full_16MB.bin`.
-
-None of these writes the external NOR; `extflash.bin` is a backup only.
+The routes are in [back to stock](back_to_stock.md). In the debug build, **Boot other slot (stock
+app)** needs **Allow boot switch to other slot** turned on first; the switch is off after every
+boot. The restore image from the network backup goes in over serial (WiNet-S) with
+`esptool --chip esp32 -p /dev/ttyUSB0 write_flash 0x0 backup/restore_full_16MB.bin`. None of the
+routes writes the external NOR; `extflash.bin` is a backup only.
 
 ## 9. WiNet-S2 install
 
@@ -205,12 +168,12 @@ The WiNet-S2 is installed and updated without a serial connection.
 - Package with `make sgu SGU_BOARD=s2 APP=<firmware.ota.bin>` and install
   through the stock pull route (§5). Start with `winet-s2-debug.yaml` to confirm the board stays up,
   or package a production entry's image with `DEBUG_APP=`.
-- OTA rollback stays on for the WiNet-S2 (`boards/winet_s2.yaml`): an image that resets within
-  30 s of boot should be reverted to the previous slot by the stock bootloader (unconfirmed on
-  hardware; the partition state at the first boot after an OTA tells), the only recovery path on
-  a board with no USB access. An image that runs but never gets a network needs the network
-  fallback (`common/ethernet_fallback.yaml`) instead. The external supervisor resets the board unless it is fed; the feed starts before
-  ESPHome's own setup, and every software restart and panic switches the supervisor off first.
+- The stock bootloader is expected to revert an image that resets within 30 s (unconfirmed:
+  check for `pending verify` at the first boot after an OTA). The way back is **Boot other slot**.
+  An image that runs but never gets a network needs the network fallback
+  (`common/ethernet_fallback.yaml`) instead.
+- The external supervisor resets the board unless it is fed; the feed starts before ESPHome's own
+  setup, and every software restart and panic switches the supervisor off first.
 - After the first install, update with native OTA (`make deploy NODE=sites/<name> DEVICE=<ip>`).
 
 ## 10. Debug tools

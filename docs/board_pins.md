@@ -25,8 +25,8 @@ USB-Serial-JTAG. The W5500 takes the chip's base MAC + 3 as its Ethernet address
 `ESP_MAC_ETH` slot), so the dongle's wired and Wi-Fi addresses differ by three.
 
 **Supervisor feed.** An external supervisor resets the WiNet-S2 unless it is kicked.
-`sungrow_board: watchdog:` runs this sequence as the first statement of the generated `setup()`,
-before the logger and the rest of the application start:
+`sungrow_board: watchdog:` runs this sequence from a global constructor, before the scheduler and
+`app_main`; an IDF secondary-stage init function arms the periodic kick once `esp_timer` is up:
 1. Configure GPIO2 and GPIO7 as input-output.
 2. Set GPIO2 = 0.
 3. Ten times: wait 100 ms, write GPIO7 = s and invert s (s starts at 1).

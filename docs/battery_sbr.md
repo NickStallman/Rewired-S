@@ -1,11 +1,12 @@
 # SBR battery stacks: how they work and what each register means
 
 This page explains how Sungrow SBR battery stacks work with an SH-RS hybrid inverter (an SH10RS
-here), and what every battery register our firmware reads means. It is written for anyone running this firmware with SBR batteries.
+here), and what every battery register Rewired-S reads means. It is written for anyone running
+Rewired-S with SBR batteries.
 
 It describes BCU firmware `SBRBCU-S_22011.01.30` behind SH10RS ARM firmware
 `SUNSTONE-H_01011.02.69`. Point names and numbers are those of the iSolarCloud app's local-Modbus
-configuration, whose register numbers are our doc numbers. Background in SG-Docs:
+configuration, whose register numbers are the doc numbers used here. Background in SG-Docs:
 [registers via the inverter](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/registers-via-inverter.md),
 [balancing and SOC](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/balancing-and-soc.md),
 [protections and limits](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sbr192/protections-and-limits.md),
@@ -15,8 +16,8 @@ configuration, whose register numbers are our doc numbers. Background in SG-Docs
 **Conventions**
 
 - Register numbers are 1-based **doc** numbers, as in Sungrow documents and
-  `data/families/battery.yaml`. On the wire the PDU address is **doc − 1**. Our Modbus master
-  subtracts the 1, and the inverter firmware's switch statements compare wire addresses.
+  `data/families/battery.yaml`. On the wire the PDU address is **doc − 1**. The Rewired-S Modbus
+  master subtracts the 1, and the inverter firmware's switch statements compare wire addresses.
 - u32 values are two registers, **low word first**.
 - "Example" values are slave 200 / slave 201 of the system below, discharging at about 1.5 kW
   near 96 % SOC.
@@ -25,7 +26,7 @@ configuration, whose register numbers are our doc numbers. Background in SG-Docs
 
 | Item | Value |
 |---|---|
-| Inverter | SH10RS, Modbus address 1, protocol type 3, firmware SUNSTONE-H_01011.02.69 |
+| Inverter | SH10RS, Modbus address 1, protocol type 3, firmware `SUNSTONE-H_01011.02.69` |
 | Stack 1 | SBR192, Modbus slave **200**, 6 modules with cell-type code `D`, about 723 cycles |
 | Stack 2 | SBR192, Modbus slave **201**, 6 modules with cell-type code `K`, about 71 cycles |
 | SBR192 | 6 modules × 20 cells (3.2 V nominal), 120 cells in series, 384 V nominal, 50 Ah, 19.2 kWh |
@@ -45,7 +46,7 @@ configuration, whose register numbers are our doc numbers. Background in SG-Docs
       │
   SH10RS inverter (battery protocol 'i')
       │ RS485 Modbus RTU
-  WiNet dongle (this firmware)
+  WiNet dongle (Rewired-S)
       slave 1         = the inverter
       slaves 200–204  = the stacks, served by the inverter itself from CAN data
 ```
@@ -158,10 +159,10 @@ One window is forwarded: wire addresses **19100–19999** (doc 19101–20000), a
   that sit live values: cell extremes and locations, contactor status, the faulted-module
   bitmap, capacities in 0.01 Ah, lifetime Ah, per-module max/min cell voltage and per-module SOC.
   Wire 19898 is an indirect read selected by a write to wire 19716.
-- Our battery table reads one register here: **doc 19939 = wire 19938 = p[0x171]**, the
+- The Rewired-S battery table reads one register here: **doc 19939 = wire 19938 = p[0x171]**, the
   **discharge cut-off SOC** (`discharge_cutoff_soc`, 0.01 %, default 500 = 5.00 %).
-  The next parameter, doc 19941 = p[0x172], is the **emergency charging SOC** (300 = 3.00 %); our
-  firmware does not poll it. §2.12 explains both.
+  The next parameter, doc 19941 = p[0x172], is the **emergency charging SOC** (300 = 3.00 %);
+  Rewired-S does not poll it. §2.12 explains both.
 - The app lists both as holding registers (fc 3), writable at its "senior" access level. 19939
   accepts 0–5000 and must be ≥ 19941.
 
@@ -471,13 +472,13 @@ The operating state is **10740 (`operation_status`)**:
   each with an enable bit and a state 0/1/2, plus two values. The inverter latches the requests,
   marks them done, and acknowledges them in 0x106 byte 6. 0x012 is the system copy of the BCU's
   service-mode frame 0x712 (service mode 2 drives channel A, modes 1/3 channel B). Neither value
-  is served on a register our firmware reads.
+  is served on a register Rewired-S reads.
 
 ### 2.13 BMS request flags (10666)
 
 **10666 (`bms_request_flags`)** is the second byte of the stack status frame 0x705:
 
-| Bit | Meaning | Our derived entity |
+| Bit | Meaning | Rewired-S derived entity |
 |---|---|---|
 | 0 (0x01) | charging not allowed (charge limit 0) | `charge_prohibited` ("Charging not allowed") |
 | 1 (0x02) | discharging not allowed (discharge limit 0, SOC below the discharge cut-off SOC, link down, …) | `discharge_prohibited` |
@@ -501,10 +502,10 @@ bytes little-endian. With no fault it reads "0000000000000000".
 **As fault codes (5448–5472).** The inverter turns the bits into Sungrow codes (at most 10) and
 serves them per stack as a word block: 5448 = 0, 5449 = flags (0x100 = a fault is present, 0x80 = an
 alarm is present), 5450–5451 = 0, 5452 = count, then 10 pairs of (code, class) at 5453 + 2i /
-5454 + 2i for i = 0–9, ending at 5472. Class 25 is a fault, 24 an alarm, and 0 a code in neither list (840/841). Our
-firmware decodes this block into `active_fault_count`, `active_fault_codes` and `first_fault`, for
-example "732 fault, 933 alarm", or "No active faults", and each stack's Home Assistant device
-gets the Problem binary sensor ([`inverter_registers.md`](inverter_registers.md) §3).
+5454 + 2i for i = 0–9, ending at 5472. Class 25 is a fault, 24 an alarm, and 0 a code in neither
+list (840/841). Rewired-S decodes this block into `active_fault_count`, `active_fault_codes` and
+`first_fault`, for example "732 fault, 933 alarm", or "No active faults", and each stack's Home
+Assistant device gets the Problem binary sensor ([`inverter_registers.md`](inverter_registers.md) §3).
 
 Protection word → code:
 
@@ -559,17 +560,17 @@ stops it from repeating until the condition drops.
 
 The BCU decodes this range by wire address, so wire 19758 lands on **p[0x117]**, a capacity
 parameter in A·ms (default 180 000 000 = 50 Ah, range 108 000 000–216 000 000). 100000 is outside
-that range. On 6-module stacks the condition does not hold. Our firmware never sends this write.
+that range. On 6-module stacks the condition does not hold. Rewired-S never sends this write.
 
 ---
 
 ## 3. Register reference: battery slaves 200–204
 
-All registers are fc 4 (input). The stacks are dev_type 44 in our firmware. "CAN" names the
+All registers are fc 4 (input). The stacks are dev_type 44 in Rewired-S. "CAN" names the
 per-stack frame for stack 0 (add 0x20·n for stack n) and the payload bytes dN. "—" in the key
 column means the row is polled for iSolarCloud but has no entity.
 
-### 3.1 Not served by SH10RS firmware SUNSTONE-H_01011.02.69
+### 3.1 Not served by SH10RS firmware `SUNSTONE-H_01011.02.69`
 
 | doc | Notes |
 |---|---|
@@ -635,18 +636,18 @@ column means the row is polled for iSolarCloud but has no entity.
 | 10789 | DC contactor: 0 open, 1 fault, 2 closed, 3 fault | u8 enum | 0x719 d0 | `dc_contactor_status` | 2 / 2 |
 | 10790 | faulted-module bitmap (bit m−1 = module m) | u8 | 0x719 d1 | `fault_module_id` | 0 / 0 |
 | 10791–10806 | module 1–8 manufacturing date code (below). Read aligned: the second register of each pair returns nothing | u32 LWF | 0x71B–0x71E | `module_N_date_code` (hidden) + derived `module_N_manufacturing_date` | 2023-09-23 / 2025-11-11 |
-| 10822–10893 | module 1–8 S/N, 18 characters (9 registers each) | string | 0x71F | `packN_serial_number` | EM032D6239230112DF… / EM032K725B110548KC… |
+| 10822–10893 | module 1–8 S/N, 18 characters (9 registers each) | string | 0x71F | `packN_serial_number` | e.g. `EM032D623923XXXXXX` / `EM032K725B11XXXXXX` (made-up examples) |
 | 19939/19940 | discharge cut-off SOC, BCU p[0x171] via the CAN tunnel (§1.5, §2.12); fc 3 holding in the app | u32 LWF, 0.01 % | 0x1E0 tunnel | `discharge_cutoff_soc` | 5.00 / 5.00 % |
 
 **Module manufacturing date.** The app names these registers "Pack N manufacturing date" (points
 58823–58830). The BCU builds the value from the module S/N characters (0-based) as
 10⁶·(c7c8) + 10⁴·m + 100·(c10c11) + (c6 − '0'), where m is c9 read as a hex digit (A–C = months
-10–12). The value is 0xFFFFFFFF if any of those characters is below '0'. Our firmware publishes
+10–12). The value is 0xFFFFFFFF if any of those characters is below '0'. Rewired-S publishes
 `module_N_manufacturing_date` as "YYYY-MM-DD" and treats 0, 0xFFFFFFFF, a month outside 1–12 or a
 day outside 1–31 as invalid; the raw `module_N_date_code` entities are hidden.
 
-- "EM032D6**239230**…" gives 23092306 → **2023-09-23**, and "EM032K7**25B110**…" gives 25111107 →
-  **2025-11-11**.
+- Made-up examples: `EM032D623923XXXXXX` (characters 6–11 `623923`) gives 23092306 →
+  **2023-09-23**, and `EM032K725B11XXXXXX` (`725B11`) gives 25111107 → **2025-11-11**.
 - The stack S/N encodes the BCU's date (`S` YYMMDD + 4 digits), which can differ from its
   modules' dates.
 
@@ -664,18 +665,18 @@ day outside 1–31 as invalid; the raw `module_N_date_code` entities are hidden.
 | 5634 | `battery_soh` | system SOH, 0.1 % | 96 % |
 | 5635 | `bms_max_charge_current` | system charge limit from 0x001, A; **forced to 0 at 100.0 % SOC** | 19 A |
 | 5636 | `bms_max_discharge_current` | system discharge limit from 0x001, A; **forced to 0 at 0 % SOC** | 30 A |
-| 5637 | `bms_total_discharge_energy` | not served by SUNSTONE-H_01011.02.69 | absent |
+| 5637 | `bms_total_discharge_energy` | not served by `SUNSTONE-H_01011.02.69` | absent |
 | 5639 | `battery_capacity` | 0.01 kWh: holding 33049 when non-zero, else Σ stacks' 10665, else 0xFFFF | 38.40 kWh |
 | 5669 | `daily_battery_discharge_energy` | 0.1 kWh | 13.3 kWh |
 | 5670/5671 | `total_battery_discharge_energy` | with SBR: the BMS system total (0x003), full u32, 0.1 kWh | 15207.4 kWh (= 13844.9 + 1362.4) |
 | 5672 | `daily_battery_charge_energy` | 0.1 kWh | 22.2 kWh |
 | 5673/5674 | — | **inverter bug**: 5673 serves only the **low 16 bits** of the total charge, and 5674 is never written | 2644.6 kWh (low word of 15751.7) |
-| 13041/13042 | `total_battery_charge_energy` | the **full** u32 total charge, 0.1 kWh, from the same field. Our firmware reads the total from here on protocol-3 inverters | 15751.7 kWh (= 14306.9 + 1444.8) |
+| 13041/13042 | `total_battery_charge_energy` | the **full** u32 total charge, 0.1 kWh, from the same field. Rewired-S reads the total from here on protocol-3 inverters | 15751.7 kWh (= 14306.9 + 1444.8) |
 | 13020–13025 | (:502 export) | the same fields as 5630–5634 | |
-| 13039 | `battery_capacity_sh` | **system nominal energy, 0.1 kWh** (0x007 d4d5 / 100, no further scaling). Our firmware polls it only for protocol type 5, so it has no value on the SH10RS | 384 = 38.4 kWh |
+| 13039 | `battery_capacity_sh` | **system nominal energy, 0.1 kWh** (0x007 d4d5 / 100, no further scaling). Rewired-S polls it only for protocol type 5, so it has no value on the SH10RS | 384 = 38.4 kWh |
 | 13058 | `max_soc` (holding) | max SOC sent to the BMS in 0x106, 0.1 % | |
 | 13059 | `min_soc` (holding) | min SOC sent to the BMS in 0x106, 0.1 %; also the 24 h low-SOC warning threshold | |
-| 13070–13079 | — | four inverter flag words built from the master's system fault/alarm word: 13070/71, 13072/73, 13074/75, 13078/79 (13076/77 = 0). Not polled; the stock :502 export maps them to battery rows 10811–10819, which SUNSTONE-H_01011.02.69 does not serve | |
+| 13070–13079 | — | four inverter flag words built from the master's system fault/alarm word: 13070/71, 13072/73, 13074/75, 13078/79 (13076/77 = 0). Not polled; the stock :502 export maps them to battery rows 10811–10819, which `SUNSTONE-H_01011.02.69` does not serve | |
 | 33047 / 33048 | `battery_max_charge_power` / `battery_max_discharge_power` (holding) | the inverter's own charge/discharge power caps, ×10 W | |
 | 33049 | — (holding) | battery capacity override that 5639 serves when non-zero | |
 

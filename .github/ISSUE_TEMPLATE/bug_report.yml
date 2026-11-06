@@ -11,7 +11,7 @@ body:
     id: version
     attributes:
       label: Rewired-S version
-      description: Settings page of the web UI, or the `Rewired-S version` sensor.
+      description: Settings → Boot slots (running slot) in the web UI, or the device's firmware line in Home Assistant.
       placeholder: "0.9.1"
     validations:
       required: true

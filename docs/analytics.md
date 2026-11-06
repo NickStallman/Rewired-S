@@ -1,8 +1,8 @@
 # Usage reporting and diagnostics uploads
 
 Rewired-S reports anonymous usage to a collector run by the project, and can upload a diagnostics
-report when something goes wrong or when you ask it to. Reporting is on in every entry and one
-substitution turns it off (below). The reports exist so that the install base, the hardware mix
+report when something goes wrong or when you ask it to. Reporting is on in every compiled and pre-built
+entry and one substitution turns it off (below). The reports exist so that the install base, the hardware mix
 and the errors people hit are visible without anyone having to file an issue, and so that a
 problem or an unrecognised device can be looked at from the dongle's own evidence.
 
@@ -16,7 +16,7 @@ serial uses a random id kept in its preferences instead.
 | Event | When | Properties |
 |---|---|---|
 | `ping` | 60–120 s after boot, then every 24 h | `version` (Rewired-S), `esphome_version`, `stock_version` (the version string the dongle presents to iSolarCloud), `board` (`winet_s` / `winet_s2`), `chip`, `network` (`wifi` / `ethernet`), `uptime_s`, `reset_reason`, `cloud_uplink`, `mqtt`, `modbus_tcp`, `control_writes`, `psram_kb`, `heap_min_kb`, `winetVersion` 4, `winetCount` 1 |
-| `device_registered` | with every ping, one per connected device | `device` (model), `role` (`inverter` / `battery` / `charger` / `bridge` / `meter`), `dev_type`, `protocol`, the inverter type code and the device's firmware-version registers |
+| `device_registered` | with every ping, one per connected device | `device` (model), `role` (`inverter` / `battery` / `charger` / `bridge` / `meter` / `other`), `dev_type`, `protocol`, `dev_code`, `inv_type` (when known), the firmware-version registers, `version`, `winetVersion` |
 | `error` | when a notable fault occurs | `type`, `error`, `count`; see the table below |
 
 A repeating error is sent once, then at most once an hour with a count, as the Home Assistant
@@ -33,8 +33,8 @@ add-on does.
 
 The timestamps are taken from SNTP; before the clock is valid the collector uses its own receive
 time. The batch is built on the main loop and sent from a low-priority task, so the inverter
-polling never waits for it; a failed send is retried three times, three seconds apart, and then
-dropped.
+polling never waits for it; a send is tried up to three times, three seconds apart (a refused
+request is not retried), and then dropped.
 
 ## The diagnostics report
 
@@ -56,7 +56,8 @@ The report is a generated plain-text document, not a raw log. It contains:
     and similar identity registers) as `key=value`;
   - the firmware-version registers of its family.
 - **Features**: cloud uplink state and connect failures, MQTT connection, Modbus-TCP state and
-  counters, whether inverter writes are enabled and the write counters, any running capture.
+  counters, whether inverter writes are enabled and the write counters, any running capture, the network
+  fallback state (Ethernet builds).
 - **Memory, uptime and reset reason**, then the reset journal (`/api/diag`: this boot's and the
   previous boot's records, the core-dump summary, the previous boot's log tail) and the log tail
   of this boot.
@@ -86,9 +87,9 @@ With reporting on, the dongle uploads a report by itself:
 | `crash`, `watchdog`, `stall` | the previous boot ended in a panic, a watchdog or supervisor reset, or a stall, or a core dump is stored: once, 30 s after the network is up |
 | `offline` | a device that was online this boot has been silent for 10 minutes while another still answers: once per device per boot |
 | `cloud` | the uplink has failed for 15 consecutive minutes: once per boot |
-| `heap` | internal free heap under 24 KB on three consecutive samples |
-| `modbus` | 30 or more timeouts and exceptions from one device within a minute |
-| `device` | an unrecognised device, once its first poll round is done; once per device code per install |
+| `heap` | internal free heap under 24 KB on three consecutive samples: once per boot |
+| `modbus` | 30 or more timeouts and exceptions from one device within a minute: once per device per boot |
+| `device` | an unrecognised device, once its first poll round is done or after 5 min; once per device code per install |
 
 Automatic uploads are limited to three per 24 hours; the count is kept in the dongle's
 preferences, so a restart loop cannot exceed it. Without a valid clock the window never resets.

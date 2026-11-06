@@ -12,7 +12,8 @@ Pinout and board details: [WiNet-S hardware](https://github.com/NickStallman/SG-
 
 - A 3.3 V USB-serial adapter (never 5 V on the data lines), three or four wires, a resistor of
   about 470 Ω, and a small Phillips screwdriver.
-- `esptool` (`pip install esptool`) or the browser installer on the release page. Port names and
+- `esptool` (`pip install esptool`) or ESP Web Tools on the
+  [install page](https://nickstallman.github.io/Rewired-S/). Port names and
   drivers per operating system: [running the tools](tools_setup.md).
 - The image: `winet-s-prebuilt-<version>.ota.bin` or `winet-s-ethernet-prebuilt-…` from the
   [releases](https://github.com/NickStallman/Rewired-S/releases), or your own
@@ -40,7 +41,7 @@ the 50 MHz clock input of the Ethernet PHY, so do not short it hard to ground: p
 
 ```sh
 esptool --chip esp32 -p /dev/ttyUSB0 chip_id             # answers in download mode
-espefuse.py --chip esp32 -p /dev/ttyUSB0 summary         # Secure Boot and flash encryption must be off
+espefuse --chip esp32 -p /dev/ttyUSB0 summary            # Secure Boot and flash encryption must be off
 ```
 
 If `espefuse` reports Secure Boot or flash encryption enabled, stop: no custom image will boot.
@@ -73,7 +74,7 @@ This overwrites whatever was in `ota_0` (usually the stock app; the other slot k
 had). Reconnect the adapter without GPIO0 pulled low, or power-cycle, and watch the boot log at
 115200 baud.
 
-The **browser installer** on the [release page](https://nickstallman.github.io/Rewired-S/) does
+ESP Web Tools on the [install page](https://nickstallman.github.io/Rewired-S/) does
 exactly these two writes (a blank `otadata` and the app at `0x110000`) through Web Serial; it
 does not erase the chip and does not touch the bootloader.
 
@@ -84,12 +85,11 @@ does not erase the chip and does not touch the bootloader.
   Ethernet image: it takes a DHCP lease.
 - Compiled image: it joins the Wi-Fi from `secrets.yaml`.
 
-The WiNet-S build has OTA rollback off (the stock bootloader would revert good images at the
-next cold boot), so a bad image shows as a boot loop on the serial console; write the backup
-back or try another image.
+A bad image shows as a boot loop on the serial console (the WiNet-S has no OTA rollback;
+[limitations](limitations.md#pre-built-images)); write the backup back or try another image.
 
 ## Updates afterwards
 
-ESPHome OTA (`make deploy`, or the **Update** entity on pre-built images) writes the inactive
-slot and switches to it. The first OTA therefore overwrites whatever stock app was still in
-`ota_1`; your flash backup is the way back after that ([back to stock](back_to_stock.md)).
+ESPHome OTA (`make deploy`, or the **Firmware** update entity on pre-built images) writes the
+inactive slot and switches to it. The first OTA therefore overwrites whatever stock app was still
+in `ota_1`; your flash backup is the way back after that ([back to stock](back_to_stock.md)).

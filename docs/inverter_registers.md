@@ -1,8 +1,18 @@
 # Inverter registers: what each entity means
 
-This page explains every inverter value our firmware publishes, for the SH10RS hybrid and the SG5.0RS string inverter. It also covers what the values mean on other Sungrow models that use the same tables. The battery stacks behind the SH10RS have their own page, [`battery_sbr.md`](battery_sbr.md).
+This page explains every inverter value Rewired-S publishes, for the SH10RS hybrid and the SG5.0RS
+string inverter. It also covers what the values mean on other Sungrow models that use the same
+tables. Other models: see [compatibility](compatibility.md). The battery stacks behind the SH10RS
+have their own page, [`battery_sbr.md`](battery_sbr.md).
 
-The example values are readings from an SH10RS and an SG5.0RS. Background on the registers, states and control behaviour of these models: SG-Docs [SH10RS registers](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/registers.md), [SH10RS architecture](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/architecture.md), [SH10RS control and EMS](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/control-and-ems.md), [SG5.0RS registers](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sg5rs/registers.md), [SG5.0RS architecture](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sg5rs/architecture.md) and the [error codes](https://github.com/NickStallman/SG-Docs/blob/main/reference/appendix/error-codes.md).
+The example values are readings from an SH10RS and an SG5.0RS. Background on the registers,
+states and control behaviour of these models (SG-Docs):
+[SH10RS registers](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/registers.md),
+[SH10RS architecture](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/architecture.md),
+[SH10RS control and EMS](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/control-and-ems.md),
+[SG5.0RS registers](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sg5rs/registers.md),
+[SG5.0RS architecture](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sg5rs/architecture.md)
+and the [error codes](https://github.com/NickStallman/SG-Docs/blob/main/reference/appendix/error-codes.md).
 
 **Conventions**
 
@@ -10,18 +20,25 @@ The example values are readings from an SH10RS and an SG5.0RS. Background on the
 - u32/s32 values are two registers, **low word first**.
 - Unless a row says otherwise, every register here is an input register (fc 4).
 - “SH10RS” = an SH10RS hybrid, 10 kW, single-phase, 4 MPPT, ARM firmware `SUNSTONE-H_01011.02.69`.
-- “SG5.0RS” = an SG5.0RS string inverter, 5 kW, single-phase, 2 MPPT, ARM firmware `SUNSTONE-S_01011.01.49`.
-- Both inverters report protocol code “AA10” with protocol type 3, so the firmware polls both with the **private 5xxx map** (`inv_proto3`). Entities with a `_sg` or `_sh` key suffix come from the public maps that other models use; they never have a value on these two.
+- “SG5.0RS” = an SG5.0RS string inverter, 5 kW, single-phase, 2 MPPT, ARM firmware
+  `SUNSTONE-S_01011.01.49`.
+- Both inverters report protocol code “AA10” with protocol type 3, so the firmware polls both with
+  the **private 5xxx map** (`inv_proto3`). Entities with a `_sg` or `_sh` key suffix come from the
+  public maps that other models use; they never have a value on these two. Other models: see
+  [compatibility](compatibility.md) (the SH15T also uses `inv_proto3`).
 
 ## 1. How values reach Home Assistant
 
-Each inverter is its own Home Assistant device over MQTT discovery (`<model>_<serial>`, e.g. `SG50RS_A2291234567`).
+Each inverter is its own Home Assistant device over MQTT discovery (`<model>_<serial>`, e.g.
+`SG50RS_A2291234567`).
 
-**Which signals become entities.** Every named signal that currently has a value becomes an entity, unless its category is `hidden`. A register the inverter does not serve never creates an entity.
+**Which signals become entities.** Every named signal that currently has a value becomes an entity,
+unless its category is `hidden`. A register the inverter does not serve never creates an entity.
 
 **Entity ids.** The entity id is built from the entity **name**.
 
-**Placeholder values.** Some registers are served with a placeholder rather than left unserved. The firmware stores those as “no value”, so they do not appear:
+**Placeholder values.** Some registers are served with a placeholder rather than left unserved. The
+firmware stores those as “no value”, so they do not appear:
 
 | Rows | Absent when | Why |
 |---|---|---|
@@ -50,7 +67,7 @@ Stock “no data” values are always absent: u16 0xFFFF, s16 0x7FFF, u32 0xFFFF
 | ARM software version (`arm_software_version`) | 4954 | ARM software identifier (stays the same across builds) | ARM_SUNSTONE-H_V11_V01_A | ARM_SUNSTONE-S_V11_V01_A |
 | DSP software version (`dsp_software_version`) | 4969 | DSP software identifier | MDSP_SUNSTONE-H_V11_V01_A | MDSP_SUNSTONE-S_V11_V01_A |
 | Inverter firmware version (`inverter_firmware_version`) | 8801 | name of the last firmware **package** installed | SUNSTONE-H_B000.V002.P067 | not served |
-| Communication module firmware version (`comm_module_firmware_version`) | 8816 | what the communication module last reported to the inverter. Our firmware does not report itself, so this still shows the stock dongle version | WINET-SV300.001.03.P024 | not served |
+| Communication module firmware version (`comm_module_firmware_version`) | 8816 | what the communication module last reported to the inverter. Rewired-S does not report itself, so this still shows the stock dongle version | WINET-SV300.001.03.P032 | not served |
 | Battery firmware version (`battery_firmware_version`) | 8831 | BCU firmware of the battery | SBRBCU-S_22011.01.30 | not served |
 | Rated active power (`rated_active_power`) | 5374 | nameplate output, kW (0.1) | 10 kW | 5 kW |
 | Rated reactive power (`rated_reactive_power`) | 5376 | kvar (0.1) | 6 kvar | 3 kvar |
@@ -63,7 +80,8 @@ Hidden but still polled for iSolarCloud:
 - 5800, the certification software version. It repeats 4954 on both inverters.
 - 2534/2535, the protocol code “AA10”. The dongle's Devices page shows it as text.
 - 34209, a second model field. It is empty on the SH10RS.
-- 5487/5489, function flags. They are build-time constants, and only bits 4 (115200 gate), 22 and 25 have a known use.
+- 5487/5489, function flags. They are build-time constants, and only bits 4 (115200 gate), 22 and 25
+  have a known use.
 - 33144, the remote-server connection status.
 - 5622/5623, the export-limit setting range.
 
@@ -81,11 +99,26 @@ Hidden but still polled for iSolarCloud:
 | First active fault (`first_fault`, derived) | 5448–5472 | the first entry of the active-fault list as “NN Name” (e.g. “39 Low insulation resistance”), “No active faults” when the list is empty; the battery stacks carry the same entity from their own fault list | No active faults | — |
 | Transient state (`state_transient`, derived) | 5221 | Yes while the operating status is one the inverter leaves by itself: Initial standby (0x1200), Starting (0x1600), Intelligent station building (0x1800), Safe mode (0x1900), Restarting (0x2501), Recovering from fault (0x6600), Standby (low PV) (0xA100); on string inverters also Key stop (0x1300), which the SG5.0RS reports for a rapid shutdown. Cleared with the status | No | No |
 
-**Dispatched running** (0x8200) means the inverter is running under a power dispatch or limit rather than freely. An SH10RS shows it in normal operation, both while exporting and while charging.
+**Dispatched running** (0x8200) means the inverter is running under a power dispatch or limit rather
+than freely. An SH10RS shows it in normal operation, both while exporting and while charging.
 
-**Derived fault and state signals.** The fault list (5448–5472) is decoded into three synthetic signals per device (inverter and battery stacks alike): 0xF060 active-fault count, 0xF061 active-fault text (“39 Low insulation resistance, 933 alarm”) and 0xF065 first fault (the first entry of 0xF061). The running state (5221, signal 0x2086) sets 0xF066 transient state. Both come from tables generated by `tools/gen_tables.py`: every running-state code has a state class (running, stopped, standby, starting, transient, fault, offline or unknown, `state_class()`), and `state_transient(code, string_family)` holds the transient set of the inverter family plus the per-model-family extras (0x1300 for string inverters). The same state classes drive the start/stop follow-up and the power-limit re-assert ([`control.md`](control.md)). Fault names come from one generated table (`fault_code_text()`), shared by the firmware and the web UI.
+**Derived fault and state signals.** The fault list (5448–5472) is decoded into three synthetic
+signals per device (inverter and battery stacks alike): 0xF060 active-fault count, 0xF061
+active-fault text (“39 Low insulation resistance, 933 alarm”) and 0xF065 first fault (the first
+entry of 0xF061). The running state (5221, signal 0x2086) sets 0xF066 transient state. Both come
+from tables generated by `tools/gen_tables.py`: every running-state code has a state class (running,
+stopped, standby, starting, transient, fault, offline or unknown, `state_class()`), and
+`state_transient(code, string_family)` holds the transient set of the inverter family plus the
+per-model-family extras (0x1300 for string inverters). The same state classes drive the start/stop
+follow-up and the power-limit re-assert ([`control.md`](control.md)). Fault names come from one
+generated table (`fault_code_text()`), shared by the firmware and the web UI.
 
-**Problem (Home Assistant, MQTT).** Each inverter and battery device also gets a `binary_sensor` with device class `problem`: ON while the active-fault count is above zero, OFF otherwise. Its attributes carry `count`, `codes` (the numeric fault codes), `names` (their names, in the same order) and `first` (the First active fault text), so an automation can key on the sensor and read the detail from the attributes. It is published with the device's discovery set, whenever the fault list changes and in the periodic full refresh.
+**Problem (Home Assistant, MQTT).** Each inverter and battery device also gets a `binary_sensor`
+with device class `problem`: ON while the active-fault count is above zero, OFF otherwise. Its
+attributes carry `count`, `codes` (the numeric fault codes), `names` (their names, in the same
+order) and `first` (the First active fault text), so an automation can key on the sensor and read
+the detail from the attributes. It is published with the device's discovery set, whenever the fault
+list changes and in the periodic full refresh.
 
 **Power flow flags.** The raw 6099 word is hidden; the text entity carries the same information.
 
@@ -126,7 +159,8 @@ Hidden but still polled for iSolarCloud:
 | Negative voltage to ground (`negative_voltage_to_ground`) | 5243 s16 | V, 0.1 | SG5.0RS only |
 | Internal air temperature (`internal_temperature`) | 5245 s16 | °C, 0.1 | |
 
-String voltages/currents (5253–5332) and MPPT 5–20 are defined for larger models; neither inverter here serves them.
+String voltages/currents (5253–5332) and MPPT 5–20 are defined for larger models; neither inverter
+here serves them.
 
 ## 6. Energy counters (kWh, 0.1 unless noted)
 
@@ -186,14 +220,14 @@ All meter rows except Meter active power are absent when no meter is connected (
 | 0x8100 | Derating running | 0x8200 | Dispatched running |
 | 0x9100 | Running with alarm | 0xA100 | Standby (low PV) |
 
-The SH10RS power stage itself produces only 0x0000, 0x0400, 0x0800, 0x1000, 0x1200, 0x1300,
-0x1400, 0x1500, 0x1600, 0x1800, 0x1900, 0x2000, 0x4000, 0x4001, 0x5500, 0x8100, 0x8200 and
-0x9100; its controller adds 0x2500 (communication fault) and reports 0x1400 while the power stage
-does not answer. 0x1300 is the state after a stop command (the inverter waits for a start),
-0x1800 the string-detection sweep, 0x1900 rapid shutdown engaged, 0x8200 a run in which the
-active-power limit is the binding derating source and 0x8100 any other derating source. The SG5.0RS power stage produces 0x0000, 0x1200,
-0x1300, 0x1400, 0x1500, 0x1600, 0x5500, 0x8100, 0x8200, 0x9100 and 0xA100 (waiting for PV power);
-it reports a rapid shutdown as 0x1300, not 0x1900.
+The SH10RS power stage itself produces only 0x0000, 0x0400, 0x0800, 0x1000, 0x1200, 0x1300, 0x1400,
+0x1500, 0x1600, 0x1800, 0x1900, 0x2000, 0x4000, 0x4001, 0x5500, 0x8100, 0x8200 and 0x9100; its
+controller adds 0x2500 (communication fault) and reports 0x1400 while the power stage does not
+answer. 0x1300 is the state after a stop command (the inverter waits for a start), 0x1800 the
+string-detection sweep, 0x1900 rapid shutdown engaged, 0x8200 a run in which the active-power limit
+is the binding derating source and 0x8100 any other derating source. The SG5.0RS power stage
+produces 0x0000, 0x1200, 0x1300, 0x1400, 0x1500, 0x1600, 0x5500, 0x8100, 0x8200, 0x9100 and 0xA100
+(waiting for PV power); it reports a rapid shutdown as 0x1300, not 0x1900.
 
 The SH public map 13000 uses one bit per state:
 
@@ -248,12 +282,12 @@ caption and "Limited by the active-power setting" while the operating status is 
 | 1–9 | DRM0–DRM8 |
 | 255 | No DRM dispatching |
 
-255 is forced when the DRM function is disabled on both inverters. The SH10RS reports 254 when DRM is
-enabled and no command is asserted. On the SG5.0RS, 255 is also forced when the country byte is not
-Australia (6) or New Zealand (99), and it is returned for an unrecognised code too, so 255 there does
-not tell "DRM disabled" from "enabled, DRED connected and idle". The SG5.0RS serves the register
-directly; on the SH10RS the capability word 5521 bit 2 is set only while a state of 1–9 is asserted,
-so the dongle sees the SH10RS state only then.
+255 is forced when the DRM function is disabled on both inverters. The SH10RS reports 254 when DRM
+is enabled and no command is asserted. On the SG5.0RS, 255 is also forced when the country byte is
+not Australia (6) or New Zealand (99), and it is returned for an unrecognised code too, so 255 there
+does not tell "DRM disabled" from "enabled, DRED connected and idle". The SG5.0RS serves the
+register directly; on the SH10RS the capability word 5521 bit 2 is set only while a state of 1–9 is
+asserted, so the dongle sees the SH10RS state only then.
 
 **Reactive power mode** (5507). The power stage itself implements five modes, selected by the
 installer setting the controller pushes down (off, fixed power factor, Q(U), fixed reactive power,
@@ -284,7 +318,8 @@ the installer Q limits. The controller maps that into this enum:
 
 The other 24 codes name third-party batteries; see `tools/gen_tables.py` `BATTERY_TYPE_MAP`.
 
-**Country/region** (protection read 32310, web UI only): 150 Sungrow country codes, 6 = Australia (`COUNTRY_MAP`).
+**Country/region** (protection read 32310, web UI only): 150 Sungrow country codes, 6 = Australia
+(`COUNTRY_MAP`).
 
 ## 9. Model differences at a glance
 

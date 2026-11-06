@@ -2,7 +2,7 @@
 """Write the GitHub Pages index: ESP Web Tools install buttons for the WiNet-S serial route and
 links to the manifests the ESPHome update entity polls.
 
-    python3 -I tools/pages_index.py --version 0.9.0 --out site/index.html
+    python3 -I tools/pages_index.py --version 0.9.1 --out site/index.html
 """
 import argparse
 

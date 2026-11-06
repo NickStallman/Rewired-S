@@ -10,9 +10,10 @@ secrets ([pre-built images](prebuilt.md)); everything below is for compiling you
 ```sh
 python3 -m venv .venv && .venv/bin/pip install esphome -r tools/requirements.txt   # ESPHome 2026.9.x
 cp secrets.yaml.example secrets.yaml      # Wi-Fi, API key, web login, MQTT broker
-ln -s ../secrets.yaml sites/secrets.yaml  # site files read secrets from their own directory
 make config                               # validates every entry
 ```
+
+Site files need one more link for the secrets ([sites/README.md](../sites/README.md)).
 
 `secrets.yaml` (git-ignored):
 
@@ -26,14 +27,15 @@ make config                               # validates every entry
 
 | Entry | Dongle | Network |
 |---|---|---|
-| `winet-s.yaml` | WiNet-S | Wi-Fi, with a fallback access point and captive portal |
-| `winet-s-ethernet.yaml` | WiNet-S | Ethernet (DP83848). No fallback AP: recovery is over UART |
-| `winet-s2.yaml` | WiNet-S2 | Wi-Fi |
-| `winet-s2-ethernet.yaml` | WiNet-S2 | Ethernet (W5500), untested |
-| `*-prebuilt.yaml` | as above | the same, provisioned at runtime instead of compiled in |
+| `winet-s.yaml` | WiNet-S | Wi-Fi (`common/wifi.yaml`), with a fallback access point and captive portal |
+| `winet-s-ethernet.yaml` | WiNet-S | Ethernet (DP83848). No fallback AP; optional network fallback (`common/ethernet_fallback.yaml`) boots the other slot; otherwise recovery is over UART |
+| `winet-s2.yaml` | WiNet-S2 | Wi-Fi (`common/wifi.yaml`), with a fallback access point and captive portal |
+| `winet-s2-ethernet.yaml` | WiNet-S2 | Ethernet (W5500); status in [compatibility](compatibility.md) |
+| `*-prebuilt.yaml` | as above | the same, provisioned at runtime instead of compiled in; the Ethernet ones include the network fallback |
 | `winet-s-debug.yaml`, `winet-s-debug-ethernet.yaml`, `winet-s2-debug.yaml` | | the read-only [debug build](debug_build.md) |
 
-ESPHome runs Wi-Fi or Ethernet, not both, so the network is part of the entry.
+ESPHome runs Wi-Fi or Ethernet, not both, so the network is part of the entry. The app descriptor
+version carries `+wifi` / `+ethernet`, which the Boot slots card and the fallback read.
 
 An entry is a list of packages:
 
@@ -69,22 +71,8 @@ external_components:
 
 ## Site files
 
-A site file describes one dongle and is git-ignored (`sites/`). The minimum:
-
-```yaml
-# sites/house.yaml
-substitutions:
-  name: house-inverter
-  friendly_name: House Inverter
-  cloud_firmware_version: "WINET-SV300.001.03.P024"   # what the stock web UI's About page showed
-packages:
-  entry: !include ../winet-s2.yaml
-```
-
-```sh
-.venv/bin/esphome config sites/house.yaml
-make deploy NODE=sites/house DEVICE=192.0.2.50       # compile, encrypted OTA, logs across the reboot
-```
+A site file describes one dongle, includes an entry and sets the substitutions below; it is
+git-ignored. Setup, an example and the deploy commands are in [sites/README.md](../sites/README.md).
 
 ### Substitutions
 
@@ -111,13 +99,15 @@ documented in [board pins](board_pins.md); you should not need to change them.
   Leave the `cloud` package out of the entry to remove the uplink from the build entirely.
 - **Modbus-TCP.** The **Modbus-TCP server** switch defaults to the inverter's country rule (on
   for Australia and a few others, off elsewhere) until you set it; `common/modbus_tcp.yaml` has
-  `max_clients`, `write_allowed_ips` and the passthrough options.
-- **MQTT or native entities.** `mqtt_ha` publishes each device over MQTT discovery
-  ([Home Assistant](home_assistant.md)). Without a broker, replace it with
-  `common/native_entities.yaml`, which folds the inverter (and, with the extra packages listed in
-  that file, a battery stack and a meter) into the dongle's native-API device. Do not use both.
+  `max_clients`, `allowed_ips` and `passthrough`; `write_allowed_ips` is in `common/control.yaml`.
+- **MQTT or native entities.** Use `mqtt_ha` or `common/native_entities.yaml`, not both
+  ([Home Assistant](home_assistant.md#why-mqtt-and-not-just-esphome-entities)).
+- **Network fallback.** `fallback: !include common/ethernet_fallback.yaml` (`sungrow_board:
+  network_fallback:` with `timeout` 3min, `phy_failed_timeout` 60s, `allow_stock` false). A build
+  that never gets a network boots the other slot, but only into a Rewired-S image that is not an
+  Ethernet build. The state shows on Settings → Boot slots.
 - **Remote logs.** `syslog_host` plus `common/syslog.yaml`; `make syslog` runs a receiver.
-- **Fast loop.** `rs485: fast_loop: true` tightens the reply detection at some CPU cost
+- **Fast loop.** `sungrow_modbus: fast_loop: true` tightens the reply detection at some CPU cost
   ([update rates](update_rates.md)).
 
 ## Make targets
@@ -127,7 +117,7 @@ make                 # = make test: generated files fresh, every host suite, the
 make test-host       # what CI runs on every push (needs g++, python3, zlib)
 make web             # web UI typecheck + tests + embedded bundle check (npm ci once in components/sungrow_web/web)
 make gen             # rerun the generators; make check-gen fails on a stale generated file
-make config          # esphome config of every entry, debug entry and tests/config/*.yaml
+make config          # every entry, pre-built entry, debug entry and tests/config/*.yaml
 make config-prebuilt # the pre-built entries, validated without a secrets.yaml
 make compile         # build every entry; make compile-debug builds the debug entry
 make deploy NODE=sites/<name> DEVICE=<ip>

@@ -114,7 +114,7 @@ struct MasterTiming {
   /// ad-hoc, write verify). Stock uses 2000 ms for every frame.
   uint32_t response_timeout_ms{1000};
   /// Cyclic reads (and offline probes) time out after the request + reply wire time plus this.
-  /// The SH10RS answers in 4..10 ms (docs/update_rates.md §3.3).
+  /// The SH10RS answers in 4..10 ms (docs/update_rates.md §7).
   uint32_t poll_timeout_margin_ms{200};
   /// Reads of the ranges the inverter forwards to its DSP or tunnels to the BCU (up to ~1.5 s
   /// inside the inverter; tunnel_range()).

@@ -23,7 +23,7 @@ Background on device types and the stock grid-code profiles:
 | Range probe | `scan_range` (shipped `"1-8"`): a read-only probe of each address that is not configured, run only when the search gets no answer, no inverter is online and every remembered address stayed silent; once per boot and once per rescan. |
 | Reported children | After each poll round of an online inverter, every battery address in input 10451..10458 (values 1..247) and, from register 5621, bit 0 (EV charger at 248) and bit 2 (Energy Bridge at 246) becomes a device (up to 10). Each is probed with its class identity read: SBR fn 4 10710 × 11, charger 21201 × 24, Energy Bridge 4096 × 42. A reply (SBR: non-zero device code) makes it a device of that class (dev_type 44 / 46 / 92, table `battery` / `charger` / `energy_bridge`); a silent one is asked again every 60 s without holding up the others. Batteries, chargers and Energy Bridges are never range-probed. |
 | SBR model | Device codes 0x20E6..0x20EC map to SBR064..SBR256 in 3.2 kWh steps (0x20EA = SBR192); any other code is named `SBR000` until polling fills the model. |
-| Timeouts | `response_timeout` 2000 ms from the send; `retries` (default 0) applies to discovery only, never to writes. A scan slot is re-probed until `scan_attempts` (default 2) misses, then abandoned until a rescan; a configured device is re-probed every 2 s for 10 failures, then every 15 s. |
+| Timeouts | `response_timeout` 1000 ms from the send; `retries` (default 0) applies to discovery only, never to writes. A scan slot is re-probed until `scan_attempts` (default 2) misses, then abandoned until a rescan; a configured device is re-probed every 2 s for 10 failures, then every 15 s. |
 | Exception reply | The device is present: the fallback table (`fallback_table`, default `inv_proto1_4`; `scan_fallback_table` for scan slots) is activated, protocol type 1, the device goes online but counts as not discovered. Without a fallback table the device keeps being probed. |
 | Short reply (< 64 registers) | Treated as an exception reply. |
 | Successful parse | The device is discovered, the poll table is chosen from the protocol type (§3.2), the block is stored as the table's own data and one fn 3 read of 30644 follows (§1.2). |
@@ -152,7 +152,7 @@ family is `str_pv`, `res_new_pv`, `res_es` or `unit`.
 | Cloud devType | from the table type: 0x01 / 0x15 → 1, 0x23 → 14, 0x12 → 7, 0x2C → 43, 0x22 → 46, 0x2E → 51, 0x5C → 92; devType 0 is not reported |
 | Capability gating (bitmap 0x2181) | on for `inv_proto2` / `inv_proto3`, YAML `gate_capabilities` overrides |
 | Frame gap | 1 ms for battery, charger and Energy Bridge tables, 18 ms otherwise |
-| SBR cell block | `table: battery`: 10757 + 24 every `sbr_interval` (300 s) |
+| SBR cell block | `table: battery`: 10757 + 24 every `sbr_interval` (30 s) |
 
 ### 3.3 Matrix
 
@@ -171,10 +171,11 @@ family is `str_pv`, `res_new_pv`, `res_es` or `unit`.
 | 18 (meter table) | 0 | — | `other_dev18_*` | `dev18` | none | 7 | `unit_nodesc` | — |
 | 46 / 92 (charger / Energy Bridge) | 0 | — | `charger` / `energy_bridge` | poll table | none | 51 / 92 | `unit_nodesc` | — |
 
-The two tested inverters: the **SG5.0RS** reports dev_code 0x2606, protocol code "AA10", tag "ZS"
-(protocol 3, dev_type 21, family `unit`, country 32310); the **SH10RS** reports dev_code 0x0D1B,
-"AA10", "ZS" (protocol 3, dev_type 35, family `unit`, country 32310). Both answer 0xFFFF at 30644.
-SBR192 stacks report device code 0x20EA.
+Examples: the **SG5.0RS** reports dev_code 0x2606, protocol code "AA10", tag "ZS" (protocol 3,
+dev_type 21, family `unit`, country 32310); the **SH10RS** reports dev_code 0x0D1B, "AA10", "ZS"
+(protocol 3, dev_type 35, family `unit`, country 32310); the **SH15T** reports dev_code 0x0E25,
+tag "ZS" (protocol 3, dev_type 35, family `unit`). The SG5.0RS and SH10RS answer 0xFFFF at 30644.
+SBR192 stacks report device code 0x20EA. Status per model: [compatibility](compatibility.md).
 
 ### 3.4 Modbus-TCP server and the country
 
@@ -192,29 +193,18 @@ MQTT never exposes installer or grid-code settings.
 
 ### 4.1 Inputs
 
-| Input | Content |
-|---|---|
-| `data/grid_profiles/index.yaml` | the settings families, the descriptor table and the Setup countries |
-| `data/grid_profiles/<family>.yaml` | per family `str_pv`, `res_new_pv`, `res_es`, `unit`: the setup profiles with their register sets, the register width table and the installer catalogue (English labels) |
-| `data/installer_rules.yaml` | value rules per family (ranges in display units, regulation rules `@<address>`, scale) |
-| `data/installer_help.yaml` | help text per (family, address) |
-| `data/dsp_params/models.yaml`, `data/dsp_params/*.csv` | power-stage acceptance ranges per inverter model (§5.4) |
-
-The descriptor table of §3.1 exists in `components/sungrow_modbus/discovery.cpp` and in
-`data/grid_profiles/index.yaml`, from which `tools/gen_grid_profiles.py` derives each family's
-commit registers. No component fetches or parses anything at runtime; everything is generated
-(`make gen`, checked by `make check-gen`). `tools/fetch_grid_profiles.py` downloads the current
-grid-code XML set from iSolarCloud into `data/fetched/grid_profiles/<region>/` (not tracked) and
-converts it to the project format (`--to-project-format`, `tools/grid_profiles_xml.py`) for
-`tests/test_xml_drift.py` to compare. The file formats are described in `docs/data_format.md`.
+Inputs and generators: [data/README.md](../data/README.md); file formats:
+[data format](data_format.md). The descriptor table of §3.1 exists in
+`components/sungrow_modbus/discovery.cpp` and in `data/grid_profiles/index.yaml`, from which
+`tools/gen_grid_profiles.py` derives each family's commit registers.
 
 ### 4.2 Setup profiles (`tools/gen_grid_profiles.py`)
 
 One option per profile of `data/grid_profiles/<family>.yaml` (for `unit` the picker bound to
 register 30036); a profile's variants are told apart by input 5479 when `variant_by_input_5479` is
 set. Each variant holds its register sets in file order, verbatim (U32 low word first). Output:
-`components/sungrow_control/grid_profiles.gen.{h,cpp}` and `web/src/setup_profiles.gen.ts`. The
-bundled set:
+`components/sungrow_control/grid_profiles.gen.{h,cpp}` and
+`components/sungrow_web/web/src/setup_profiles.gen.ts`. The bundled set:
 
 | Family | Option code | Standard | Variants |
 |---|---|---|---|
@@ -244,9 +234,9 @@ registers are both in the family's allow-list (`tools/gen_installer_rules.py`). 
 a family is its catalogue addresses (U32: both registers), every register of its profile sets and
 its commit registers; `none` and `unit_nodesc` have none.
 
-Outputs: `web/src/installer_settings.gen.ts` (`INSTALLER_SETTINGS`), and
-`components/sungrow_control/installer_allow.gen.h` / `installer_rules.gen.h` for the server-side
-allow-lists, ranges and relations.
+Outputs: `components/sungrow_web/web/src/installer_settings.gen.ts` (`INSTALLER_SETTINGS`),
+and `components/sungrow_control/installer_allow.gen.h` / `installer_rules.gen.h` for the
+server-side allow-lists, ranges and relations.
 
 Catalogue fields: `family`, `address` (1-based holding register), `label`, `category`, `control`
 (number / enum / switch), `dtype` (U16 / S16 / U32), `wordOrder` (`lo_first` on U32 rows), `scale`,
@@ -293,7 +283,7 @@ the routine profile registers (plus YAML `registers:` extras), never the install
 | Preview | Items `{a, new, cur, valid, kind, changed}` (kind country / company / grid_type / set; an unknown current value counts as changed), the frames, `n_changed`, and `note`: the items the apply will skip because they are outside the model's power-stage range. The page shows the diff (U32 rows joined low word first) and the note as a warning. |
 | Apply | "Apply profile…" → dialog (standard, variant, totals) → token (device, 65534) → `POST /api/setup_apply?device=D&option=O&confirm=T`. Needs a complete prepare of the same (D, O) younger than 60 s, else PREVIEW_REQUIRED; the prepare is used once. Family allow-list for protection registers, routine registers value-checked, no range or relation check, **order kept** (country, 30036, then the sets), the XML values written verbatim. Items outside the power-stage range are skipped with a WARN log and returned as `note`. |
 | Progress | The page polls `/api/grid_read` every 800 ms and shows a row per frame. |
-| Start | "Start inverter…" (when the descriptor has a power switch) → dialog → token (device, 65533) → `POST /api/setup_start`: writes 0xCF to the descriptor's power-switch register (fn 16) through the profile's start/stop rule, which starts the start/stop follow-up (`docs/control.md`). |
+| Start | "Start inverter…" (when the descriptor has a power switch) → dialog → token (device, 65533) → `POST /api/setup_start`: writes 0xCF to the descriptor's power-switch register (fn 16) through the profile's start/stop rule, which starts the start/stop follow-up ([control](control.md)). |
 
 Nothing stops the inverter for a setup, and nothing decides whether a device needs one: the Setup
 page shows the country, standard and grid type read from the inverter.
@@ -328,7 +318,8 @@ device code of the devinfo block, else on its model string. A U32 setting is com
   applicable.
 - Any other model has no power-stage range check; the installer ranges still apply.
 
-Adding a line is a row in `models.yaml` and its CSV, adding a model is a name under `models`, then `make gen`. Background:
+Adding a line is a row in `models.yaml` and its CSV, adding a model is a name under `models`, then
+`make gen`. Background:
 [SH10RS register windows](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/register-windows.md).
 
 ### 5.5 On-demand reads (`/api/grid_read_start`, `/api/grid_read`)

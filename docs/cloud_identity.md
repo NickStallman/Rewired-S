@@ -63,7 +63,7 @@ P = persistent in the external-flash identity file.
 | 0x1089 | 16 | str P | "UTC+8:00" | time-zone string, written by the settimezone command |
 | 0x1015 | 2 | u16 P | 5 | rundata period in minutes (0 = 5; 5 for the first 30 min of a boot); 1-1440 accepted |
 | 0x1017 / 0x1018 / 0x1019 | 2 each | u16 P | 0 | silence window enable / start hour / end hour |
-| 0x6492 | 4 | u32 P | 0x4FF | remote-control enable mask (WiNet-S2; the WiNet-S default is 0x4EF) |
+| 0x6492 | 4 | u32 P | 0x4FF | remote-control enable mask (WiNet-S2 file; the WiNet-S always uses 0x4EF) |
 
 The YAML options `sn`, `broker_host`, `port`, `ssl_flag`, `mqtt_key`, `encrypt`, `keynum`,
 `compress`, `timezone_id`, `timezone`, `rundata_period`, `silence`, `remote_ctl_mask`,

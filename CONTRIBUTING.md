@@ -25,20 +25,22 @@ come with a test.
    bus. `tools/hygiene_check.sh` runs in CI and fails on the obvious patterns.
 3. **No serial numbers, plant names or addresses**, yours or anyone else's, in code, data, docs,
    dashboards, screenshots or tests. Use the documented placeholders.
-4. **Generated files are never edited by hand.** `components/**/*.gen.*`,
-   `register_tables.*`, `register_meta.py`, `mqtt_point_table.*`, `ha_meta_gen.*`, `devices/*.yaml`
-   and `web/src/*.gen.ts` come from `make gen`; `make check-gen` fails when they are stale.
+4. **Generated files are never edited by hand.** `components/**/*.gen.*`, `register_tables.*`,
+   `register_meta.py`, `mqtt_point_table.*`, `ha_meta_gen.h`, `web_assets.h`, the `GENERATED`
+   files under `devices/` and `components/sungrow_web/web/src/*.gen.ts` come from `make gen`
+   (`web_assets.h` from `make web-assets`); `make check-gen` and `make check-web-assets` fail
+   when they are stale.
 5. Keep the safety model: a new write path goes through `sungrow_control` and the allow-list,
    never straight to the bus.
 
 ## Development
 
 ```sh
-python3 -m venv .venv && .venv/bin/pip install esphome -r tools/requirements.txt
+python3 -m venv .venv && .venv/bin/pip install esphome==2026.9.1 -r tools/requirements.txt
 cp secrets.yaml.example secrets.yaml
 make                      # host suites + web suite + generated files check
 make config               # every entry validates
-make compile              # every entry builds
+make compile              # every compiled and pre-built entry builds
 make hygiene              # the rules above
 ```
 
@@ -61,6 +63,19 @@ One topic per PR, a sentence or two on what and why, how it was tested (which do
 inverter, or "host tests only"), and a changelog line. CI runs the hygiene gate, the host and
 web suites, the generated-file check, config validation of every entry and a compile of each
 entry.
+
+## Documentation standards
+
+1. One status vocabulary: the symbols of [docs/compatibility.md](docs/compatibility.md) (✅ 🟢 🟡 ⚪ ❌); other docs link to the chart instead of restating hardware status.
+2. Names: Rewired-S, WiNet-S, WiNet-S2, ESPHome, Home Assistant, iSolarCloud, Modbus-TCP, pre-built image, stock app, Boot other slot, Send diagnostics; firmware lines in code font (`SUNSTONE-H`); model names as the inverter reports them.
+3. Files, commands, YAML keys, entity ids and register numbers in code font; every path, key and number must exist in the tree.
+4. Version examples use the current release; only `CHANGELOG.md` narrates versions.
+5. Present tense: say what the firmware does, not what it used to do. Tables for status and parameters, prose for procedure. Each doc opens with an H1 and one short paragraph. No duplicated sections: link instead.
+6. Links: relative inside the repo, absolute for SG-Docs and issues; every target must exist.
+7. Rollback on the WiNet-S2 is "expected, unconfirmed"; the WiNet-S has none; the way back is Boot other slot.
+8. No serials, MACs, Wi-Fi names, passwords or private addresses; documentation examples use 192.0.2.x.
+
+`make hygiene` enforces (8); the rest is review.
 
 ## Releases
 

@@ -13,11 +13,9 @@ dongle did for other people (the iSolarCloud connection, the installer app, Modb
 working.
 
 > [!WARNING]
-> **Alpha software.** Rewired-S has been running for weeks on exactly one kind of system: an
-> **SH10RS** hybrid inverter with **SBR192** battery stacks, and an **SG5.0RS** string inverter,
-> each on its own WiNet-S or WiNet-S2 dongle. Other models are polled from the same register
-> tables and are expected to work, but their controls have not been exercised on hardware. See
-> the [hardware compatibility chart](docs/compatibility.md) and [limitations](docs/limitations.md),
+> **Alpha software.** Tested daily on an SH10RS with two SBR192 stacks and an SG5.0RS; the SH15T
+> is verified for reads by a user. Other models are expected to work; see the
+> [hardware compatibility chart](docs/compatibility.md) and [limitations](docs/limitations.md),
 > keep the way back to the stock firmware in mind ([docs/back_to_stock.md](docs/back_to_stock.md)),
 > and report what you find.
 
@@ -58,18 +56,20 @@ More screenshots: [devices](docs/images/devices.jpg), [installer settings](docs/
 
 | Dongle | SoC | Network | Status |
 |---|---|---|---|
-| WiNet-S (V200) | ESP32, 4 MB PSRAM | Wi-Fi or Ethernet (DP83848) | tested (Ethernet on the string inverter) |
-| WiNet-S2 (SV300) | ESP32-S3, 8 MB PSRAM | Wi-Fi | tested (on the hybrid inverter); pre-built image and stock-updater install verified by a user |
-| WiNet-S2 (SV300) | ESP32-S3, 8 MB PSRAM | Ethernet (W5500) | verified by a user (link, DHCP, MQTT, cloud over the cable) |
+| WiNet-S (V200) | ESP32, 4 MB PSRAM | Wi-Fi | ✅ |
+| WiNet-S (V200) | ESP32, 4 MB PSRAM | Ethernet (DP83848) | ✅ |
+| WiNet-S2 (SV300) | ESP32-S3, 8 MB PSRAM | Wi-Fi | ✅; pre-built image and updater install 🟢 |
+| WiNet-S2 (SV300) | ESP32-S3, 8 MB PSRAM | Ethernet (W5500) | 🟢 |
+
+Legend and evidence: [compatibility chart](docs/compatibility.md).
 
 Inverters and batteries: every inverter the WiNet-S supports works, because the firmware polls
 each device from the register table of the protocol type it reports rather than by model name;
 the [compatibility chart](docs/compatibility.md) lists every class, whether its power-stage
-acceptance ranges are known, and how far it has been verified. In short: SH-RS hybrids and SG-RS
-string inverters with SBR batteries are the tested line (daily use), the SH-T three-phase
-hybrids are verified for reads on an SH15T and carry their ranges too; SH-RT and SG-RT
-three-phase models, SBH batteries, meters, EV chargers and the Energy Bridge are polled from the
-same tables but nobody has reported on them yet.
+acceptance ranges are known, and how far it has been verified. In short: SH-RS hybrids, SG-RS
+string inverters, SBR batteries and a DTSU666 on the meter port are ✅; the SH15T is 🟢 for reads.
+SH-RT and SG-RT models, SBH batteries, meters on their own RS485 address, EV chargers and the
+Energy Bridge are 🟡/⚪.
 
 ## Getting started
 
@@ -82,10 +82,9 @@ slot so you can go back.
 The stock firmware accepts a signed update package served from your LAN. Rewired-S ships as
 such a package, signed with the project's release key, which you import into the dongle once.
 
-1. Download the `.sgu` package, its `.bin` signature and the release public key
-   (`publicKey_V1.pem`) from the
+1. Download your entry's `.zip` package and `publicKey_V1.pem` from the
    [latest release](https://github.com/NickStallman/Rewired-S/releases), or build your own
-   (`docs/install_ota.md`).
+   ([docs/install_ota.md](docs/install_ota.md)).
 2. Import the public key and serve the package with the tools in `tools/`, then start the update
    from the stock web UI. The dongle writes the new image into its inactive slot and reboots into
    it. The web UI's **Boot other slot** button is the way back on both dongles (the WiNet-S2's
@@ -101,8 +100,8 @@ on Windows, macOS and Linux with nothing but Python: **[docs/tools_setup.md](doc
 
 Two screws open the WiNet-S. With a 3.3 V USB-serial adapter on the UART pads and GPIO0 held low
 at reset, `esptool` writes the image into the first OTA slot, exactly as for any ESP32 project.
-Take a full flash backup first; it is the definitive way back. The release page also offers a
-browser-based installer (ESP Web Tools) for this route.
+Take a full flash backup first; it is the definitive way back. The
+[install page](https://nickstallman.github.io/Rewired-S/) offers ESP Web Tools for this route.
 
 Full procedure: **[docs/install_serial.md](docs/install_serial.md)**.
 
@@ -110,7 +109,7 @@ Full procedure: **[docs/install_serial.md](docs/install_serial.md)**.
 
 - **Pre-built images** (the release assets) need no toolchain. Wi-Fi is set through the setup
   network, the MQTT broker and the web login on the Settings page, the native API key when Home
-  Assistant adopts the dongle, and updates arrive through an **Update** entity. See
+  Assistant adopts the dongle, and updates arrive through the **Firmware** update entity. See
   [docs/prebuilt.md](docs/prebuilt.md).
 - **Compile your own** when you want Wi-Fi, MQTT and the API key compiled in, a site file with
   your own options, the native-entities alternative to MQTT, or the debug build:
@@ -135,7 +134,7 @@ Three ways, none of which touches the dongle's identity or settings:
 
 1. **Boot other slot** on the web UI, while the stock app is still in the other slot.
 2. Extract the app image from an official Sungrow package you download yourself
-   (`tools/sgu.py extract`) and send it with ESPHome's OTA.
+   (`tools/sgu.py extract`) and send it with ESPHome's OTA (not yet run on hardware).
 3. Over serial on the WiNet-S, from your backup or from that extracted image.
 
 Details and what is preserved: [docs/back_to_stock.md](docs/back_to_stock.md).
@@ -183,7 +182,7 @@ protocol or hardware fact matters.
 ## Development
 
 ```sh
-python3 -m venv .venv && .venv/bin/pip install esphome -r tools/requirements.txt
+python3 -m venv .venv && .venv/bin/pip install esphome==2026.9.1 -r tools/requirements.txt
 cp secrets.yaml.example secrets.yaml
 make            # host suites, web suite, generated files up to date
 make config     # validate every entry

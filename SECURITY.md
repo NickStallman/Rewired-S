@@ -8,8 +8,8 @@ public.
 
 Things that are by design and do not need a report:
 
-- The pre-built images start with a documented default web login and an open-to-join setup
-  access point. Both are covered in `docs/prebuilt.md`, and the web UI warns until the password
+- The pre-built images start with a documented default web login and a setup access point with a
+  published password. Both are covered in `docs/prebuilt.md`, and the web UI warns until the password
   is changed.
 - The shared iSolarCloud broker credentials in `components/isolarcloud` are the ones every stock
   dongle uses; they are not secret and are needed for the uplink to work.

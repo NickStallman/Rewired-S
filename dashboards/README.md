@@ -1,30 +1,31 @@
 # Home Assistant dashboards
 
-Three dashboards built only from the entities Rewired-S publishes over MQTT discovery. Each is a
-Lovelace **view** you paste into the raw configuration editor of a dashboard
-(⋮ → *Edit dashboard* → ⋮ → *Raw configuration editor*), or save as a dashboard of its own.
+Three dashboards built from the MQTT discovery entities, plus the dongle's own switches in
+`ems-control.yaml`. Each is a Lovelace **view** you paste into the raw configuration editor of a
+dashboard (⋮ → *Edit dashboard* → ⋮ → *Raw configuration editor*), or save as a dashboard of its
+own.
 
 | File | What it shows | Needs |
 |---|---|---|
 | `overview.yaml` | Solar, battery, grid and load at a glance, daily energy, inverter status | built-in cards only |
 | `energy-flow.yaml` | A live flow diagram from the MPPTs through PV, battery and grid to the load, with short-history graphs | [ha-sankey-chart](https://github.com/MindFreeze/ha-sankey-chart) and [mini-graph-card](https://github.com/kalkih/mini-graph-card) from HACS |
-| `ems-control.yaml` | Inverter state, EMS mode, forced charge/discharge, SOC limits, export limit, string-inverter power limit, battery stack cells and temperatures | built-in cards only |
+| `ems-control.yaml` | Inverter state, EMS mode, forced charge/discharge, SOC limits, export limit, string-inverter power limit, battery stack cells and temperatures. Battery controls are absent without a battery; delete those rows. | built-in cards only |
 
 ## Entity ids
 
-Rewired-S names every entity `<domain>.<model>_<serial>_<name>`, where `<model>` is the device
-model in lower case with dots replaced (`sh10rs`, `sg5_0rs`, `sbr192`) and `<serial>` is the
-device serial number in lower case. The files use the placeholders `SH_SERIAL` (hybrid inverter),
-`SG_SERIAL` (string inverter) and `BAT_SERIAL` (battery stack). Replace them before pasting, for
-example:
+The entity-id scheme is in [Home Assistant](../docs/home_assistant.md#the-devices-mqtt-discovery).
+The files use the placeholders `SH_SERIAL` (hybrid inverter), `SG_SERIAL` (string inverter),
+`BAT_SERIAL` (battery stack), each the device serial number in lower case, and `<dongle>` (the
+dongle's ESPHome node name). Replace them before pasting, for example:
 
 ```sh
-sed -e 's/SH_SERIAL/a2xxxxxxxxx/g' -e 's/BAT_SERIAL/s23xxxxxxxx/g' dashboards/ems-control.yaml
+sed -e 's/SH_SERIAL/a2xxxxxxxxx/g' -e 's/BAT_SERIAL/s23xxxxxxxx/g' \
+    -e 's/<dongle>/house_inverter/g' dashboards/ems-control.yaml
 ```
 
 Your serials are on the Devices page of the web UI and in Home Assistant under
-*Settings → Devices & services → MQTT*. A card for a device you do not have (a second battery
-stack, a string inverter) can simply be deleted.
+*Settings → Devices & services → MQTT*. A card for a device you do not have (a battery stack, a
+string inverter) can be deleted.
 
 ## Battery charge and discharge as separate flows
 
@@ -52,15 +53,9 @@ template:
         state: "{{ [0, states('sensor.sh10rs_SH_SERIAL_battery_power') | float] | max | round(0) }}"
 ```
 
-## Energy dashboard
+## Energy dashboard and Modbus-TCP
 
-Home Assistant's built-in Energy dashboard works with the `total_increasing` energy entities:
-**Total PV yield** or **Total yield** (solar production), **Total import energy** and **Total
-export energy** (grid), **Total battery charge energy** and **Total battery discharge energy**
-(battery). Pick them under *Settings → Dashboards → Energy*.
-
-## Modbus-TCP instead
-
-If you run [mkaiser's Sungrow SHx integration](https://github.com/mkaiser/Sungrow-SHx-Inverter-Modbus-Home-Assistant)
-against the dongle's Modbus-TCP server, its own dashboards keep working unchanged; the entity
-ids above do not apply.
+The entities for Home Assistant's built-in Energy dashboard are in
+[Home Assistant](../docs/home_assistant.md#dashboards); running mkaiser's integration against the
+dongle's Modbus-TCP server instead (its own dashboards, other entity ids) is in
+[Modbus-TCP](../docs/home_assistant.md#modbus-tcp-instead-of-or-as-well-as-mqtt).

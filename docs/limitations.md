@@ -15,8 +15,9 @@ are not confirmed on hardware.
 - The WiNet-S RS485 driver-enable pin (GPIO12) is also the flash-voltage strap; whether the
   transceiver pulls it at reset is not verified.
 - Whether the WiNet-S2's stock bootloader really rolls back an image that resets within 30 s
-  is not confirmed on hardware (ESPHome cannot read that bootloader's descriptor); the Ethernet
-  images carry a network fallback instead, the Wi-Fi images rely on **Boot other slot**.
+  is not confirmed on hardware (ESPHome cannot read that bootloader's descriptor); the pre-built
+  Ethernet images carry a network fallback (opt-in in compiled entries; not yet seen firing on
+  hardware), the Wi-Fi images rely on **Boot other slot**.
 - The timeout of the WiNet-S2 external supervisor is not known. A supervisor reset clears RTC
   memory, so the reset journal of such a boot is lost.
 - On a brownout the firmware does not switch the WiNet-S2 supervisor off.
@@ -38,7 +39,8 @@ are not confirmed on hardware.
 - The `fast_loop` option is off by default; its CPU cost has not been measured on the WiNet-S2.
   With it off, reply detection and the frame gap follow the ~16 ms main loop (about 37 ms
   overhead per inverter transaction, 21 ms per battery transaction).
-- The bus runs at 9600 baud with an 18 ms minimum frame gap.
+- The bus runs at 9600 baud with 18 ms before inverter frames (1 ms for battery, charger and
+  Energy Bridge devices).
 - On an SH10RS in EMS mode 0 or 8 the power-flow registers (5017-5018, 5031-5032, 5214-5215,
   13008-13011, 13022) hold means over about 40 s inside the inverter, so a 1 s poll does not make
   them faster; the meter block from 5601 is the responsive grid-power source.
@@ -63,7 +65,10 @@ are not confirmed on hardware.
 - The unit and scale of the string-inverter power-limit register 5039 (0.1 kW in public sources)
   are not confirmed on hardware.
 - Start/stop follows the stock setup descriptor: 13000 on a protocol-5 hybrid, 30045 on a
-  protocol-4 string inverter, 5006 otherwise; neither of the first two is tested on such a unit.
+  protocol-4 string inverter, 5006 otherwise (also on a protocol-4 hybrid, although its parameter
+  descriptor names 30045). Protocol-4 devices (family `none`, descriptor 30643 / 30644 / 30045)
+  and the protocol-5 start/stop register 13000 are untested on hardware; Setup offers no profile
+  on protocol 4.
 - There is no fault-clear command: the stock fault-clear and self-check are equipment-layer
   commands, not holding registers.
 - Power-stage acceptance ranges are known for the SH-RS, SG-RS and SH-T lines only
@@ -71,11 +76,9 @@ are not confirmed on hardware.
   the installer catalogue ranges only. The SH-RS and SG-RS tables were read on the SH10RS and
   SG5.0RS, the SH-T table on the SH15T's firmware; their siblings share the power-stage image.
 - A 100 ms settle gap follows every write and each register is rate-limited to one write per
-  second; both are fixed.
+  second by default (`write_settle`, `write_rate_limit`).
 - Polling continues while writes are queued; writes go out between poll transactions (the stock
   dongle pauses polling during a parameter operation).
-- The hybrid start/stop rule has no protocol-4 alternative, so a hybrid on protocol 4 uses 5006
-  although its parameter descriptor names 30045.
 - A control profile is attached by device type (1 and 21: string, 35: hybrid, any other type:
   none, so its writes are refused); a device listed under `sungrow_control: devices:` keeps the
   profile that entry names. The web UI offers the controls of the attached profile.
@@ -92,8 +95,6 @@ are not confirmed on hardware.
 - Setup offers Australia only (country code 6), from the bundled AU grid-code XMLs.
 - Whether writing the country register makes the inverter reload its default protection values is
   not established; Setup and Installer write the commit registers first.
-- Protocol-4 devices (family `none`, descriptor 30643 / 30644 / 30045) and the protocol-5
-  start/stop register 13000 are untested on hardware; Setup offers no profile on protocol 4.
 - On a hybrid on protocol 1 or 4, which of 30500, 30643 and 30646 it implements is not known.
 - ZS devices whose protocol code lacks "AA" are treated as protocol 3 (family `unit`) on both
   dongles.
@@ -160,7 +161,7 @@ are not confirmed on hardware.
 - The `reactive_energy` device class needs a Home Assistant release that has it.
 - Enum maps marked "authored" in the register tables come from public sources and are not
   checked against device codes.
-- Entity ids differ from winet-extractor's; the device identifiers (`<model>_<serial>`) match.
+- The entity id scheme matches winet-extractor's; individual entity names can differ.
 - No native-API entity packages exist for loggers, EV chargers or Energy Bridges.
 - The `_sg` / `_sh` public-map entities have no value on protocol-3 inverters such as the SH10RS
   and SG5.0RS.
@@ -186,8 +187,9 @@ are not confirmed on hardware.
   capture; grid and fault captures are refused without PSRAM.
 - Waveform channel 173 is not identified; the viewer shows it in raw counts.
 - One capture runs at a time, and an I-V scan can start at most every 2 minutes.
-- Stock-OTA packages always carry the stock web UI as their second part; an app-only package is
-  untested.
+- App-only packages are verified on a WiNet-S2 on P033
+  ([#10](https://github.com/NickStallman/Rewired-S/issues/10)); a dongle that refuses one takes a
+  `--stock-sgu` package.
 
 ## Usage reporting
 
@@ -237,13 +239,15 @@ are not confirmed on hardware.
 - The four images are Wi-Fi or Ethernet, not both.
 - The WiNet-S has no OTA rollback, so a failed update from the **Firmware** entity is recovered
   over UART.
+- Not yet run on hardware: the network fallback firing, back-to-stock route 2, the pre-built
+  images' adoption key flow.
 
 ## Features deliberately not provided
 
 - **115200 baud** over the temporary baud registers: the inverter's own channel settings stay
   untouched and 9600 baud carries the poll plan.
 - **fn 0x65 change-stream polling:** tiered fn 3/4 polling covers every supported model.
-- **Frame gap below 18 ms:** no gain at 9600 baud worth the risk to slower devices.
+- **Inverter frame gap below 18 ms:** no gain at 9600 baud worth the risk to slower devices.
 - **Always-on `SG-<SN>` hotspot and its WiMeter / WiProxy transport:** the stock hotspot is open
   and exposes every Modbus-TCP port, including unit-247 writes; ESPHome's WPA2 fallback AP covers
   provisioning.

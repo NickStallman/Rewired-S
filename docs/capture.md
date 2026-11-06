@@ -5,9 +5,9 @@ offers it as a download:
 
 | Capture | Inverters | What the inverter does | File |
 |---|---|---|---|
-| I-V scan | SG5.0RS, SH10RS (functionEnum bit 3) | Its DSP sweeps the PV inputs one at a time (voltage reference stepped from the operating point down to 50 V, about 25-30 s per input); the ARM stores the curve data | `VI_ALL` (binary, 258-byte records, 3 per PV input: voltage in 1 V, current in 0.01 A, current repeated) |
-| Grid waveform | SH10RS only (functionEnum bit 19) | Its DSP records 30 channels (AC voltage, DC bus, battery voltage, AC currents, ...); the ARM copies them to flash | `GridWaveRecord` (19 962 bytes: 6-byte prefix + 30 channels x 320 samples) |
-| Fault recordings | SH10RS only (functionEnum bit 19) | Nothing new is recorded: the control board copies the recordings it stored at its last trips (up to 10, one per trip, newest kept) into its flash and serves them as one file | `FaultUpload_packet_01` (6-byte prefix: u32 record count low word first, u16 record length; then N records of 19 956 bytes in the grid-waveform format with 1 cycle) |
+| I-V scan | inverters reporting functionEnum bit 3 (seen: SG5.0RS, SH10RS) | Its DSP sweeps the PV inputs one at a time (voltage reference stepped from the operating point down to 50 V, about 25-30 s per input); the ARM stores the curve data | `VI_ALL` (binary, 258-byte records, 3 per PV input: voltage in 1 V, current in 0.01 A, current repeated) |
+| Grid waveform | inverters reporting functionEnum bit 19 (seen: SH10RS) | Its DSP records 30 channels (AC voltage, DC bus, battery voltage, AC currents, ...); the ARM copies them to flash | `GridWaveRecord` (19 962 bytes: 6-byte prefix + 30 channels x 320 samples) |
+| Fault recordings | inverters reporting functionEnum bit 19 (seen: SH10RS) | Nothing new is recorded: the control board copies the recordings it stored at its last trips (up to 10, one per trip, newest kept) into its flash and serves them as one file | `FaultUpload_packet_01` (6-byte prefix: u32 record count low word first, u16 record length; then N records of 19 956 bytes in the grid-waveform format with 1 cycle) |
 
 The files are kept raw for offline analysis; the browser viewers decode the grid-waveform and
 fault records (`components/sungrow_web/web/src/gridwave.ts`) and the I-V curves
@@ -64,7 +64,7 @@ Fault recordings:
 6. YMODEM receive. The record count in the file prefix is reported as `records`.
 
 The trigger writes go through `ControlCore::write_diag`: only the registers and values above are
-accepted, from no other source (cloud, MQTT, Modbus TCP and the normal web write endpoint cannot
+accepted, from no other source (cloud, MQTT, Modbus-TCP and the normal web write endpoint cannot
 reach them). The "Inverter writes enabled" switch does not apply; each start needs the web UI
 confirmation (confirm token bound to address 65532).
 
@@ -75,9 +75,10 @@ the file transfer (`ModbusMaster::acquire_exclusive` + raw mode): the master sen
 capture runs YMODEM on the UART at 9600 baud. The hold ends with the transfer, on any failure, or
 at the safety limit (60 s until the header, then size / 900 B/s + 30 s). An I-V file (about
 1.5 KB) takes about 2 s; a grid recording (19 962 bytes on the SH10RS) about 21 s; a fault export
-about 21 s per record. No device goes offline because of the pause. The high-frequency loop request the capture holds during the transfer is the same ESPHome
-mechanism the Modbus hub uses for its `fast_loop` option; each component holds its own requester and
-the loop runs fast while either is active.
+about 21 s per record. No device goes offline because of the pause. The high-frequency loop
+request the capture holds during the transfer is the same ESPHome mechanism the Modbus hub uses for
+its `fast_loop` option; each component holds its own requester and the loop runs fast while either
+is active.
 
 YMODEM: 'C' (repeated every 3 s, 3 times), header block 0, STX 1024 / SOH 128 data blocks,
 CRC-16/XMODEM, ACK per block, NAK on a bad block (10 errors cancel), EOT, ACK. The data are cut to
