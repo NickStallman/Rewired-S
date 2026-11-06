@@ -313,13 +313,23 @@ class ControlRow {
 // The device's Controls section: routine rows + a collapsed Advanced block. Web-page writes are
 // authorised by the login (the writes-enabled switch gates Modbus-TCP, MQTT and the HA action only).
 // Values refresh in place from the same /api/signals poll as the table.
+/** Battery-type signal (enum): 2 = "No battery". Battery controls are hidden while it reads so. */
+const BATTERY_TYPE_SIGID = "0x2510";
+const BATTERY_TYPE_NONE = 2;
+
+export function hasBattery(map: Map<string, SignalValue>): boolean {
+  const s = map.get(BATTERY_TYPE_SIGID);
+  return !(s && s.valid && s.value === BATTERY_TYPE_NONE);
+}
+
 class ControlsPanel {
   readonly root: HTMLElement;
   private rows: { def: WriteDef; row: ControlRow }[] = [];
+  private advancedSummary: HTMLElement | null = null;
 
   constructor(
     private device: number,
-    profile: string,
+    private profile: string,
   ) {
     const defs = writeDefsForProfile(profile);
     const routine = ROUTINE_KEYS[profile] ?? new Set<string>();
@@ -342,21 +352,27 @@ class ControlsPanel {
       routineBox,
     ];
     if (advancedCount > 0) {
-      const adv = el("details", { class: "ctrl-advanced" }, [
-        el("summary", {}, [`Advanced (${advancedCount})`]),
-        advancedBox,
-      ]);
+      this.advancedSummary = el("summary", {}, [`Advanced (${advancedCount})`]);
+      const adv = el("details", { class: "ctrl-advanced" }, [this.advancedSummary, advancedBox]);
       children.push(adv);
     }
     this.root = el("div", { class: "controls" }, children);
   }
 
   update(map: Map<string, SignalValue>): void {
+    const battery = hasBattery(map);
+    const routine = ROUTINE_KEYS[this.profile] ?? new Set<string>();
+    let advancedShown = 0;
     for (const { def, row } of this.rows) {
+      const hidden = def.requiresBattery && !battery;
+      row.root.hidden = hidden;
+      if (!hidden && !routine.has(def.key)) advancedShown++;
+      if (hidden) continue;
       const s = map.get(def.sigid);
       const raw = s && s.valid && typeof s.value === "number" ? s.value : null;
       row.update(raw);
     }
+    if (this.advancedSummary) setText(this.advancedSummary, `Advanced (${advancedShown})`);
   }
 
   /** Show the start/stop follow-up on its control row while it is pending or freshly decided. */

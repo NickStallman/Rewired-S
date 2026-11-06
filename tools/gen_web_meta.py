@@ -254,6 +254,7 @@ def gen_write(keys) -> str:
         "  numberMax: number;",
         "  sigid: string; // '0xNNNN' read-back signal key in /api/signals",
         "  options: [number, string][]; // raw -> label (selects / switches)",
+        "  requiresBattery: boolean; // hidden when the inverter's battery type reads \"No battery\"",
         "}",
         "",
     ]
@@ -273,7 +274,8 @@ def gen_write(keys) -> str:
             f"rawMin: {int(m['min'])}, rawMax: {int(m['max'])}, values: {vals}, "
             f"scale: {_num(m['scale'])}, unit: {_jstr(m.get('unit', ''))}, step: {_num(m['step'])}, "
             f"numberMin: {_num(m['number_min'])}, numberMax: {_num(m['number_max'])}, "
-            f'sigid: "0x{int(m["sigid"]):04X}", options: {opts} }},'
+            f'sigid: "0x{int(m["sigid"]):04X}", options: {opts}, '
+            f'requiresBattery: {"true" if m.get("requires") == "battery" else "false"} }},'
         )
     lines.append("};")
     lines.append("")

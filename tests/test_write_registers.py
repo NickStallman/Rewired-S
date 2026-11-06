@@ -29,6 +29,27 @@ for r in rows:
     if m:
         assert int(m.group(1)) == r["address"] - 1, (r["key"], "wire != address - 1")
 
+# `requires: battery` marks the controls that mean nothing without a battery; the hand-written
+# entity table (write_entities.cpp) and the web catalogue carry the same flag.
+BATTERY_KEYS = {"forced_cmd", "forced_power", "max_soc", "min_soc", "reserved_soc_backup",
+                "battery_max_charge_power", "battery_max_discharge_power",
+                "battery_charging_start_power", "battery_discharging_start_power"}
+assert {r["key"] for r in rows if r["requires"] == "battery"} == BATTERY_KEYS
+assert all(r["profile"] == "hybrid" for r in rows if r["requires"])
+ents = open(os.path.join(ROOT, "components", "sungrow_control", "write_entities.cpp"), encoding="utf-8").read()
+for r in rows:
+    m = re.search(r'\{"%s", (?:[^{}]|\n)*?\},\n' % re.escape(r["key"]), ents)
+    if m is None:  # not every allow-listed register is an entity (hybrid start/stop is an action)
+        assert r["requires"] != "battery", "write_entities.cpp lacks battery control %s" % r["key"]
+        continue
+    flagged = m.group(0).rstrip().endswith("true},")
+    assert flagged == (r["requires"] == "battery"), (r["key"], "requires_battery flag differs from the YAML")
+meta = open(os.path.join(ROOT, "components", "sungrow_web", "web", "src", "meta.gen.ts"), encoding="utf-8").read()
+for r in rows:
+    want = "requiresBattery: %s" % ("true" if r["requires"] == "battery" else "false")
+    line = [l for l in meta.splitlines() if l.lstrip().startswith('"%s":' % r["key"])]
+    assert len(line) == 1 and want in line[0], (r["key"], want)
+
 # mkaiser / battery-controller strings, byte for byte.
 opts = dict(by_key["ems_mode"]["options"])
 assert opts[0] == "Self-consumption mode (default)" and opts[2] == "Forced mode" and opts[3] == "External EMS"

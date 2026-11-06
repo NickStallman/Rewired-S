@@ -203,7 +203,8 @@ family → register → tooltip text.
 `name`, `address`, `address_by_protocol` (`{protocol type: address}`), `type` (`u16` | `s16`),
 `min` / `max` (raw), `values` (the only raw values accepted), `options` (`{value, label}` for
 selects), `scale`, `unit`, `step`, `number_min` / `number_max` (display units), `interval`
-(read-back period in s), `mkaiser`, `confidence`, `evidence`. The header of the file documents
+(read-back period in s), `requires` (`battery`: left out of MQTT discovery and the web Devices
+page while the inverter's battery type reads "No battery"), `mkaiser`, `confidence`, `evidence`. The header of the file documents
 each field.
 
 ## 6 Power-stage ranges: `data/dsp_params/`
