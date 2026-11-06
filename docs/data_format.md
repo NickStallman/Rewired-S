@@ -208,9 +208,15 @@ each field.
 
 ## 6 Power-stage ranges: `data/dsp_params/`
 
-`models.yaml` lists each inverter model whose power-stage acceptance ranges are known
-(`dev_code`, `model`, `family`, `key`, `firmware`, `csv`); the CSV (`doc_reg,count,min,max,label,
-unit`) gives one raw range per register (`count` 2 = U32).
+`models.yaml` lists each power-stage **firmware line** whose acceptance ranges are known: `key`
+(identifier), `name` (SH-RS, SG-RS, SH-T), `family` (`hybrid` | `string`), `firmware` (the
+power-stage image the ranges were read from), `csv`, `models` (the devinfo model strings the
+line covers, as the inverter reports them: `SH5.0RS`, `SH15T`, `SH5.0RS-20`) and `dev_codes`
+(`{model: devinfo device code}` for the models a dongle has reported). The CSV
+(`doc_reg,count,min,max,label,unit`) gives one raw range per register (`count` 2 = U32). A device
+is matched by its device code first, then by its model string, so every model of a line gets the
+line's ranges; the same table applies to the whole line because the ranges live in the shared
+power-stage image (model-specific limits are dynamic clamps the table never held).
 
 ## 7 Adding a new device family
 

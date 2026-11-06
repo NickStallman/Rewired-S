@@ -549,10 +549,10 @@ void SungrowAnalytics::sample_(uint32_t now) {
       s.fails_primed = true;
     }
 #ifdef SUNGROW_ANALYTICS_BIND_CONTROL
-    // An inverter model without a row in the model manifest: known family, not catalogued.
+    // An inverter with no power-stage range table (neither its code nor its model string is listed).
     if (!s.catalogue_checked && d.discovered() && d.table() != nullptr && d.table()->family == dm::Family::INVERTER) {
       s.catalogue_checked = true;
-      if (sungrow_control::dsp_model(d.devinfo().dev_code) == nullptr) {
+      if (sungrow_control::dsp_model_for(d.devinfo().dev_code, d.devinfo().model) == nullptr) {
         char detail[64];
         std::snprintf(detail, sizeof(detail), "uncatalogued:%u/%u/%u", d.devinfo().dev_type,
                       d.devinfo().protocol, d.devinfo().dev_code);

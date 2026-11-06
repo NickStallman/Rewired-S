@@ -65,9 +65,10 @@ are not confirmed on hardware.
   protocol-4 string inverter, 5006 otherwise; neither of the first two is tested on such a unit.
 - There is no fault-clear command: the stock fault-clear and self-check are equipment-layer
   commands, not holding registers.
-- Power-stage acceptance ranges are known for the SH10RS and SG5.0RS only
-  (`data/dsp_params/models.yaml`); other models are checked against the installer catalogue
-  ranges only.
+- Power-stage acceptance ranges are known for the SH-RS, SG-RS and SH-T lines only
+  (`data/dsp_params/models.yaml`); the SH-RT, SG-RT and every other line are checked against
+  the installer catalogue ranges only. The SH-RS and SG-RS tables were read on the SH10RS and
+  SG5.0RS, the SH-T table on the SH15T's firmware; their siblings share the power-stage image.
 - A 100 ms settle gap follows every write and each register is rate-limited to one write per
   second; both are fixed.
 - Polling continues while writes are queued; writes go out between poll transactions (the stock

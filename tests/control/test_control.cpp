@@ -130,15 +130,18 @@ struct Rig {
   }
   /// Pretend device 0 is of grid-code family `fam` with the descriptor of (inv, protocol) and,
   /// optionally, the devinfo dev_type / dev_code of a model.
-  void family(mb::XmlFamily fam, uint16_t inv_type, uint8_t protocol, uint8_t dev_type = 0, uint16_t dev_code = 0) {
+  void family(mb::XmlFamily fam, uint16_t inv_type, uint8_t protocol, uint8_t dev_type = 0, uint16_t dev_code = 0,
+              const char *model = "") {
     const mb::FamilyDescriptor *desc = mb::family_descriptor(inv_type, protocol);
-    ctl.set_family_fn([fam, desc, dev_type, dev_code](uint8_t dev) {
+    std::string name = model;
+    ctl.set_family_fn([fam, desc, dev_type, dev_code, name](uint8_t dev) {
       DeviceIdentity id;
       id.known = dev == 0;
       id.family = fam;
       id.desc = desc;
       id.dev_type = dev_type;
       id.dev_code = dev_code;
+      std::snprintf(id.model, sizeof(id.model), "%s", name.c_str());
       return id;
     });
   }
@@ -1384,11 +1387,31 @@ TEST(setup_dsp_range_other_model_not_gated) {
   CHECK(r.ctl.setup_plan_note(0, b).empty());
   r.run_setup(5000);
   CHECK_EQ(r.inv.hold[32550], 1300);
-  // The generated table: known models only.
-  CHECK(dsp_model(3355) != nullptr && dsp_model(9734) != nullptr && dsp_model(1234) == nullptr);
+  // The generated table: known codes and model strings only.
+  CHECK(dsp_model(3355) != nullptr && dsp_model(9734) != nullptr && dsp_model(3621) != nullptr);
+  CHECK(dsp_model(1234) == nullptr && dsp_model(0) == nullptr);
   const DspRange *rg = dsp_range(dsp_model(9734), 31205);
   CHECK(rg != nullptr && rg->min == 0 && rg->max == 1500 && rg->count == 1);
   CHECK(dsp_range(dsp_model(3355), 1) == nullptr && dsp_range(nullptr, 32550) == nullptr);
+  // A sibling of a listed line is found by its devinfo model string; the code wins when known.
+  const DspModel *sh_t = dsp_model_by_name("SH20T");
+  CHECK(sh_t != nullptr && std::strcmp(sh_t->key, "SH_T") == 0 && sh_t == dsp_model(3621));
+  CHECK(dsp_model_by_name("sh6.0rs ") == dsp_model(3355));
+  CHECK(dsp_model_by_name("SG10RS") == dsp_model(9734) && dsp_model_by_name("SH10RT") == nullptr);
+  CHECK(dsp_model_by_name("") == nullptr && dsp_model_by_name(nullptr) == nullptr);
+  CHECK(dsp_model_for(1234, "SH25T") == sh_t && dsp_model_for(9734, "SH25T") == dsp_model(9734));
+  CHECK(dsp_model_for(0, "") == nullptr);
+  rg = dsp_range(sh_t, 32320);
+  CHECK(rg != nullptr && rg->min == 4500 && rg->max == 6598);
+  // ... and the range check then applies to it: 32320 above the SH-T window is left out of a
+  // profile (the SH-RS window, 4500..6500, would not have caught 6599 either way: unknown code
+  // 4321 + model string is what selects the SH-T table).
+  Rig r2(true, Profile::HYBRID, 3);
+  r2.family(mb::XmlFamily::UNIT, 0, 3, /*dev_type=*/35, /*dev_code=*/4321, "SH20T");
+  std::vector<ControlCore::SetupReg> c = {{32320, 6599}};
+  CHECK(!r2.ctl.setup_plan_note(0, c).empty());
+  std::vector<ControlCore::SetupReg> ok = {{32320, 6598}};
+  CHECK(r2.ctl.setup_plan_note(0, ok).empty());
 }
 
 int main() { return th::run_all(); }

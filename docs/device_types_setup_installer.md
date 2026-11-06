@@ -317,9 +317,10 @@ Frame statuses: `pending`, `ok`, `exception`, `timeout`, `expired`, `verify_mism
 
 The inverter's power stage ignores a parameter write outside its own range while the control board
 acknowledges it, so a value can read back as written and still have no effect. The firmware carries
-these ranges for the models listed in `data/dsp_params/models.yaml` (SH10RS, SG5.0RS), one CSV per
-model, generated into `components/sungrow_control/dsp_ranges.gen.h` and matched on the device code
-of the devinfo block. A U32 setting is compared as one 32-bit value.
+these ranges for the firmware lines listed in `data/dsp_params/models.yaml` (SH-RS, SG-RS, SH-T),
+one CSV per line, generated into `components/sungrow_control/dsp_ranges.gen.h` and matched on the
+device code of the devinfo block, else on its model string. A U32 setting is compared as one
+32-bit value.
 
 - Installer: a value outside the range is refused with BAD_VALUE `dsp_range:ADDR:MIN-MAX`.
 - Setup profile: the item is skipped (with the second word of a U32), logged at WARN and listed in
@@ -327,7 +328,7 @@ of the devinfo block. A U32 setting is compared as one 32-bit value.
   applicable.
 - Any other model has no power-stage range check; the installer ranges still apply.
 
-Adding a model is a row in `models.yaml` and its CSV, then `make gen`. Background:
+Adding a line is a row in `models.yaml` and its CSV, adding a model is a name under `models`, then `make gen`. Background:
 [SH10RS register windows](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/sh10rs/register-windows.md).
 
 ### 5.5 On-demand reads (`/api/grid_read_start`, `/api/grid_read`)

@@ -1,0 +1,277 @@
+doc_reg,count,min,max,label,unit
+30020,1,2000,2099,,
+30021,1,1,12,,
+30022,1,1,31,,
+30023,1,0,23,,
+30024,1,0,59,,
+30025,1,0,59,,
+30030,1,187,221,,
+30031,1,85,170,,
+30032,1,85,170,,
+30091,1,10,900,Standby time,s
+30092,1,0,3600,Recovery time from fault,s
+30095,1,85,170,,
+30113,1,0,255,DRM,
+30123,1,0,1000,Reactive power resonance suppression,
+30124,1,0,1000,JET certification auxiliary point 1,
+30230,1,170,170,,
+30280,1,85,170,Grid unbalance protection,
+30281,1,2,50,Grid unbalance protection threshold,
+30282,1,5,60000,Grid unbalance protection delay,s
+30295,1,85,170,10-minute overvoltage protection,
+30342,1,85,170,,
+30343,1,85,170,,
+30349,1,85,170,,
+30360,1,85,170,Active islanding,
+30361,1,85,170,Criteria for islanding detection,
+30362,1,100,10000,Frequency change rate,Hz/s
+30363,1,3,18,Phase monitoring,°
+30364,1,8,30000,Islanding protection delay,s
+30380,1,85,170,,
+30381,1,85,238,,
+30382,1,85,170,,
+30383,1,85,170,,
+30384,1,85,170,,
+30385,1,85,170,,
+30400,1,85,170,,
+30401,1,85,170,,
+30402,1,85,170,,
+30404,1,85,170,,
+30405,1,85,170,,
+30406,1,85,170,,
+30430,1,85,170,Automatic fault recovery,
+30798,1,0,5,LVRT protection level,
+30799,1,85,170,LVRT grid unbalance support,
+30800,1,85,170,LVRT zero power mode,
+30801,1,85,170,LVRT,
+30802,1,0,100,LVRT K factor,
+30813,2,0,14400000,LVRT time 1,ms
+30815,2,0,14400000,LVRT time 2,ms
+30817,2,0,14400000,LVRT time 3,ms
+30819,2,0,14400000,LVRT time 4,ms
+30821,2,0,14400000,LVRT time 5,ms
+30823,1,85,170,LVRT power priority mode,
+30824,1,85,170,LVRT reactive current limitation,
+30825,1,0,1000,LVRT maximum reactive current,%
+30826,1,85,170,LVRT zero current trigger,
+30827,1,0,1000,LVRT zero current trigger voltage,%
+30828,1,85,170,Add previous reactive power during LVRT,
+30829,1,85,170,LVRT triggered by voltage transient,
+30830,1,0,150,LVRT voltage transient,%
+30831,1,85,170,LVRT exit,
+30832,1,0,100,LVRT exit time,s
+30997,1,0,5,HVRT protection level,
+30998,1,85,170,HVRT grid unbalance support,
+30999,1,85,170,HVRT zero power mode,
+31000,1,85,170,HVRT,
+31011,1,0,100,HVRT K factor,
+31012,2,0,14400000,HVRT time 1,ms
+31014,2,0,14400000,HVRT time 2,ms
+31016,2,0,14400000,HVRT time 3,ms
+31018,2,0,14400000,HVRT time 4,ms
+31020,2,0,14400000,HVRT time 5,ms
+31022,1,85,170,HVRT power priority mode,
+31023,1,85,170,HVRT reactive current limitation,
+31024,1,0,1000,HVRT maximum reactive current,%
+31025,1,85,170,HVRT zero current trigger,
+31026,1,1000,1500,HVRT zero current trigger voltage,%
+31027,1,85,170,Add previous reactive power during HVRT,
+31028,1,85,170,HVRT triggered by voltage transient,
+31029,1,0,150,HVRT voltage transient,%
+31030,1,85,170,HVRT exit,
+31031,1,0,100,HVRT exit time,s
+31196,1,85,170,Active power soft start after fault,
+31198,1,85,170,Active power ramp-up,
+31199,1,1,60000,Active power ramp-up rate,%
+31200,1,85,170,Active power ramp rate control,
+31201,1,1,60000,Active power ramp-down rate,%/min
+31202,1,1,60000,Active power ramp-up rate,%/min
+31204,1,85,170,Active power limitation,
+31205,1,0,1500,Active power limit ratio,%
+31211,1,85,170,,
+31214,1,85,170,,
+31216,1,85,170,Whole home backup mode,
+31221,1,85,170,Feed-in power limitation,
+31224,1,0,60000,,
+31230,1,85,170,Active power regulation at grid overvoltage,
+31253,1,85,170,,
+31255,1,0,1000,,
+31256,1,0,1000,,
+31257,1,0,1000,,
+31261,1,0,2650,,
+31262,1,0,2650,,
+31263,1,0,2650,,
+31264,1,85,170,,
+31400,1,85,170,Overfrequency derating,
+31404,1,5000,6500,Overfrequency derating F1,Hz
+31405,1,5000,6500,Overfrequency derating F2,Hz
+31406,1,5000,6500,Overfrequency derating F3,Hz
+31409,1,0,2000,Overfrequency derating P1,%
+31410,1,0,2000,Overfrequency derating P2,%
+31411,1,0,2000,Overfrequency derating P3,%
+31412,1,5000,6500,Overfrequency derating recovery threshold,Hz
+31413,1,0,2,Overfrequency derating curve,
+31414,1,1,6000,Active power decrease rate during overfrequency derating,%/min
+31415,1,0,12000,Recovery waiting time after overfrequency derating,s
+31416,1,1,6000,Active power recovery rate after overfrequency derating,%/min
+31417,1,0,1000,Overfrequency derating delay,s
+31420,1,85,170,Underfrequency uprating,
+31421,1,4500,5996,Underfrequency uprating F1,Hz
+31422,1,4500,5996,Underfrequency uprating F2,Hz
+31423,1,4500,5996,Underfrequency uprating F3,Hz
+31427,1,0,2000,Underfrequency uprating P1,%
+31428,1,0,2000,Underfrequency uprating P2,%
+31429,1,0,2000,Underfrequency uprating P3,%
+31433,1,4900,6000,Underfrequency uprating recovery frequency,Hz
+31434,1,0,2,Underfrequency uprating curve,
+31435,1,1,6000,Active power increase rate during underfrequency uprating,%/min
+31436,1,0,12000,Recovery waiting time after underfrequency uprating,s
+31437,1,1,6000,Active power recovery rate after underfrequency uprating,%/min
+31438,1,0,1000,Underfrequency uprating delay,s
+31603,1,85,170,Reactive power generation at night,
+31605,1,85,164,Reactive power regulation mode,
+31615,1,85,170,Reactive power response,
+31616,1,1,6000,Reactive power response time,s
+31700,1,0,1,Q(U) curve,
+31701,1,0,50,Hysteresis ratio,%
+31702,1,800,1000,QU_V1,%
+31704,1,800,1000,QU_V2,%
+31706,1,1000,1200,QU_V3,%
+31708,1,1000,1200,QU_V4,%
+31709,1,0,1000,QU_Q4,%
+31710,1,200,1000,QU_EnterPower,%
+31711,1,10,200,QU_ExitPower,%
+31712,1,85,170,QU_EnableMode,
+31713,1,10,95,,
+31720,1,0,2,Q(P) curve,
+31721,1,100,1000,QP_P1,%
+31722,1,200,1000,QP_P2,%
+31723,1,200,1000,QP_P3,%
+31727,1,1000,1100,,
+31728,1,900,1000,,
+31729,1,10,200,,
+31730,1,85,170,QP_EnableMode,
+31731,1,200,1000,,
+31985,1,85,170,,
+31986,1,1,128,,
+31988,1,85,170,,
+31989,1,85,170,,
+32222,1,85,170,,
+32224,1,85,170,,
+32255,2,0,4294967295,,
+32262,1,85,170,,
+32271,1,85,170,,
+32280,1,85,170,,
+32281,1,85,170,,
+32289,1,85,170,,
+32294,1,85,170,,
+32303,1,85,170,,
+32305,1,1540,2760,,
+32306,1,50,60,,
+32313,1,0,4,Protection level,
+32320,1,4500,6598,Overfrequency protection recovery threshold,Hz
+32321,1,4500,6500,Underfrequency protection recovery threshold,Hz
+32324,1,4500,6500,Grid underfrequency level 1 protection threshold,Hz
+32325,1,4500,6600,Grid overfrequency level 1 protection threshold,Hz
+32328,1,4500,6500,Grid underfrequency level 2 protection threshold,Hz
+32329,1,4500,6600,Grid overfrequency level 2 protection threshold,Hz
+32332,1,4500,6500,Grid underfrequency level 3 protection threshold,Hz
+32333,1,4500,6600,Grid overfrequency level 3 protection threshold,Hz
+32336,1,4500,6500,Grid underfrequency level 4 protection threshold,Hz
+32337,1,4500,6600,Grid overfrequency level 4 protection threshold,Hz
+32340,1,4500,6500,Grid underfrequency level 5 protection threshold,Hz
+32341,1,4500,6600,Grid overfrequency level 5 protection threshold,Hz
+32362,2,0,1440000,Grid undervoltage level 1 protection delay,s
+32364,2,0,1440000,Grid overvoltage level 1 protection delay,s
+32366,2,0,1440000,Grid underfrequency level 1 protection delay,s
+32368,2,0,1440000,Grid overfrequency level 1 protection delay,s
+32370,2,0,1440000,Grid undervoltage level 2 protection delay,s
+32372,2,0,1440000,Grid overvoltage level 2 protection delay,s
+32374,2,0,1440000,Grid underfrequency level 2 protection delay,s
+32376,2,0,1440000,Grid overfrequency level 2 protection delay,s
+32378,2,0,1440000,Grid undervoltage level 3 protection delay,s
+32380,2,0,1440000,Grid overvoltage level 3 protection delay,s
+32382,2,0,1440000,Grid underfrequency level 3 protection delay,s
+32384,2,0,1440000,Grid overfrequency level 3 protection delay,s
+32386,2,0,1440000,Grid undervoltage level 4 protection delay,s
+32388,2,0,1440000,Grid overvoltage level 4 protection delay,s
+32390,2,0,1440000,Grid underfrequency level 4 protection delay,s
+32392,2,0,1440000,Grid overfrequency level 4 protection delay,s
+32394,2,0,1440000,Grid undervoltage level 5 protection delay,s
+32396,2,0,1440000,Grid overvoltage level 5 protection delay,s
+32398,2,0,1440000,Grid underfrequency level 5 protection delay,s
+32400,2,0,1440000,Grid overfrequency level 5 protection delay,s
+32468,1,85,170,,
+32469,2,0,4294967295,,
+32477,1,0,300,,
+32502,1,85,170,,
+32510,2,0,4294967295,,
+32535,1,85,170,Grid testing before connection,
+32536,1,4000,6500,Grid connection frequency lower limit,Hz
+32537,1,4000,6500,Grid connection frequency upper limit,Hz
+32538,1,85,170,,
+32552,1,1,6000,Active power rising gradient,%/min
+32569,1,85,170,,
+32570,1,85,170,,
+32573,1,85,170,,
+32581,1,85,170,,
+32602,1,85,170,,
+32617,1,85,170,Off-grid emergency charging,
+32710,1,85,170,Low noise mode,
+32723,1,85,170,,
+32996,1,85,170,,
+32997,1,85,170,,
+32999,1,20,10000,,
+33000,1,85,170,,
+33001,1,0,1000,,
+33002,1,0,1,,
+33005,1,85,170,,
+33006,1,85,170,,
+33031,1,0,1000,,
+33032,1,0,1000,,
+33050,1,85,170,,
+33128,1,0,200,,
+33130,1,85,170,,
+33136,2,0,4294967295,,
+33138,2,0,4294967295,,
+33140,2,0,4294967295,,
+33142,2,0,4294967295,,
+33145,1,85,162,,
+33146,1,0,9,Energy management mode,
+33147,1,170,204,Charging/discharging command,
+33149,1,1,1000,,
+33150,1,1,1000,,
+33151,2,0,4294967295,Working days discharging start time 1: hour,h
+33154,2,0,4294967295,Working days discharging end time 1: minute,min
+33159,1,0,1000,,
+33179,2,0,4294967295,Battery use on non-working days,
+33181,2,0,4294967295,Non-working day battery use start time 1: minute,min
+33183,2,0,4294967295,Non-working day battery use end time 1: minute,min
+33185,2,0,4294967295,Non-working day battery use start time 2: minute,min
+33187,2,0,4294967295,Non-working day battery use end time 2: minute,min
+33277,1,0,50000,Max. battery charging power from AC,kW
+33278,1,0,5000,Generator rated power,kW
+33283,1,85,170,,
+33299,1,0,1000,,
+33300,1,0,100,,
+33306,2,0,4294967295,,
+33308,2,0,4294967295,,
+33310,2,0,4294967295,,
+33312,1,85,170,,
+33313,1,85,170,,
+33494,1,85,170,,
+33495,1,85,170,,
+33496,1,85,170,,
+33497,1,5000,5500,,
+33500,1,85,170,Master-slave operating mode,
+33501,1,1,10,Master-slave settings,
+33502,1,1,9,Total number of master and slaves,
+33503,1,85,170,,
+33516,1,0,100,,
+33517,1,0,1,,
+33526,1,0,100,,
+33527,1,0,1,,
+33536,1,0,100,,
+33537,1,0,1,,
+33546,1,0,100,,
+33547,1,0,1,,
