@@ -76,6 +76,13 @@ network fallback for the Ethernet images, and a privacy fix in the diagnostics l
 ### Fixed
 - Diagnostics: values ESPHome logs as secrets (Wi-Fi password, API key) enter the log tail as
   `<secret>`; the report scrubber replaces the Wi-Fi and MQTT passwords (`<psk>`, `<mqtt-password>`).
+- `tools/fake_iconfig_server.py` offers the package only to a request that names a WiNet (the
+  stock device-update dialog asks with the inverter's model) and matches `/web/<name>` with or
+  without the `/v2` prefix (stock `P016`) (#10).
+- `tools/deploy_debug.py import-key` treats `result_code=120` as "key already stored" and continues.
+- The release public key is published as `publicKey_V1.pem`, the name the stock updater's key
+  import requires; the install guide names the exact menu path, warns about the device-update
+  dialog, and notes the browser-address and PowerShell requirements.
 
 ### Removed
 - The stock-format inputs (`data/register_map/*.csv`, `bitfields.csv`, `mqtt_point_table.csv`,

@@ -59,8 +59,25 @@ def test_spa_pubkey_version():
     try:
         dd.spa_pubkey_version("whatever.pem", "WiNet-S")
         raise AssertionError("bad name should raise")
-    except ValueError:
-        check("rejects non-publicKey_V<n> name", True)
+    except ValueError as e:
+        check("rejects non-publicKey_V<n> name", "publicKey_V1.pem" in str(e))
+
+
+def test_report_import_key(capture=None):
+    import io
+    import contextlib
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        ok = dd.report_import_key({"result_code": 1}, "WiNet-S_publicKey_V1")
+    check("imported OK", ok and "imported OK" in out.getvalue())
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        already = dd.report_import_key({"result_code": 120, "result_msg": "internal abnormal"}, "V1")
+    check("120 = already stored, continues", already and "already stored" in out.getvalue())
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        failed = dd.report_import_key({"result_code": 0, "result_msg": "bad"}, "V1")
+    check("other codes fail", not failed and "FAILED" in out.getvalue())
 
 
 # --- WebSocket framing: accept key, mask round-trip, length boundaries ---

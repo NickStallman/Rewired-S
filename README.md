@@ -79,7 +79,8 @@ slot so you can go back.
 The stock firmware accepts a signed update package served from your LAN. Rewired-S ships as
 such a package, signed with the project's release key, which you import into the dongle once.
 
-1. Download the `.sgu` package, its `.bin` signature and the public key for your dongle from the
+1. Download the `.sgu` package, its `.bin` signature and the release public key
+   (`publicKey_V1.pem`) from the
    [latest release](https://github.com/NickStallman/Rewired-S/releases), or build your own
    (`docs/install_ota.md`).
 2. Import the public key and serve the package with the tools in `tools/`, then start the update

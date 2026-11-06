@@ -15,17 +15,18 @@ in SG-Docs.
 - The dongle on your LAN, reachable from a computer that can run Python 3. The stock web UI
   login (`admin` and the installer password; the default is in the dongle's manual).
 - A **package** for your dongle. Either the release package (`winet-s-prebuilt-…sgu` and so on,
-  with its `.bin` signature and `rewired-s-release-public-key.pem`, from the
-  [releases page](https://github.com/NickStallman/Rewired-S/releases)), or one you build and sign
-  yourself (below).
+  with its `.bin` signature and the release public key `publicKey_V1.pem`, from the
+  [releases page](https://github.com/NickStallman/Rewired-S/releases); the key is also inside
+  every package `.zip`), or one you build and sign yourself (below). The key file must keep the
+  `publicKey_V<n>.pem` name: the stock updater derives the key version from it.
 - Python 3.11+ with `pip install -r tools/requirements.txt`. Per-platform setup (Windows
   PowerShell, macOS, Linux), firewall notes and the exact commands: [running the tools](tools_setup.md).
 
 > [!NOTE]
 > The release packages are **app-only**: they contain the Rewired-S app and nothing else, so the
-> dongle's stock web UI partition is left exactly as it is. App-only packages have not yet been
-> run through a stock updater on hardware (the development dongles no longer run stock firmware);
-> packages that carry the stock web-UI part are the proven shape. If your dongle refuses an
+> dongle's stock web UI partition is left exactly as it is. The stock updater of a WiNet-S2 on
+> firmware `P033` has installed such a package on hardware (reported in
+> [#10](https://github.com/NickStallman/Rewired-S/issues/10)). If your dongle refuses an
 > app-only package (the update log says nothing was found to install), build a package with
 > `--stock-sgu` as described under *Build your own package*: it copies the web UI part from an
 > official package you download, so the updater rewrites that partition with identical content.
@@ -47,12 +48,15 @@ and is never printed.
 ## 2. Import the public key (once)
 
 ```sh
-python3 -I tools/deploy_debug.py import-key --host 192.0.2.50 --pubkey rewired-s-release-public-key.pem
+python3 -I tools/deploy_debug.py import-key --host 192.0.2.50 --pubkey publicKey_V1.pem
 ```
 
 The tool asks for a typed `yes`. The stock firmware stores the key on its external flash and from
-then on verifies packages against it. For a self-signed package use your own public key
-(`keys/rewired-s_pub.pem`).
+then on verifies packages against it. The key survives stock cloud updates, so a dongle that had
+it imported before answers a second import with `result_code=120`:
+the tool reports that as "already stored" and the install can go ahead (`fake_iconfig_server.py
+--no-key` skips offering the key again). For a self-signed package use your own public key, named
+`publicKey_V<n>.pem` as `tools/package_sgu.py` writes it (`dist/publicKey_V1.pem`).
 
 ## 3. Serve the package
 
@@ -61,14 +65,25 @@ python3 -I tools/fake_iconfig_server.py --dist release/     # the directory with
 ```
 
 It answers the dongle's package-server requests over HTTPS on port 20001 with a self-signed
-certificate. Keep the dongle off the internet during the install so nothing else answers.
+certificate. Keep the dongle off the internet during the install so nothing else answers. The
+server answers both the `/v2/web/…` requests of current stock firmware and the `/web/…` requests
+of older versions (`P016`).
 
 ## 4. Start the update in the stock web UI
 
-Log in as `admin`, open **System → System update → iConfig update package**, enter the address of
-the computer running the server and start. The dongle downloads the package, verifies it, writes
-the app into its inactive slot and reboots into Rewired-S. Expect two to three minutes; do not
-power the dongle off while the progress bar is moving.
+Open the stock web UI **from the computer that runs the server**: the dongle contacts the
+address of the browser that is logged in, not an address you type. Log in as `admin`, open
+**System → System maintenance → System update → iConfig update package** and start. The dongle
+downloads the package, verifies it, writes the app into its inactive slot and reboots into
+Rewired-S. Expect two to three minutes; do not power the dongle off while the progress bar is
+moving.
+
+> [!CAUTION]
+> The same page has a second, similar dialog for updating the **inverter** (device update). It
+> asks the package server for the inverter's model and would send what it gets to the inverter
+> over RS485. Use only the **System update** dialog. `tools/fake_iconfig_server.py` refuses a
+> request that does not name a WiNet (it answers an empty package list and logs `refused`), so
+> the wrong dialog ends with "no package found" rather than an inverter update attempt.
 
 On stock firmware old enough to still offer a browser upload, `tools/deploy_debug.py upload
 --sgu <package>.sgu` does steps 3 and 4 in one go.
@@ -110,6 +125,9 @@ make compile                                    # or .venv/bin/esphome compile s
 make sgu APP=.esphome/build/<name>/build/firmware.ota.bin SGU_BOARD=s2 SGU_BUILD=901
 #   SGU_STOCK=<official .sgu>   adds the stock web-UI part (only if the app-only package is refused)
 ```
+
+On Windows run `esphome compile` from **PowerShell** or `cmd`, not from Git Bash or another
+MSYS/MinGW shell: ESP-IDF's installer stops with `MSys/Mingw is not supported` there.
 
 `tools/package_sgu.py` checks the image (ESP magic, chip id, 16 MB header, size against the OTA
 slot, a version above the installed one), builds the package with the in-file trailer the

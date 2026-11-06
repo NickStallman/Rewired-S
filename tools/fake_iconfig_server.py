@@ -1,13 +1,25 @@
 #!/usr/bin/env python3
-r"""Minimal fake "iConfig" package server so a stock WiNet-S pulls and installs OUR signed .sgu.
+r"""Minimal fake "iConfig" package server so a stock WiNet-S / WiNet-S2 pulls and installs OUR signed .sgu.
 
-Background: on WiNet-S firmware P044 the browser has no .sgu upload; the dongle instead PULLS a
-firmware package over HTTPS from an iConfig server whose IP the web UI is given. The dongle then
-verifies the .sgu with the SAME on-device RSA check (against our imported key) and esp_ota-flashes
-it.
+Background: the stock web UI has no .sgu upload on recent firmware; the dongle instead PULLS a
+firmware package over HTTPS from an iConfig server. The dongle then verifies the .sgu with the
+SAME on-device RSA check (against our imported key) and esp_ota-flashes it.
 
-This server impersonates iConfig: it listens HTTPS on :20001 and answers the five /v2/web/* requests
-the dongle makes, serving our files from dist/ by path (it ignores the dongle's time/sign/file_id).
+This server impersonates iConfig: it listens HTTPS on :20001 and answers the five requests the
+dongle makes (`get_time`, `select_packages`, `get_key`, `get_packages`, `result`), serving our
+files from dist/ by path (it ignores the dongle's time/sign/file_id). Stock P033 and the WiNet-S
+P044 request `/v2/web/<name>`; older stock (P016) requests `/web/<name>`; both are matched on the
+suffix.
+
+Which server the dongle contacts: the stock UI sends the dongle the address of the machine the
+browser runs on (`window.testIp`), not an address you type, on every version seen so far. Run this
+server on the computer whose browser is logged in to the dongle.
+
+SAFETY: the stock web UI has two iConfig dialogs on the same server. "System -> System update ->
+iConfig update package" asks with dev_model=WiNet-S / WiNet-S2 and installs on the dongle; the
+*device* update dialog asks with the inverter's model (dev_model=SH15T, `["SH15T"]` on P016) and
+pushes what it gets to the inverter over RS485. A request that does not name a WiNet gets an
+empty package list, and get_key / get_packages are refused until a dongle has asked.
 
 IMPORTANT: get_packages must serve a .ZIP, not a bare .sgu. After the
 dongle downloads the package, the web UI re-fetches it, unzips it in the browser (JSZip), and
@@ -20,8 +32,8 @@ imported key, and esp_ota flashes it.
 
     python3 -I tools/fake_iconfig_server.py --dist dist --bind 0.0.0.0 --port 20001
 
-Then in the dongle web UI (admin): System update -> iConfig update package -> enter THIS host's LAN
-IP. The dongle discovers the port (20001 first), downloads our key + .sgu, verifies and flashes.
+Then in the dongle web UI (admin): System -> System update -> iConfig update package -> start. The
+dongle discovers the port (20001 first), downloads our key + .sgu, verifies and flashes.
 
 Stdlib plus `cryptography` (tools/requirements.txt) for the self-signed certificate it generates on first run
 (openssl is used instead when `cryptography` is missing)
@@ -40,7 +52,48 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
 STATE = {"dist": "dist", "sgu": None, "sig": None, "pem": None, "pkg": None, "file_id": 901,
-         "dev_model": "WiNet-S", "with_key": True}
+         "dev_model": "WiNet-S", "with_key": True,
+         # The dev_model of the last select_packages that was answered with the package: get_key
+         # and get_packages are served only after a dongle has asked.
+         "last_dev_model": ""}
+
+ROUTES = ("get_time", "select_packages", "get_key", "get_packages", "result")
+
+
+def route_name(path):
+    """Which iConfig request `path` is: the name after the last `/web/` (`/v2/web/<name>` on
+    current stock, `/web/<name>` on P016), or None."""
+    path = path.rstrip("/")
+    for name in ROUTES:
+        if path.endswith("/web/" + name):
+            return name
+    return None
+
+
+def dev_model_from(query, body=b""):
+    """The dev_model the dongle asks for, from the query string or a form / JSON POST body.
+    P016 sends it as a JSON array string (`["SH15T"]`); the brackets and quotes are stripped."""
+    q = parse_qs(query or "", keep_blank_values=True)
+    values = q.get("dev_model") or []
+    if not values and body:
+        text = body.decode("utf-8", "replace")
+        values = parse_qs(text, keep_blank_values=True).get("dev_model") or []
+        if not values:
+            try:
+                obj = json.loads(text)
+            except ValueError:
+                obj = None
+            if isinstance(obj, dict) and "dev_model" in obj:
+                values = [obj["dev_model"] if isinstance(obj["dev_model"], str) else json.dumps(obj["dev_model"])]
+    if not values:
+        return ""
+    return values[0].strip().strip("[]").strip().strip("\"'").strip()
+
+
+def is_dongle(dev_model):
+    """True when the request comes from the dongle's own updater (WiNet-S, WiNet-S2, winet...),
+    False for an inverter / battery model from the device-update dialog."""
+    return "winet" in (dev_model or "").lower()
 
 
 def _find_artifacts(dist):
@@ -85,15 +138,24 @@ class Handler(BaseHTTPRequestHandler):
 
     def _route(self, method):
         u = urlparse(self.path)
-        path = u.path.rstrip("/")
         sys.stderr.write("%s %s\n" % (method, self.path))
-        if path.endswith("/v2/web/get_time"):
+        length = int(self.headers.get("Content-Length") or 0)
+        body = self.rfile.read(length) if length else b""
+        name = route_name(u.path)
+        if name == "get_time":
             return self._json({"result_code": "1", "result_data": {"time": int(time.time())}})
-        if path.endswith("/v2/web/select_packages"):
+        if name == "select_packages":
+            asked = dev_model_from(u.query, body)
+            if not is_dongle(asked):
+                STATE["last_dev_model"] = ""
+                sys.stderr.write("    !! refused: dev_model=%r is not the dongle (the device-update dialog "
+                                 "targets the inverter); nothing offered\n" % asked)
+                return self._json({"result_code": "1", "result_data": {"rowCount": 0, "pageList": []}})
+            STATE["last_dev_model"] = asked
             entry = {
                 "file_id": STATE["file_id"],
                 "file_name": os.path.basename(STATE["pkg"]),
-                "dev_model": STATE["dev_model"],
+                "dev_model": asked or STATE["dev_model"],
                 "version": os.path.splitext(os.path.basename(STATE["pkg"]))[0],
                 "file_size": os.path.getsize(STATE["pkg"]),
                 "create_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -102,15 +164,17 @@ class Handler(BaseHTTPRequestHandler):
                 entry["license_name"] = os.path.basename(STATE["pem"])
             return self._json({"result_code": "1",
                                "result_data": {"rowCount": 1, "pageList": [entry]}})
-        if path.endswith("/v2/web/get_key"):
-            if not STATE["pem"]:
-                return self._json({"result_code": "0", "result_msg": "no key"}, 404)
-            return self._file(STATE["pem"])
-        if path.endswith("/v2/web/get_packages"):
+        if name in ("get_key", "get_packages"):
+            if not is_dongle(STATE.get("last_dev_model")):
+                sys.stderr.write("    !! refused: no dongle has asked for the package yet (last dev_model=%r)\n"
+                                 % STATE.get("last_dev_model"))
+                return self._json({"result_code": "0", "result_msg": "refused"}, 403)
+            if name == "get_key":
+                if not STATE["pem"]:
+                    return self._json({"result_code": "0", "result_msg": "no key"}, 404)
+                return self._file(STATE["pem"])
             return self._file(STATE["pkg"])
-        if path.endswith("/v2/web/result"):
-            length = int(self.headers.get("Content-Length") or 0)
-            body = self.rfile.read(length) if length else b""
+        if name == "result":
             text = body.decode("utf-8", "replace")
             sys.stderr.write("    result report (%d bytes):\n%s\n----end result----\n"
                              % (len(body), text))
@@ -179,7 +243,8 @@ def main(argv=None):
     ap.add_argument("--cert", help="server cert PEM (self-signed generated if omitted)")
     ap.add_argument("--key", help="server key PEM")
     ap.add_argument("--file-id", type=int, default=901)
-    ap.add_argument("--dev-model", default="WiNet-S")
+    ap.add_argument("--dev-model", default="WiNet-S",
+                    help="dev_model echoed when the dongle's own request carries none")
     ap.add_argument("--no-key", action="store_true",
                     help="omit license_name so the dongle skips get_key and uses the already-imported key")
     args = ap.parse_args(argv)
@@ -204,7 +269,9 @@ def main(argv=None):
     httpd = ThreadingHTTPServer((args.bind, args.port), Handler)
     httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
     print("fake iConfig server on https://%s:%d  (Ctrl-C to stop)" % (args.bind, args.port))
-    print("point the dongle's 'System update -> iConfig' at this host's LAN IP.")
+    print("open the dongle's web UI from THIS computer (the dongle contacts the browser's address),")
+    print("then System -> System update -> iConfig update package. NOT the device-update dialog:")
+    print("that one targets the inverter; requests that do not name a WiNet are refused here.")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
