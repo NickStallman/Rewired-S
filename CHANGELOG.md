@@ -62,6 +62,15 @@ All notable changes to Rewired-S are recorded here. The format follows
   are unchanged apart from their header comments. `tools/extract_init_param_xml.py` and
   `tools/fetch_grid_profiles.py` convert a dongle's grid-code files into that format.
 
+### Fixed
+- `tools/fake_iconfig_server.py` offers the package only to a request that names a WiNet (the
+  stock device-update dialog asks with the inverter's model) and matches `/web/<name>` with or
+  without the `/v2` prefix (stock `P016`) (#10).
+- `tools/deploy_debug.py import-key` treats `result_code=120` as "key already stored" and continues.
+- The release public key is published as `publicKey_V1.pem`, the name the stock updater's key
+  import requires; the install guide names the exact menu path, warns about the device-update
+  dialog, and notes the browser-address and PowerShell requirements.
+
 ### Removed
 - The stock-format inputs (`data/register_map/*.csv`, `bitfields.csv`, `mqtt_point_table.csv`,
   the grid-code XML and label files, `stock_param_tables.csv`, the web UI catalogue) and
