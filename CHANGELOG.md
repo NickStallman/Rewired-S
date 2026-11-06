@@ -64,6 +64,9 @@ network fallback for the Ethernet images, and a privacy fix in the diagnostics l
 ### Changed
 - Battery controls (`requires: battery` in `data/write_registers.yaml`) are left out of MQTT
   discovery and the web Devices page on a hybrid that reports "No battery" (#9).
+- `docs/compatibility.md`: every inverter class with its firmware line, reads, controls,
+  power-stage ranges and hardware verification; WiNet-S2 Ethernet and the stock-updater route
+  recorded as verified (#9, #10, #11).
 - `common/base.yaml` no longer carries `api:`, `ota:` (native) and `web_server.auth`; they come
   from `common/access_secrets.yaml`, which every compiled entry includes (resulting configuration
   unchanged).

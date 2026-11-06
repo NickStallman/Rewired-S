@@ -14,8 +14,9 @@ are not confirmed on hardware.
   verified.
 - The WiNet-S RS485 driver-enable pin (GPIO12) is also the flash-voltage strap; whether the
   transceiver pulls it at reset is not verified.
-- The W5500 reset pin (GPIO5) of the WiNet-S2 Ethernet variant is not verified; Ethernet on the
-  WiNet-S2 is untested.
+- Whether the WiNet-S2's stock bootloader really rolls back an image that resets within 30 s
+  is not confirmed on hardware (ESPHome cannot read that bootloader's descriptor); the Ethernet
+  images carry a network fallback instead, the Wi-Fi images rely on **Boot other slot**.
 - The timeout of the WiNet-S2 external supervisor is not known. A supervisor reset clears RTC
   memory, so the reset journal of such a boot is lost.
 - On a brownout the firmware does not switch the WiNet-S2 supervisor off.
