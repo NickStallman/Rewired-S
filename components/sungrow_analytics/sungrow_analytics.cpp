@@ -726,8 +726,11 @@ void SungrowAnalytics::fill_scrubber_() {
     char ssid[wifi::SSID_BUFFER_SIZE] = "";
     wifi::global_wifi_component->wifi_ssid_to(ssid);
     this->scrubber_.add(ssid, "<ssid>");
+    this->scrubber_.add(wifi::global_wifi_component->get_sta().get_password().str(), "<psk>");
   }
 #endif
+  if (this->mqtt_ != nullptr)
+    this->scrubber_.add(this->mqtt_->settings().pass, "<mqtt-password>");
 }
 
 void SungrowAnalytics::fill_bundle_device_(const Device &d, uint32_t now, BundleDevice *out) const {

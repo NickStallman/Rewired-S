@@ -199,13 +199,17 @@ TEST(scrubber_text) {
   s.add("abc", "<short>");  // ignored
   s.add("my-net 5G", "<ssid>");
   s.add("house-inverter", "<host>");
-  CHECK_EQ(s.size(), 4u);
+  s.add("hunter2!", "<psk>");
+  s.add("", "<mqtt-password>");  // no password stored: ignored
+  CHECK_EQ(s.size(), 5u);
   std::string in =
       "Serial number: A2101234567 and B2101234567\n"
       "WiFi SSID 'my-net 5G' IP Address: 192.0.2.4 gateway 10.0.0.1\n"
       "Rewired-S 0.9.0 on house-inverter, stock WINET-SV200.001.00.P046, idf 5.4.2 at 12:30:45\n"
-      "ipv4 1.2.3.4. and 255.255.255.0:1883 but not 1.2.3.4.5 nor 1234.5.6.7\n";
+      "ipv4 1.2.3.4. and 255.255.255.0:1883 but not 1.2.3.4.5 nor 1234.5.6.7\n"
+      "Password='hunter2!' and hunter2!hunter2!\n";
   std::string out = s.apply(in);
+  CHECK(contains(out, "Password='<psk>' and <psk><psk>"));
   CHECK(contains(out, "Serial number: <sn> and <serial>"));
   CHECK(contains(out, "SSID '<ssid>' IP Address: <ip> gateway <ip>"));
   CHECK(contains(out, "Rewired-S 0.9.0 on <host>, stock WINET-SV200.001.00.P046, idf 5.4.2 at 12:30:45"));

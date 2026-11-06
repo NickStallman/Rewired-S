@@ -68,6 +68,10 @@ network fallback for the Ethernet images, and a privacy fix in the diagnostics l
   are unchanged apart from their header comments. `tools/extract_init_param_xml.py` and
   `tools/fetch_grid_profiles.py` convert a dongle's grid-code files into that format.
 
+### Fixed
+- Diagnostics: values ESPHome logs as secrets (Wi-Fi password, API key) enter the log tail as
+  `<secret>`; the report scrubber replaces the Wi-Fi and MQTT passwords (`<psk>`, `<mqtt-password>`).
+
 ### Removed
 - The stock-format inputs (`data/register_map/*.csv`, `bitfields.csv`, `mqtt_point_table.csv`,
   the grid-code XML and label files, `stock_param_tables.csv`, the web UI catalogue) and
