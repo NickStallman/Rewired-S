@@ -120,13 +120,14 @@ const char *read_reason_name(ReadReason r);
 const char *frame_status_name(WriteStatus s, bool expired);
 
 /// Identity of a device: its grid-code XML family and parameter descriptor, and the devinfo
-/// device code and type (power-stage ranges, model family).
+/// device code, type and model string (power-stage ranges, model family).
 struct DeviceIdentity {
   bool known{false};  ///< the device index exists in the master
   XmlFamily family{XmlFamily::NONE};
   const FamilyDescriptor *desc{nullptr};
   uint16_t dev_code{0};  ///< devinfo device code (0 = unknown)
   uint8_t dev_type{0};   ///< stock dev_type (0 = unknown)
+  char model[17]{};      ///< devinfo model string ("" = unknown)
 };
 
 // ---- start/stop follow-up ---------------------------------------------------------------------

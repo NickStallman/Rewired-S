@@ -345,6 +345,7 @@ DeviceIdentity ControlCore::identity(uint8_t device) const {
       id.desc = d.descriptor();
       id.dev_code = d.devinfo().dev_code;
       id.dev_type = d.devinfo().dev_type;
+      std::snprintf(id.model, sizeof(id.model), "%s", d.devinfo().model);
       break;
     }
   return id;
@@ -1145,7 +1146,8 @@ static bool batch_value(const std::vector<ControlCore::SetupReg> &regs, uint16_t
 
 std::vector<ControlCore::SetupReg> ControlCore::dsp_filter_(uint8_t device, const std::vector<SetupReg> &regs,
                                                             std::string *note) const {
-  const DspModel *m = dsp_model(this->identity(device).dev_code);
+  const DeviceIdentity id = this->identity(device);
+  const DspModel *m = dsp_model_for(id.dev_code, id.model);
   if (m == nullptr)
     return regs;
   std::vector<uint16_t> drop;
@@ -1256,7 +1258,7 @@ Verdict ControlCore::setup_apply(uint8_t device, const std::vector<SetupReg> &re
     }
     return false;
   };
-  const DspModel *dsp = dsp_model(id.dev_code);
+  const DspModel *dsp = dsp_model_for(id.dev_code, id.model);
   // Typed value per the register's installer dtype (U32: low word at addr, high word at addr + 1).
   auto typed = [&](uint16_t addr, int64_t *out) -> bool {
     const InstallerRange *rg = installer_range(id.family, addr);
@@ -1324,7 +1326,7 @@ Verdict ControlCore::setup_apply(uint8_t device, const std::vector<SetupReg> &re
   } else {
     ordered = this->dsp_filter_(device, regs, &this->setup_note_);
     if (!this->setup_note_.empty())
-      this->log_(2, "setup dev %u (%s): skipped %s", device, dsp->model, this->setup_note_.c_str());
+      this->log_(2, "setup dev %u (%s): skipped %s", device, dsp->name, this->setup_note_.c_str());
   }
   this->setup_queue_ = this->frames_for_(device, ordered);
   this->setup_results_.clear();

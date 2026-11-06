@@ -17,6 +17,9 @@ All notable changes to Rewired-S are recorded here. The format follows
   it locally.
 - `unsupported_device` reporting when discovery finds a device without a register table or
   catalogue entry.
+- Power-stage acceptance ranges for the SH-T line (`data/dsp_params/sh15t.csv`, PEARL-H). The
+  range tables are keyed by firmware line and matched by device code or devinfo model string, so
+  every listed SH-RS, SG-RS and SH-T model gets them (#9).
 - Pre-built images (`winet-s-prebuilt.yaml`, `winet-s-ethernet-prebuilt.yaml`,
   `winet-s2-prebuilt.yaml`, `winet-s2-ethernet-prebuilt.yaml`; `docs/prebuilt.md`): Wi-Fi from
   the captive portal (Improv Serial on the WiNet-S), the API key from Home Assistant at adoption,

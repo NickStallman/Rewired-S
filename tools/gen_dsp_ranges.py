@@ -3,16 +3,17 @@
 
 BUILD-TIME ONLY (needs PyYAML, deterministic).
 
-Inputs: data/dsp_params/models.yaml, one row per model whose power-stage ranges are known
-(dev_code, model, family, key, firmware, csv), and the CSV each row names
+Inputs: data/dsp_params/models.yaml, one row per power-stage firmware line whose ranges are known
+(key, name, family, firmware, csv, models, dev_codes), and the CSV each row names
 (doc_reg,count,min,max,label,unit; count 2 = a U32 value with its low word at doc_reg). Rows of
 one CSV that repeat a register are merged into the union of their ranges. docs/data_format.md
 describes both.
 
-Output: components/sungrow_control/dsp_ranges.gen.h: one address-sorted DspRange array per model,
-the DspModel table sorted by device code, dsp_model(dev_code) and dsp_range(model, addr).
-ControlCore::setup_apply uses them to refuse (Installer) or skip (Setup profile) a value the
-power stage would ignore; a device whose code is not in the manifest gets no range check.
+Output: components/sungrow_control/dsp_ranges.gen.h: one address-sorted DspRange array per line,
+the DspModel table sorted by key, dsp_model(dev_code), dsp_model_by_name(model),
+dsp_model_for(dev_code, model) and dsp_range(model, addr). ControlCore::setup_apply uses them to
+refuse (Installer) or skip (Setup profile) a value the power stage would ignore; a device whose
+code and model string are both unknown to the manifest gets no range check.
 
 Usage: python3 tools/gen_dsp_ranges.py [--check]   (--check: exit 1 if the header is stale).
 """
@@ -20,6 +21,7 @@ Usage: python3 tools/gen_dsp_ranges.py [--check]   (--check: exit 1 if the heade
 import argparse
 import csv
 import os
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -31,11 +33,13 @@ DATA_DIR = os.path.join(ROOT, "data", "dsp_params")
 MANIFEST = os.path.join(DATA_DIR, "models.yaml")
 OUT_H = os.path.join(ROOT, "components", "sungrow_control", "dsp_ranges.gen.h")
 
-FIELDS = ("dev_code", "model", "family", "key", "firmware", "csv")
+FIELDS = ("key", "name", "family", "firmware", "csv", "models", "dev_codes")
+REQUIRED = ("key", "name", "family", "firmware", "csv", "models")
+MODEL_RE = r"^[A-Z0-9][A-Z0-9._-]{0,15}$"  # fits DevInfo::model (16 chars)
 
 
 def load_manifest(path=MANIFEST):
-    """[{dev_code: int, model, family, key, firmware, csv}] in file order."""
+    """[{key, name, family, firmware, csv, models: [str], dev_codes: {model: int}}] sorted by key."""
     doc = datalib.load_yaml(path)
     name = os.path.basename(path)
     if not isinstance(doc, dict) or not isinstance(doc.get("models"), list):
@@ -47,25 +51,47 @@ def load_manifest(path=MANIFEST):
         unknown = sorted(set(r) - set(FIELDS))
         if unknown:
             raise SystemExit("%s: models[%d]: unknown field(s) %s" % (name, i, unknown))
-        missing = [k for k in FIELDS if k not in r or r[k] in ("", None)]
+        missing = [k for k in REQUIRED if k not in r or r[k] in ("", None, [])]
         if missing:
-            raise SystemExit("%s: model %s lacks %s" % (name, r.get("model", "?"), missing))
-        r = {k: r[k] for k in FIELDS}
-        if isinstance(r["dev_code"], bool) or not isinstance(r["dev_code"], int):
-            raise SystemExit("%s: dev_code %r is not an integer" % (name, r["dev_code"]))
-        for k in ("model", "family", "key", "firmware", "csv"):
-            r[k] = str(r[k])
-        if not 1 <= r["dev_code"] <= 0xFFFF:
-            raise SystemExit("%s: dev_code %d out of range" % (name, r["dev_code"]))
-        if not r["key"].replace("_", "").isalnum() or r["key"][0].isdigit():
-            raise SystemExit("%s: key %r is not an identifier" % (name, r["key"]))
-        rows.append(r)
-    codes = [r["dev_code"] for r in rows]
-    if len(set(codes)) != len(codes):
-        raise SystemExit("%s: duplicate dev_code" % name)
+            raise SystemExit("%s: line %s lacks %s" % (name, r.get("key", "?"), missing))
+        row = {k: str(r[k]) for k in ("key", "name", "family", "firmware", "csv")}
+        if not row["key"].replace("_", "").isalnum() or row["key"][0].isdigit():
+            raise SystemExit("%s: key %r is not an identifier" % (name, row["key"]))
+        if row["family"] not in ("hybrid", "string"):
+            raise SystemExit("%s: %s: family must be hybrid or string" % (name, row["key"]))
+        models = r["models"]
+        if not isinstance(models, list) or not all(isinstance(m, str) for m in models):
+            raise SystemExit("%s: %s: models must be a list of strings" % (name, row["key"]))
+        for m in models:
+            if not re.match(MODEL_RE, m):
+                raise SystemExit("%s: %s: model %r is not a devinfo model string" % (name, row["key"], m))
+        if len(set(models)) != len(models):
+            raise SystemExit("%s: %s: duplicate model" % (name, row["key"]))
+        row["models"] = list(models)
+        codes = r.get("dev_codes") or {}
+        if not isinstance(codes, dict):
+            raise SystemExit("%s: %s: dev_codes must be a mapping model -> code" % (name, row["key"]))
+        row["dev_codes"] = {}
+        for m, c in codes.items():
+            if m not in models:
+                raise SystemExit("%s: %s: dev_codes names %r, not in models" % (name, row["key"], m))
+            if isinstance(c, bool) or not isinstance(c, int) or not 1 <= c <= 0xFFFF:
+                raise SystemExit("%s: %s: dev_code %r for %s out of range" % (name, row["key"], c, m))
+            row["dev_codes"][m] = c
+        rows.append(row)
     keys = [r["key"] for r in rows]
     if len(set(keys)) != len(keys):
         raise SystemExit("%s: duplicate key" % name)
+    seen = {}
+    for r in rows:
+        for m in r["models"]:
+            if m.upper() in seen:
+                raise SystemExit("%s: model %s listed under %s and %s" % (name, m, seen[m.upper()], r["key"]))
+            seen[m.upper()] = r["key"]
+    codes = [c for r in rows for c in r["dev_codes"].values()]
+    if len(set(codes)) != len(codes):
+        raise SystemExit("%s: duplicate dev_code" % name)
+    rows.sort(key=lambda r: r["key"])
     return rows
 
 
@@ -96,13 +122,13 @@ def load_ranges(path):
 
 
 def load(manifest=MANIFEST):
-    """[(model row, {addr: (count, min, max)})] sorted by dev_code."""
+    """[(line row, {addr: (count, min, max)})] sorted by key."""
     models = load_manifest(manifest)
     data_dir = os.path.dirname(manifest)
     out = []
     for m in models:
         out.append((m, load_ranges(os.path.join(data_dir, m["csv"]))))
-    out.sort(key=lambda e: e[0]["dev_code"])
+    out.sort(key=lambda e: e[0]["key"])
     return out
 
 
@@ -110,12 +136,12 @@ def gen_h(models):
     h = [
         "// GENERATED by tools/gen_dsp_ranges.py from data/dsp_params/models.yaml - DO NOT EDIT.",
         "#pragma once",
-        "// Power-stage acceptance ranges per inverter model (data/dsp_params/<model>.csv). The power",
-        "// stage ignores a parameter write outside its range while the control board acknowledges",
-        "// it, so ControlCore refuses (Installer) or skips (Setup profile) such a value on a listed",
-        "// model. A model is matched on the device code of its devinfo block; a model without a row",
-        "// has no table and no range check. count 2: a U32 value, low word at addr, compared as one",
-        "// 32-bit number. Header-only constexpr data.",
+        "// Power-stage acceptance ranges per inverter firmware line (data/dsp_params/<line>.csv). The",
+        "// power stage ignores a parameter write outside its range while the control board",
+        "// acknowledges it, so ControlCore refuses (Installer) or skips (Setup profile) such a value",
+        "// on a listed model. A device is matched on the device code of its devinfo block first, then",
+        "// on its model string; a model known to neither has no table and no range check. count 2: a",
+        "// U32 value, low word at addr, compared as one 32-bit number. Header-only constexpr data.",
         "#include <cstddef>",
         "#include <cstdint>",
         "",
@@ -130,16 +156,25 @@ def gen_h(models):
         "};",
         "",
         "struct DspModel {",
-        "  uint16_t dev_code;     ///< devinfo device code",
-        "  const char *model;",
+        "  const char *key;",
+        "  const char *name;      ///< the firmware line (SH-RS, SG-RS, SH-T, ...)",
         "  const char *firmware;  ///< power-stage firmware the ranges apply to",
+        "  const char *const *models;  ///< devinfo model strings of the line",
+        "  size_t model_count;",
+        "  const uint16_t *dev_codes;  ///< devinfo device codes seen on hardware",
+        "  size_t dev_code_count;",
         "  const DspRange *ranges;  ///< sorted by addr",
         "  size_t count;",
         "};",
         "",
     ]
     for m, ranges in models:
-        h.append("// %s (dev_code %d, %s): %d registers" % (m["model"], m["dev_code"], m["firmware"], len(ranges)))
+        h.append("// %s (%s): %d models, %d registers" % (m["name"], m["firmware"], len(m["models"]), len(ranges)))
+        h.append("inline constexpr const char *const DSP_MODELS_%s[] = {%s};"
+                 % (m["key"], ", ".join('"%s"' % x for x in m["models"])))
+        codes = sorted(m["dev_codes"].values())
+        h.append("inline constexpr uint16_t DSP_CODES_%s[] = {%s};"
+                 % (m["key"], ", ".join(str(c) for c in codes) if codes else "0"))
         h.append("inline constexpr DspRange DSP_RANGES_%s[] = {" % m["key"])
         for addr in sorted(ranges):
             count, lo, hi = ranges[addr]
@@ -148,17 +183,54 @@ def gen_h(models):
         h.append("")
     h.append("inline constexpr DspModel DSP_MODELS[] = {")
     for m, _ in models:
-        h.append('    {%d, "%s", "%s", DSP_RANGES_%s, sizeof(DSP_RANGES_%s) / sizeof(DspRange)},'
-                 % (m["dev_code"], m["model"], m["firmware"], m["key"], m["key"]))
+        n_codes = len(m["dev_codes"])
+        h.append('    {"%s", "%s", "%s", DSP_MODELS_%s, %d, DSP_CODES_%s, %d, DSP_RANGES_%s, sizeof(DSP_RANGES_%s) / sizeof(DspRange)},'
+                 % (m["key"], m["name"], m["firmware"], m["key"], len(m["models"]), m["key"], n_codes, m["key"], m["key"]))
     h += [
         "};",
         "",
-        "/// The model with devinfo device code `dev_code`, nullptr when its ranges are not known.",
+        "/// The line with a model whose devinfo device code is `dev_code`, nullptr when unknown.",
         "inline const DspModel *dsp_model(uint16_t dev_code) {",
+        "  if (dev_code == 0)",
+        "    return nullptr;",
         "  for (const DspModel &m : DSP_MODELS)",
-        "    if (m.dev_code == dev_code)",
-        "      return &m;",
+        "    for (size_t i = 0; i < m.dev_code_count; i++)",
+        "      if (m.dev_codes[i] == dev_code)",
+        "        return &m;",
         "  return nullptr;",
+        "}",
+        "",
+        "/// ASCII case-insensitive equality of two model strings (trailing spaces ignored).",
+        "inline bool dsp_model_name_eq(const char *a, const char *b) {",
+        "  auto up = [](char c) { return c >= 'a' && c <= 'z' ? static_cast<char>(c - 32) : c; };",
+        "  while (*a != '\\0' && *b != '\\0') {",
+        "    if (up(*a) != up(*b))",
+        "      return false;",
+        "    a++;",
+        "    b++;",
+        "  }",
+        "  while (*a == ' ')",
+        "    a++;",
+        "  while (*b == ' ')",
+        "    b++;",
+        "  return *a == '\\0' && *b == '\\0';",
+        "}",
+        "",
+        "/// The line listing the devinfo model string `model`, nullptr when unknown or empty.",
+        "inline const DspModel *dsp_model_by_name(const char *model) {",
+        "  if (model == nullptr || *model == '\\0')",
+        "    return nullptr;",
+        "  for (const DspModel &m : DSP_MODELS)",
+        "    for (size_t i = 0; i < m.model_count; i++)",
+        "      if (dsp_model_name_eq(m.models[i], model))",
+        "        return &m;",
+        "  return nullptr;",
+        "}",
+        "",
+        "/// The line for a device: by its device code, else by its model string.",
+        "inline const DspModel *dsp_model_for(uint16_t dev_code, const char *model) {",
+        "  const DspModel *m = dsp_model(dev_code);",
+        "  return m != nullptr ? m : dsp_model_by_name(model);",
         "}",
         "",
         "/// Range of `addr` (first word of a U32) in `m`, nullptr when unlisted or `m` is nullptr.",
@@ -199,7 +271,7 @@ def main():
         with open(OUT_H, "w", encoding="utf-8") as f:
             f.write(text)
     print("wrote %s: %s" % (os.path.relpath(OUT_H, ROOT),
-                            ", ".join("%s %d" % (m["model"], len(r)) for m, r in models)))
+                            ", ".join("%s %d" % (m["name"], len(r)) for m, r in models)))
     return 0
 
 
