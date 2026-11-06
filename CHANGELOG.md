@@ -5,6 +5,12 @@ All notable changes to Rewired-S are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-11-07
+
+Feedback round after the first public release: the SH15T (SH-T line) verified on hardware,
+the WiNet-S2 install route and Ethernet build verified, the install tooling and docs fixed, a
+network fallback for the Ethernet images, and a privacy fix in the diagnostics log tail.
+
 ### Added
 - Anonymous usage reporting (`sungrow_analytics`): a daily ping with versions, board, network
   kind, feature state and the connected device models, plus throttled error events. On in every
