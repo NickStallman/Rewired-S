@@ -62,8 +62,9 @@ The report is a generated plain-text document, not a raw log. It contains:
   of this boot.
 
 Before it leaves the dongle the report is scrubbed: the dongle serial, every device serial, the
-node name, the Wi-Fi network name and every IPv4 address are replaced by `<sn>`, `<serial>`,
-`<host>`, `<ssid>` and `<ip>`.
+node name, the Wi-Fi network name, the Wi-Fi and MQTT passwords and every IPv4 address are
+replaced by `<sn>`, `<serial>`, `<host>`, `<ssid>`, `<psk>`, `<mqtt-password>` and `<ip>`. Values
+ESPHome logs as secrets enter the log tail as `<secret>`.
 
 ### Unrecognised devices
 

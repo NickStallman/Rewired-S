@@ -101,6 +101,29 @@ static void test_line_sanitising() {
   ring_begin(h, CAP, 1);
   ring_append_line(h, data, CAP, "abcdefghij", 10, 4);
   CHECK(ring_text(h, data, CAP) == "abcd\n");
+  // LOG_SECRET spans are masked.
+  ring_begin(h, CAP, 1);
+  const char secret[] =
+      "\033[0;32m[I][captive_portal:066]: Requested WiFi Settings Change:\n  SSID='net'\n  Password=\033[8m'hunter2'\033[28m\033[0m";
+  ring_append_line(h, data, CAP, secret, sizeof(secret) - 1);
+  CHECK(ring_text(h, data, CAP) == "[I][captive_portal:066]: Requested WiFi Settings Change:  SSID='net'  Password=<secret>\n");
+  // ESC[0m closes a span; an unterminated span hides the rest of its line only.
+  ring_begin(h, CAP, 2);
+  const char open[] = "key=\033[8mabc\033[0m tail";
+  ring_append_line(h, data, CAP, open, sizeof(open) - 1);
+  const char never[] = "key=\033[8mabc def";
+  ring_append_line(h, data, CAP, never, sizeof(never) - 1);
+  ring_append_line(h, data, CAP, "plain", 5);
+  CHECK(ring_text(h, data, CAP) == "key=<secret> tail\nkey=<secret>\nplain\n");
+  // Other sequences inside a span keep it concealed; the cut still applies.
+  ring_begin(h, CAP, 1);
+  const char nested[] = "a\033[8mb\033[1mc\033[28md";
+  ring_append_line(h, data, CAP, nested, sizeof(nested) - 1);
+  CHECK(ring_text(h, data, CAP) == "a<secret>d\n");
+  ring_begin(h, CAP, 1);
+  const char cut[] = "abc\033[8mSECRET\033[28m";
+  ring_append_line(h, data, CAP, cut, sizeof(cut) - 1, 5);
+  CHECK(ring_text(h, data, CAP) == "abc<s\n");
 }
 
 static Journal make_prev() {
