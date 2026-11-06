@@ -11,6 +11,7 @@
 
 #include "boot_slot.h"
 #include "cloud_version.h"
+#include "net_fallback.h"
 #ifdef USE_SWITCH
 #include "esphome/components/switch/switch.h"
 #endif
@@ -64,8 +65,8 @@ class SungrowBoard : public Component {
   float get_setup_priority() const override { return setup_priority::BUS + 100.0f; }
   void setup() override;
   void dump_config() override;
-#ifdef USE_SUNGROW_DIAG
   void loop() override;
+#ifdef USE_SUNGROW_DIAG
   void set_diag_config(const DiagConfig &cfg) { this->diag_cfg_ = cfg; }
 #ifdef USE_TEXT_SENSOR
   void set_last_reset_sensor(text_sensor::TextSensor *s) { this->last_reset_ = s; }
@@ -105,6 +106,14 @@ class SungrowBoard : public Component {
 #ifdef USE_SWITCH
   void set_boot_switch(switch_::Switch *s) { this->boot_switch_ = s; }
 #endif
+  // ---- network fallback (net_fallback.h, common/ethernet_fallback.yaml) ----
+  void set_network_fallback(uint32_t timeout_ms, uint32_t phy_failed_timeout_ms, bool allow_stock) {
+    this->net_fallback_cfg_.timeout_ms = timeout_ms;
+    this->net_fallback_cfg_.phy_failed_timeout_ms = phy_failed_timeout_ms;
+    this->net_fallback_cfg_.allow_stock = allow_stock;
+  }
+  /// One-line state of the network fallback ("" when the build has none).
+  std::string network_fallback_status() const;
   bool is_winet_s2() const {
 #ifdef USE_WINET_S2
     return true;
@@ -130,6 +139,20 @@ class SungrowBoard : public Component {
   BootSwitchGuard boot_guard_;
 #ifdef USE_SWITCH
   switch_::Switch *boot_switch_{nullptr};
+#endif
+#ifdef USE_SUNGROW_NET_FALLBACK
+  void net_fallback_setup_();
+  void net_fallback_loop_(uint32_t now);
+  bool net_fallback_connected_() const;
+  bool net_fallback_phy_failed_() const;
+  FallbackTarget net_fallback_target_() const;
+  NetFallbackConfig net_fallback_cfg_;
+  ESPPreferenceObject net_fallback_pref_;
+  NetFallbackPref net_fallback_data_{};
+  uint32_t net_fallback_last_ms_{0};
+  bool net_fallback_fired_{false};
+#else
+  NetFallbackConfig net_fallback_cfg_;
 #endif
 #ifdef USE_SUNGROW_DIAG
   DiagConfig diag_cfg_;

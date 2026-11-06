@@ -493,6 +493,7 @@ export class SettingsView implements View {
     const running = el("span", { class: "settings-value" }, ["…"]);
     const other = el("span", { class: "settings-value" }, ["…"]);
     const note = el("span", { class: "settings-desc muted" }, []);
+    const fallback = el("p", { class: "settings-desc muted", hidden: true }, []);
     const result = el("span", { class: "settings-desc muted" }, []);
     const boot = el("button", { class: "btn", type: "button", disabled: true }, ["Boot other slot"]) as HTMLButtonElement;
     const card = el("section", { class: "settings-section", hidden: true }, [
@@ -511,6 +512,7 @@ export class SettingsView implements View {
         ]),
         el("div", { class: "settings-row settings-actions" }, [result, boot]),
       ]),
+      fallback,
     ]);
     let info: BootSlotInfo | null = null;
     const load = async () => {
@@ -524,6 +526,8 @@ export class SettingsView implements View {
         const st = bootSlotState(b);
         setText(note, st.note);
         boot.disabled = !st.enabled;
+        fallback.hidden = !b.fallback;
+        if (b.fallback) setText(fallback, `Network fallback: ${b.fallback}.`);
       } catch {
         /* keep hidden */
       }

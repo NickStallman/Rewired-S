@@ -17,6 +17,10 @@ All notable changes to Rewired-S are recorded here. The format follows
   it locally.
 - `unsupported_device` reporting when discovery finds a device without a register table or
   catalogue entry.
+- Network fallback (`sungrow_board` `network_fallback:`, `common/ethernet_fallback.yaml`, on in
+  the pre-built Ethernet entries): a build that has never had a network boots the other OTA slot
+  after 3 min (1 min when the Ethernet driver fails), if that slot holds a non-Ethernet Rewired-S
+  image (#11). The app descriptor's version carries the network kind (`0.9.1+wifi` / `+ethernet`).
 - Pre-built images (`winet-s-prebuilt.yaml`, `winet-s-ethernet-prebuilt.yaml`,
   `winet-s2-prebuilt.yaml`, `winet-s2-ethernet-prebuilt.yaml`; `docs/prebuilt.md`): Wi-Fi from
   the captive portal (Improv Serial on the WiNet-S), the API key from Home Assistant at adoption,

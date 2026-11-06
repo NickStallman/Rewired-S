@@ -24,3 +24,11 @@ text_sensor:
   - platform: ethernet_info
     ip_address:
       name: IP address
+
+# The app descriptor's version carries the network kind ("0.9.1+ethernet"): the boot-slot page and the
+# network fallback (common/ethernet_fallback.yaml) read it from the other OTA slot.
+esp32:
+  framework:
+    sdkconfig_options:
+      CONFIG_APP_PROJECT_VER_FROM_CONFIG: "y"
+      CONFIG_APP_PROJECT_VER: '"${project_version}+ethernet"'

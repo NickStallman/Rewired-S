@@ -54,9 +54,10 @@ slot; the stock firmware will overwrite it with its next own update.
 
 > [!NOTE]
 > This path has not been run on hardware yet (both development dongles have long since lost
-> their stock app to updates). The mechanism is the ordinary ESPHome OTA with a foreign app image,
-> and on the WiNet-S2 the stock bootloader's rollback applies to the stock app too, which marks
-> itself valid within its boot window; please report your result. **Boot other slot** (route 1)
+> their stock app to updates). The mechanism is the ordinary ESPHome OTA with a foreign app image;
+> whether the WiNet-S2's stock bootloader rolls a failed image back is itself unconfirmed (see
+> [prebuilt.md](prebuilt.md)), so count on **Boot other slot** rather than on a rollback; please
+> report your result. **Boot other slot** (route 1)
 > is verified on the WiNet-S. On pre-built images ESPHome's OTA accepts the web login password (or the
 > API key once Home Assistant has adopted the dongle); see [pre-built images](prebuilt.md).
 

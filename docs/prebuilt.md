@@ -127,9 +127,18 @@ remembered across restarts; *Send diagnostics* keeps working either way.
   you change it; the native OTA port shares that password.
 - **MQTT password in NVS.** The broker password is stored in the dongle's NVS in the clear (these
   dongles have no flash encryption). Use a broker account that can only do what the dongle needs.
-- **No rollback on the WiNet-S.** A pre-built image that fails to boot on a WiNet-S is recovered
-  over the UART pads ([install_serial.md](install_serial.md)); the WiNet-S2 rolls back to the
-  previous slot by itself.
+- **Rollback and the network fallback.** A pre-built image that fails to boot on a WiNet-S is
+  recovered over the UART pads ([install_serial.md](install_serial.md)). The WiNet-S2 keeps its
+  stock bootloader, which is expected to roll an image that resets within 30 s back to the
+  previous slot; this has not been proven on hardware yet (ESPHome logs `Bootloader too old for
+  OTA rollback`, which only says the bootloader predates the descriptor ESPHome reads), so treat
+  the way back as **Settings → Boot slots** first. An image that boots but never gets a network
+  is not caught by any rollback: the Ethernet pre-built images therefore carry the **network
+  fallback** (`common/ethernet_fallback.yaml`), which boots the other slot three minutes after
+  a boot without a network (one minute when the Ethernet driver fails to start) until the
+  running build has connected once. Right after the first Ethernet install that slot holds the
+  Wi-Fi image the install went through. The Boot slots card shows its state, and each image's
+  version carries its network kind (`0.9.1+wifi`, `0.9.1+ethernet`).
 - **A second update overwrites the stock app.** The other slot holds the stock app only until the
   next update lands in it. The detected cloud version is kept from the first boot; the way back to
   stock after that is a stock package through the stock updater or a serial flash.
