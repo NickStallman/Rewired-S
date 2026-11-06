@@ -26,6 +26,10 @@ network fallback for the Ethernet images, and a privacy fix in the diagnostics l
 - Power-stage acceptance ranges for the SH-T line (`data/dsp_params/sh15t.csv`, PEARL-H). The
   range tables are keyed by firmware line and matched by device code or devinfo model string, so
   every listed SH-RS, SG-RS and SH-T model gets them (#9).
+- Network fallback (`sungrow_board` `network_fallback:`, `common/ethernet_fallback.yaml`, on in
+  the pre-built Ethernet entries): a build that has never had a network boots the other OTA slot
+  after 3 min (1 min when the Ethernet driver fails), if that slot holds a non-Ethernet Rewired-S
+  image (#11). The app descriptor's version carries the network kind (`0.9.1+wifi` / `+ethernet`).
 - Pre-built images (`winet-s-prebuilt.yaml`, `winet-s-ethernet-prebuilt.yaml`,
   `winet-s2-prebuilt.yaml`, `winet-s2-ethernet-prebuilt.yaml`; `docs/prebuilt.md`): Wi-Fi from
   the captive portal (Improv Serial on the WiNet-S), the API key from Home Assistant at adoption,

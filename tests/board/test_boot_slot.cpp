@@ -46,6 +46,15 @@ static void test_guard_is_one_shot() {
   CHECK(!g.take());
 }
 
+static void test_json_fallback() {
+  const SlotInfo run = slot("ota_0", 0x10000, true, "rewired-s", "0.9.1+ethernet");
+  const SlotInfo other = slot("ota_1", 0x610000, true, "rewired-s", "0.9.1+wifi");
+  CHECK(!contains(boot_slots_json(run, other, false), "fallback"));
+  CHECK(!contains(boot_slots_json(run, other, false, ""), "fallback"));
+  CHECK(contains(boot_slots_json(run, other, false, "armed: boots the other slot in 7 s \"x\""),
+                 "\"can_switch\":true,\"fallback\":\"armed: boots the other slot in 7 s \\\"x\\\"\"}"));
+}
+
 static void test_verdicts() {
   const SlotInfo stock = slot("ota_1", 0x610000, true, "winet", "WINET-SV200.001.00.P046B001-dir");
   const SlotInfo blank = slot("ota_1", 0x610000, false);
@@ -89,6 +98,7 @@ static void test_slots_json() {
 int main() {
   test_guard_is_one_shot();
   test_verdicts();
+  test_json_fallback();
   test_slots_json();
   std::printf("%d checks, %d failures\n", g_checks, g_fail);
   return g_fail == 0 ? 0 : 1;

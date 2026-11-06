@@ -147,7 +147,7 @@ bus and Modbus-TCP rows apply to the WiNet-S builds only.
 | Subsystem | Expected |
 |---|---|
 | Flash | `flash_id … physical 16 MB, usable 16 MB`; bootloader magic 0xE9, DIO; the partition table with a valid MD5; otadata names the running slot; the inactive slot shows the stock app and its version |
-| Reset and rollback | the reset-reason sensor reports a clean boot; WiNet-S: `Running partition … valid` at the first boot; WiNet-S2: the image is marked valid 30 s after boot |
+| Reset and rollback | the reset-reason sensor reports a clean boot; WiNet-S: `Running partition … valid` at the first boot; WiNet-S2: `pending verify` at the first boot after an OTA (that is the bootloader doing its part; `new` means it does not) and `valid` 30 s later |
 | Supervisor (WiNet-S2) | "Watchdog running" on and "Watchdog edge count" rising; no "power-on" resets after restarts |
 | Network | Wi-Fi connected with an address, or the Ethernet link up |
 | External flash | JEDEC id, superblock `v2.0 block_size 4096`, mounted read-only, the identity file found, serial number present |
@@ -206,8 +206,10 @@ The WiNet-S2 is installed and updated without a serial connection.
   through the stock pull route (§5). Start with `winet-s2-debug.yaml` to confirm the board stays up,
   or package a production entry's image with `DEBUG_APP=`.
 - OTA rollback stays on for the WiNet-S2 (`boards/winet_s2.yaml`): an image that resets within
-  30 s of boot is reverted to the previous slot, which is the recovery path on a board with no
-  USB access. The external supervisor resets the board unless it is fed; the feed starts before
+  30 s of boot should be reverted to the previous slot by the stock bootloader (unconfirmed on
+  hardware; the partition state at the first boot after an OTA tells), the only recovery path on
+  a board with no USB access. An image that runs but never gets a network needs the network
+  fallback (`common/ethernet_fallback.yaml`) instead. The external supervisor resets the board unless it is fed; the feed starts before
   ESPHome's own setup, and every software restart and panic switches the supervisor off first.
 - After the first install, update with native OTA (`make deploy NODE=sites/<name> DEVICE=<ip>`).
 

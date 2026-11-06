@@ -11,6 +11,7 @@ import {
   validateCloudVersion,
   validateLogin,
   validateMqtt,
+  slotNetworkKind,
   type MqttForm,
 } from "./settings_forms.js";
 import type { BootSlotInfo, MqttSettingsInfo } from "./api.js";
@@ -173,4 +174,19 @@ test("boot slot text and button state", () => {
   assert.match(bootSlotState({ ...b, other: { ...run, label: "ota_1" } }).note, /another Rewired-S/);
   assert.deepStrictEqual(bootSlotState({ ...b, other: null, can_switch: false }), { enabled: false, note: "This flash layout has no other OTA slot." });
   assert.deepStrictEqual(bootSlotState({ ...b, other: { ...stock, valid: false }, can_switch: false }).enabled, false);
+});
+
+test("slotNetworkKind reads the +wifi / +ethernet marker", () => {
+  assert.strictEqual(slotNetworkKind("0.9.1+wifi"), "wifi");
+  assert.strictEqual(slotNetworkKind("0.9.1+ethernet"), "ethernet");
+  assert.strictEqual(slotNetworkKind("0.9.0"), "unknown");
+  assert.strictEqual(slotNetworkKind("WINET-SV300.001.03.P033B001-dir"), "unknown");
+});
+
+test("bootSlotState names the other build's network kind", () => {
+  const base = { running: null, armed: false, can_switch: true };
+  const other = (version: string) => ({ label: "ota_1", address: 1, valid: true, project: "rewired-s", version, idf: "" });
+  assert.match(bootSlotState({ ...base, other: other("0.9.1+wifi") }).note, /Wi-Fi/);
+  assert.match(bootSlotState({ ...base, other: other("0.9.1+ethernet") }).note, /Ethernet/);
+  assert.match(bootSlotState({ ...base, other: other("0.9.0") }).note, /another Rewired-S build\.$/);
 });

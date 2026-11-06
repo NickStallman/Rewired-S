@@ -16,6 +16,8 @@ packages:
   # Network: W5500 SPI Ethernet in place of Wi-Fi (ESPHome runs one or the other), for a unit
   # wired to the W5500. Wi-Fi: winet-s2.yaml.
   network: !include boards/winet_s2_ethernet.yaml
+  # Optional: boot the other slot when this build never gets a network (common/ethernet_fallback.yaml).
+  # fallback: !include common/ethernet_fallback.yaml
   board_io: !include common/board_io.yaml
   rs485: !include common/rs485.yaml
   identity: !include common/identity.yaml

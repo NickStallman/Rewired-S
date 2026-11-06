@@ -557,6 +557,7 @@ struct BundleFeatures {
   uint32_t writes_ok{0}, writes_failed{0}, writes_rejected{0}, writes_mismatch{0};
   bool capture_present{false}, capture_running{false};
   const char *capture_kind{""};
+  const char *net_fallback{nullptr};  ///< network fallback state line (nullptr: not built)
 };
 
 struct BundleMemory {
@@ -672,6 +673,8 @@ inline void write_features(std::string &out, const BundleFeatures &f) {
     write_line(out, "captures: %s%s", f.capture_running ? "running " : "idle", f.capture_running ? f.capture_kind : "");
   else
     out += "captures: not built\n";
+  if (f.net_fallback != nullptr)
+    write_line(out, "network fallback: %s", f.net_fallback);
 }
 
 inline void write_memory(std::string &out, const BundleMemory &m) {

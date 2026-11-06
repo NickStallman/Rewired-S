@@ -29,6 +29,9 @@
 #include "../sungrow_board/diag_journal.h"
 #include "../sungrow_board/sungrow_board.h"
 #endif
+#ifdef USE_SUNGROW_NET_FALLBACK
+#include "../sungrow_board/sungrow_board.h"
+#endif
 #ifdef SUNGROW_ANALYTICS_BIND_CONTROL
 #include "../sungrow_control/dsp_ranges.gen.h"
 #endif
@@ -902,6 +905,13 @@ std::string SungrowAnalytics::build_bundle() {
     f.capture_present = true;
     f.capture_running = this->capture_->core().running();
     f.capture_kind = f.capture_running ? sungrow_capture::kind_name(this->capture_->core().running_kind()) : "";
+  }
+#endif
+#ifdef USE_SUNGROW_NET_FALLBACK
+  std::string net_fallback_line;
+  if (sungrow_board::global_board != nullptr) {
+    net_fallback_line = sungrow_board::global_board->network_fallback_status();
+    f.net_fallback = net_fallback_line.c_str();
   }
 #endif
   write_features(out, f);

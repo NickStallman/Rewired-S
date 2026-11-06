@@ -1,0 +1,12 @@
+# Network fallback for the Ethernet images (components/sungrow_board/net_fallback.h): a build
+# that has never had a network since it was installed boots the other OTA slot 3 min after boot
+# (60 s when the Ethernet driver failed to start). Armed per build in NVS until the build
+# connects once; boots only a Rewired-S image that is not an Ethernet build ("+wifi" /
+# "+ethernet" marker in the app descriptor; an unmarked image counts), the stock app only with
+# `allow_stock: true`. Settings -> Boot slots shows the state. Included by the pre-built
+# Ethernet entries; `fallback: !include common/ethernet_fallback.yaml` adds it to a site file.
+sungrow_board:
+  network_fallback:
+    timeout: 3min
+    phy_failed_timeout: 60s
+    allow_stock: false

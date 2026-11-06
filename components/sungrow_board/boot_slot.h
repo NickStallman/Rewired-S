@@ -128,8 +128,10 @@ inline void slot_json(std::string &o, const SlotInfo &s) {
 }
 }  // namespace boot_slot_detail
 
-/// GET /api/boot_slot: {"running":{..},"other":{..}|null,"armed":bool,"can_switch":bool}
-inline std::string boot_slots_json(const SlotInfo &running, const SlotInfo &other, bool armed) {
+/// GET /api/boot_slot: {"running":{..},"other":{..}|null,"armed":bool,"can_switch":bool[,"fallback":".."]}
+/// `fallback`: the network fallback's state line (net_fallback.h), omitted when nullptr or "".
+inline std::string boot_slots_json(const SlotInfo &running, const SlotInfo &other, bool armed,
+                                   const char *fallback = nullptr) {
   std::string j = "{\"running\":";
   boot_slot_detail::slot_json(j, running);
   j += ",\"other\":";
@@ -138,6 +140,10 @@ inline std::string boot_slots_json(const SlotInfo &running, const SlotInfo &othe
   j += armed ? "true" : "false";
   j += ",\"can_switch\":";
   j += other.present && other.valid_image ? "true" : "false";
+  if (fallback != nullptr && fallback[0] != '\0') {
+    j += ",\"fallback\":";
+    boot_slot_detail::json_str(j, fallback);
+  }
   j += '}';
   return j;
 }

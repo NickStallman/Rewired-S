@@ -92,7 +92,8 @@ On stock firmware old enough to still offer a browser upload, `tools/deploy_debu
 
 | | WiNet-S2 | WiNet-S |
 |---|---|---|
-| Boot test | an image that resets within 30 s is **rolled back** to the stock slot by the bootloader | no automatic rollback (the stock bootloader would undo good images too); a bad image is recovered over UART |
+| Boot test | the stock bootloader is expected to roll an image that resets within 30 s back to the stock slot (not yet confirmed on hardware: the first boot after an OTA logs `Bootloader rollback: supported` under `safe_mode` when it works; please report that line) | no automatic rollback (the stock bootloader would undo good images too); a bad image is recovered over UART |
+| No network after boot (Ethernet images) | the **network fallback** boots the other slot after 3 min (the Wi-Fi image or stock app that was there), see [prebuilt.md](prebuilt.md) | the same |
 | Way back while the stock app is in the other slot | **Settings → Boot other slot** in the web UI | the same button |
 | Pre-built image | the `rewired-s-xxxxxx` setup network appears (Wi-Fi) or the dongle takes a DHCP lease (Ethernet) | the same |
 | Compiled image | joins the Wi-Fi from `secrets.yaml` | the same |
@@ -139,8 +140,11 @@ the running one.
 ## Updates after the first install
 
 - Pre-built images: Home Assistant shows an **Update** entity for the dongle; the firmware
-  downloads the new image from the release page over HTTPS. The WiNet-S2 rolls back a failed
-  update; the WiNet-S does not, so keep a serial adapter in reach.
+  downloads the new image from the release page over HTTPS. The update lands in the other slot,
+  so it overwrites the stock app (or the Wi-Fi image) that was there. The WiNet-S2's bootloader is
+  expected to roll back an update that resets within 30 s; the Ethernet images also boot the
+  other slot when the new build never gets a network. The WiNet-S has neither, so keep a serial
+  adapter in reach.
 - Pre-built images also take an ESPHome OTA (`esphome upload … --device <ip>`) authenticated with
   the web login password, or with the API key after Home Assistant adoption.
 - Compiled images: `make deploy NODE=sites/<name> DEVICE=<ip>` runs an encrypted ESPHome OTA,

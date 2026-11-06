@@ -16,6 +16,8 @@ packages:
   # Network: Ethernet in place of Wi-Fi (ESPHome runs one or the other): no fallback AP, so
   # recovery when the link never comes up is over UART. Wi-Fi: winet-s.yaml.
   network: !include boards/winet_s_ethernet.yaml
+  # Optional: boot the other slot when this build never gets a network (common/ethernet_fallback.yaml).
+  # fallback: !include common/ethernet_fallback.yaml
   board_io: !include common/board_io.yaml
   rs485: !include common/rs485.yaml
   identity: !include common/identity.yaml

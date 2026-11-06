@@ -163,10 +163,20 @@ export function bootSlotState(b: BootSlotInfo): { enabled: boolean; note: string
   if (!b.other) return { enabled: false, note: "This flash layout has no other OTA slot." };
   if (!b.other.valid) return { enabled: false, note: "The other slot holds no bootable image." };
   const stock = /^WINET-SV/.test(b.other.version);
+  const kind = slotNetworkKind(b.other.version);
   return {
     enabled: true,
     note: stock
       ? "The other slot holds the stock Sungrow app: booting it is the way back to stock."
-      : "The other slot holds another Rewired-S build.",
+      : kind === "unknown"
+        ? "The other slot holds another Rewired-S build."
+        : `The other slot holds another Rewired-S build (${kind === "wifi" ? "Wi-Fi" : "Ethernet"}).`,
   };
+}
+
+/** Network kind of a Rewired-S image from the "+wifi" / "+ethernet" marker in its version. */
+export function slotNetworkKind(version: string): "wifi" | "ethernet" | "unknown" {
+  if (version.endsWith("+wifi")) return "wifi";
+  if (version.endsWith("+ethernet")) return "ethernet";
+  return "unknown";
 }
