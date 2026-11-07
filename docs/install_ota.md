@@ -20,7 +20,7 @@ in SG-Docs.
   yourself (below). The key file must keep the
   `publicKey_V<n>.pem` name: the stock updater derives the key version from it.
 - Python 3.11+ and the tools package (`pipx install
-  "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=tools"`). Per-platform
+  "git+https://github.com/NickStallman/Rewired-S@v0.9.2#subdirectory=tools"`). Per-platform
   setup (Windows, macOS, Linux) and firewall notes: [installing the tools](tools_setup.md).
 
 > [!NOTE]

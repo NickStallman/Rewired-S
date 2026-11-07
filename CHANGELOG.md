@@ -5,6 +5,16 @@ All notable changes to Rewired-S are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-11-08
+
+### Added
+- Power-stage acceptance ranges for the SG-CX (`EMERALD-S`), SG-HX (`DIAMOND-S`) and SH-CX
+  (`GARNET-H`) commercial lines (`data/dsp_params/`), matched by model string.
+
+### Changed
+- `docs/compatibility.md`: SG-CX, SG-HX and SH-CX carry power-stage ranges; SG-RS-L2 and
+  SH-RL/MG-RL noted as shipping the newer `SungrowIAP3.0` package, not yet decodable.
+
 ## [0.9.1] - 2026-11-07
 
 Feedback round after the first public release: the SH15T (SH-T line) verified on hardware,
@@ -156,6 +166,7 @@ an SG string inverter or an SH hybrid inverter with SBR battery stacks.
   `tools/register_overrides.yaml`, replaced by the files above. Nothing that originates from a
   Sungrow firmware image is in the repository.
 
-[Unreleased]: https://github.com/NickStallman/Rewired-S/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/NickStallman/Rewired-S/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/NickStallman/Rewired-S/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/NickStallman/Rewired-S/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/NickStallman/Rewired-S/releases/tag/v0.9.0
