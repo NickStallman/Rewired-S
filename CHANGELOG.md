@@ -15,6 +15,10 @@ All notable changes to Rewired-S are recorded here. The format follows
 - `docs/compatibility.md`: SG-CX, SG-HX and SH-CX carry power-stage ranges; SG-RS-L2 and
   SH-RL/MG-RL noted as shipping the newer `SungrowIAP3.0` package, not yet decodable.
 
+### Fixed
+- Analytics `modbus_burst`: a device's timeout/exception counters resetting (on reconnect) no
+  longer underflows the 60-second delta into a spurious ~4.29-billion "failed reads" report.
+
 ## [0.9.1] - 2026-11-07
 
 Feedback round after the first public release: the SH15T (SH-T line) verified on hardware,
