@@ -16,7 +16,7 @@ substitutions:
   name: house-inverter
   friendly_name: House Inverter
 packages:
-  rewired_s: github://NickStallman/Rewired-S/winet-s2.yaml@v0.9.1
+  rewired_s: github://NickStallman/Rewired-S/winet-s2.yaml@v0.9.2
 ```
 
 `secrets.yaml` holds the nine keys of
@@ -32,15 +32,15 @@ A pre-built entry needs no secrets; this alone is a valid configuration:
 
 ```yaml
 packages:
-  rewired_s: github://NickStallman/Rewired-S/winet-s2-prebuilt.yaml@v0.9.1
+  rewired_s: github://NickStallman/Rewired-S/winet-s2-prebuilt.yaml@v0.9.2
 ```
 
 The ESPHome dashboard's **Adopt** button writes this kind of file for a pre-built image, pinned to
 the release the dongle runs.
 
-- **Pin a release.** `@v0.9.1` is the documented form; `@main` tracks development. ESPHome keeps
+- **Pin a release.** `@v0.9.2` is the documented form; `@main` tracks development. ESPHome keeps
   the fetched copy under `.esphome/packages/` and refreshes it daily; the long form
-  (`rewired_s: {url: https://github.com/NickStallman/Rewired-S, ref: v0.9.1, files:
+  (`rewired_s: {url: https://github.com/NickStallman/Rewired-S, ref: v0.9.2, files:
   [winet-s2.yaml], refresh: 1d}`) sets `refresh:`.
 - **Keep the folder empty otherwise.** A `components/` or `boards/` folder next to your file
   shadows the package's own.
@@ -145,7 +145,7 @@ documented in [board pins](board_pins.md); you should not need to change them.
 - **MQTT or native entities.** Use `mqtt_ha` or `common/native_entities.yaml`, not both
   ([Home Assistant](home_assistant.md#why-mqtt-and-not-just-esphome-entities)).
 - **Network fallback.** On a compiled Ethernet entry, add
-  `fallback: github://NickStallman/Rewired-S/common/ethernet_fallback.yaml@v0.9.1` to `packages:`
+  `fallback: github://NickStallman/Rewired-S/common/ethernet_fallback.yaml@v0.9.2` to `packages:`
   (in a checkout: `!include common/ethernet_fallback.yaml`; it sets `sungrow_board:
   network_fallback:` with `timeout` 3min, `phy_failed_timeout` 60s, `allow_stock` false). A build
   that never gets a network boots the other slot, but only into a Rewired-S image that is not an

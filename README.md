@@ -85,7 +85,7 @@ the way back.
    (Python 3.11+), import the key and serve the package:
 
    ```sh
-   pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=tools"
+   pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.2#subdirectory=tools"
    rewired-s-deploy import-key --host <dongle-ip> --pubkey <folder>/publicKey_V1.pem
    rewired-s-iconfig-server --dist <folder>
    ```

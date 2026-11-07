@@ -44,13 +44,14 @@ or skips such a write, without it only the installer catalogue ranges apply.
 |---|---|---|---|---|---|---|---|
 | **SH-RS** 1-phase hybrid | SH3.0RS, SH3.6RS, SH4.0RS, SH5.0RS, SH6.0RS, SH8.0RS, **SH10RS** (`-20` variants) | `SUNSTONE-H` | hybrid | ✅ | ✅ | yes | SH10RS with two SBR192 and a DTSU666, daily use |
 | **SH-T** 3-phase hybrid | SH5T, SH6T, SH8T, SH10T, SH12T, **SH15T**, SH20T, SH25T (`_V12` variants) | `PEARL-H` | hybrid | 🟢 | 🟡 | yes | SH15T, no battery, 3-phase meter; values checked against iSolarCloud [#9](https://github.com/NickStallman/Rewired-S/issues/9) |
-| **SH-RT** 3-phase hybrid | SH5.0RT, SH6.0RT, SH8.0RT, SH10RT (`-20`, `-V112`, `-V122`) | `SAPPHIRE-H` | hybrid | 🟡 | 🟡 | — | forced-power unit and start/stop register unchecked |
-| **SG-RT** 3-phase string | SG5.0RT, SG6.0RT, SG8.0RT, SG10RT, SG12RT, SG15RT, SG17RT, SG20RT (`-P2`) | `BERYL-S` | string | 🟡 | 🟡 | — | |
+| **SH-RT** 3-phase hybrid | SH5.0RT, SH6.0RT, SH8.0RT, SH10RT (`-20`, `-V112`, `-V122`) | `SAPPHIRE-H` | hybrid | 🟡 | 🟡 | — | newer power-stage platform: ranges are not in the image's static tables (analysed, needs deeper work); forced-power unit and start/stop register unchecked |
+| **SG-RT** 3-phase string | SG5.0RT, SG6.0RT, SG8.0RT, SG10RT, SG12RT, SG15RT, SG17RT, SG20RT (`-P2`) | `BERYL-S` | string | 🟡 | 🟡 | — | newer power-stage platform (two DSP variants, `_03011` / `_03031`): ranges are not in the image's static tables |
 | **SG-RS** 1-phase string | SG2.0RS-S, SG2.5RS-S, SG3.0RS, SG3.6RS, SG4.0RS, **SG5.0RS**, SG6.0RS, SG8.0RS, SG10RS (`-L`) | `SUNSTONE-S` | string | ✅ | ✅ | yes | SG5.0RS, daily use |
-| **SG-RS-L2** 1-phase string | SG3.0RS-L2 … SG10RS-L2 | `SULFUR-S` | string | 🟡 | 🟡 | — | |
-| **SH-RL / MG-RL** 1-phase hybrid | SH3RL … SH10RL, MG5RL … MG12RL | `BARITE-H` | hybrid | 🟡 | 🟡 | — | |
-| **SH-CX** commercial hybrid | SH50CX, SH80CX, SH110CX, SH125CX | `GARNET-H` | hybrid | 🟡 | 🟡 | — | |
-| **SG-CX / SG-HX** commercial string | SG25CX … SG125CX, SG225HX … SG350HX | `AGATE-S`, `EMERALD-S`, `GARNET`, `DIAMOND-S`, others | string | ⚪ | ⚪ | — | profile only where the device type maps |
+| **SG-RS-L2** 1-phase string | SG3.0RS-L2 … SG10RS-L2 | `SULFUR-S` | string | 🟡 | 🟡 | — | firmware ships in the newer `SungrowIAP3.0` package, not yet decodable |
+| **SH-RL / MG-RL** 1-phase hybrid | SH3RL … SH10RL, MG5RL … MG12RL | `BARITE-H` | hybrid | 🟡 | 🟡 | — | firmware ships in the newer `SungrowIAP3.0` package, not yet decodable |
+| **SH-CX** commercial hybrid | SH50CX, SH80CX, SH100CX, SH110CX, SH125CX | `GARNET-H` | hybrid | 🟡 | 🟡 | yes | ranges from GARNET-H; not run on hardware |
+| **SG-CX** commercial string | SG25CX-P2 … SG125CX-P2 (`-CN`, `-LV`, `-H` variants) | `EMERALD-S` (also `GARNET-S`, `AGATE-S`) | string | ⚪ | ⚪ | yes | ranges from EMERALD-S; GARNET-S matches bar a few grid-limit digits; not run on hardware |
+| **SG-HX** utility string | SG125HX … SG350HX (`-US`, `-IN`, `-JP` variants) | `DIAMOND-S` | string | ⚪ | ⚪ | yes | ranges from DIAMOND-S; not run on hardware |
 | Older residential (SH5K, SG-K, SG-KTL-M) and anything else the WiNet lists | | various | by type | ⚪ | ❌ | — | fallback table when the identification block is not served |
 
 Controls: the hybrid profile (EMS mode, forced charge/discharge, SOC limits, reserved SOC,

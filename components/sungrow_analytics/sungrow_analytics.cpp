@@ -540,11 +540,12 @@ void SungrowAnalytics::sample_(uint32_t now) {
     // poll round (its unserved blocks are expected, not a fault).
     const sungrow_modbus::LinkStats &st = d.stats();
     const uint32_t fails = st.timeouts + st.exceptions;
-    if (d.online() && d.first_round_done() && s.fails_primed && fails - s.last_fail_total >= MODBUS_BURST &&
-        !s.burst_reported) {
+    // A counter reset (device reconnect) lowers the total; treat that as zero new fails, not a
+    // huge unsigned wrap. The next line re-primes last_fail_total to the lower value.
+    const uint32_t new_fails = fails >= s.last_fail_total ? fails - s.last_fail_total : 0;
+    if (d.online() && d.first_round_done() && s.fails_primed && new_fails >= MODBUS_BURST && !s.burst_reported) {
       s.burst_reported = true;
-      this->report_error_("modbus_burst", std::to_string(fails - s.last_fail_total) + " failed reads in 60 s", model,
-                          now);
+      this->report_error_("modbus_burst", std::to_string(new_fails) + " failed reads in 60 s", model, now);
       this->request_auto_bundle_("modbus", now);
     }
     if (d.first_round_done()) {

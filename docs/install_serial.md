@@ -67,7 +67,7 @@ blank selector makes the bootloader start `ota_0`.
 
 ```sh
 esptool --chip esp32 -p /dev/ttyUSB0 -b 460800 erase_region 0x109000 0x2000
-esptool --chip esp32 -p /dev/ttyUSB0 -b 460800 write_flash 0x110000 winet-s-prebuilt-0.9.1.ota.bin
+esptool --chip esp32 -p /dev/ttyUSB0 -b 460800 write_flash 0x110000 winet-s-prebuilt-0.9.2.ota.bin
 ```
 
 This overwrites whatever was in `ota_0` (usually the stock app; the other slot keeps whatever it

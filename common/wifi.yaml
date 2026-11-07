@@ -22,7 +22,7 @@ text_sensor:
     ip_address:
       name: IP address
 
-# The app descriptor's version carries the network kind ("0.9.1+wifi"): the boot-slot page and the
+# The app descriptor's version carries the network kind ("0.9.2+wifi"): the boot-slot page and the
 # network fallback (common/ethernet_fallback.yaml) read it from the other OTA slot.
 esp32:
   framework:

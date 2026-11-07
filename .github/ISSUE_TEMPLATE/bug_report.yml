@@ -12,7 +12,7 @@ body:
     attributes:
       label: Rewired-S version
       description: Settings → Boot slots (running slot) in the web UI, or the device's firmware line in Home Assistant.
-      placeholder: "0.9.1"
+      placeholder: "0.9.2"
     validations:
       required: true
   - type: dropdown
