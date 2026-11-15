@@ -15,7 +15,7 @@ serial uses a random id kept in its preferences instead.
 
 | Event | When | Properties |
 |---|---|---|
-| `ping` | 60–120 s after boot, then every 24 h | `version` (Rewired-S), `esphome_version`, `stock_version` (the version string the dongle presents to iSolarCloud), `board` (`winet_s` / `winet_s2`), `chip`, `network` (`wifi` / `ethernet`), `uptime_s`, `reset_reason`, `cloud_uplink`, `mqtt`, `modbus_tcp`, `control_writes`, `psram_kb`, `heap_min_kb`, `winetVersion` 4, `winetCount` 1 |
+| `ping` | 60–120 s after boot, then every 24 h | `version` (Rewired-S), `esphome_version`, `stock_version` (the version string the dongle presents to iSolarCloud), `board` (`winet_s` / `winet_s2`), `chip`, `network` (the interface in use: `wifi` / `ethernet`), `uptime_s`, `reset_reason`, `cloud_uplink`, `mqtt`, `modbus_tcp`, `control_writes`, `psram_kb`, `heap_min_kb`, `winetVersion` 4, `winetCount` 1 |
 | `device_registered` | with every ping, one per connected device | `device` (model), `role` (`inverter` / `battery` / `charger` / `bridge` / `meter` / `other`), `dev_type`, `protocol`, `dev_code`, `inv_type` (when known), the firmware-version registers, `version`, `winetVersion` |
 | `error` | when a notable fault occurs | `type`, `error`, `count`; see the table below |
 
@@ -57,7 +57,7 @@ The report is a generated plain-text document, not a raw log. It contains:
   - the firmware-version registers of its family.
 - **Features**: cloud uplink state and connect failures, MQTT connection, Modbus-TCP state and
   counters, whether inverter writes are enabled and the write counters, any running capture, the network
-  fallback state (Ethernet builds).
+  fallback state (where configured).
 - **Memory, uptime and reset reason**, then the reset journal (`/api/diag`: this boot's and the
   previous boot's records, the core-dump summary, the previous boot's log tail) and the log tail
   of this boot.

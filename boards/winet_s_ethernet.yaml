@@ -1,5 +1,5 @@
-# Optional network package for the WiNet-S (V200/ESP32): internal EMAC + DP83848 RMII PHY instead
-# of Wi-Fi. Use it in winet-s.yaml in place of common/wifi.yaml (ESPHome can't run both).
+# Ethernet of the WiNet-S (V200/ESP32): internal EMAC + DP83848 RMII PHY. Runs beside Wi-Fi
+# (common/network.yaml).
 #
 # The values match the stock firmware's Ethernet setup: DP83848 PHY at address 1, MDC GPIO23,
 # MDIO GPIO18, RMII clock input on GPIO0 (IDF default EMAC config), PHY reset on GPIO5.
@@ -19,16 +19,3 @@ ethernet:
   # — left unset (reset_gpio_num=-1) the DP83848 is never brought out of hardware reset, so esp_eth PHY
   # init fails/stalls and Ethernet never comes up.
   power_pin: GPIO5
-
-text_sensor:
-  - platform: ethernet_info
-    ip_address:
-      name: IP address
-
-# The app descriptor's version carries the network kind ("0.9.2+ethernet"): the boot-slot page and the
-# network fallback (common/ethernet_fallback.yaml) read it from the other OTA slot.
-esp32:
-  framework:
-    sdkconfig_options:
-      CONFIG_APP_PROJECT_VER_FROM_CONFIG: "y"
-      CONFIG_APP_PROJECT_VER: '"${project_version}+ethernet"'

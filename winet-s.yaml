@@ -1,4 +1,4 @@
-# WiNet-S (V200, ESP32), Wi-Fi.
+# WiNet-S (V200, ESP32), Ethernet and Wi-Fi.
 # Production firmware: RS485 autodetect of the inverter and the devices it reports (batteries, EV
 # charger, Energy Bridge), iSolarCloud uplink, Modbus-TCP :502, gated register writes, per-device
 # Home Assistant discovery over MQTT, the web UI, diagnostic captures and reset diagnostics.
@@ -13,8 +13,10 @@ packages:
   base: !include common/base.yaml
   # API key and web login from secrets.yaml (the prebuilt entries use common/provisioning.yaml).
   access: !include common/access_secrets.yaml
-  # Network: Wi-Fi with a fallback AP. Ethernet (DP83848): winet-s-ethernet.yaml.
-  network: !include common/wifi.yaml
+  # Network: Ethernet preferred, Wi-Fi with a fallback AP as backup (common/network.yaml).
+  ethernet: !include boards/winet_s_ethernet.yaml
+  wifi: !include common/wifi.yaml
+  network: !include common/network.yaml
   board_io: !include common/board_io.yaml
   rs485: !include common/rs485.yaml
   identity: !include common/identity.yaml

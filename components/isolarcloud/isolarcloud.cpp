@@ -17,6 +17,10 @@
 #ifdef USE_WIFI
 #include "esphome/components/wifi/wifi_component.h"
 #endif
+#if __has_include("../sungrow_board/net_active.h")
+#include "../sungrow_board/net_active.h"
+#define ISOLARCLOUD_ACTIVE_NET
+#endif
 #include "esphome/core/application.h"
 #include "esphome/core/hal.h"
 #include "esphome/core/helpers.h"
@@ -311,7 +315,12 @@ void IsolarcloudComponent::refresh_logger_signals_() {
 void IsolarcloudComponent::refresh_logger_network_() {
   // 0x1202 active link IP (point 23241, devinfo "5767"), 0x1203 Wi-Fi SSID (point 23242).
   char ip[network::IP_ADDRESS_BUFFER_SIZE] = "";
-  for (const auto &a : network::get_ip_addresses()) {
+#ifdef ISOLARCLOUD_ACTIVE_NET
+  const network::IPAddresses addrs = sungrow_board::active_ip_addresses();
+#else
+  const network::IPAddresses addrs = network::get_ip_addresses();
+#endif
+  for (const auto &a : addrs) {
     if (a.is_ip4() && a.is_set()) {
       a.str_to(ip);
       break;

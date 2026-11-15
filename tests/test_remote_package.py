@@ -18,9 +18,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ESPHOME = os.environ.get("ESPHOME", os.path.join(ROOT, ".venv", "bin", "esphome"))
 if os.sep not in ESPHOME:
     ESPHOME = shutil.which(ESPHOME) or ESPHOME
-ENTRIES = ["winet-s.yaml", "winet-s-ethernet.yaml", "winet-s2.yaml", "winet-s2-ethernet.yaml",
-           "winet-s-prebuilt.yaml", "winet-s-ethernet-prebuilt.yaml", "winet-s2-prebuilt.yaml",
-           "winet-s2-ethernet-prebuilt.yaml"]
+ENTRIES = ["winet-s.yaml", "winet-s2.yaml", "winet-s-prebuilt.yaml", "winet-s2-prebuilt.yaml"]
 
 # A valid secrets.yaml for the compiled entries (the pre-built ones read none).
 SECRETS = """wifi_ssid: "example"

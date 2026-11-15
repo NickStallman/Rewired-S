@@ -5,13 +5,22 @@ All notable changes to Rewired-S are recorded here. The format follows
 
 ## [Unreleased]
 
-## [0.9.2] - 2026-11-08
+## [0.9.2] - 2026-11-16
 
 ### Added
 - Power-stage acceptance ranges for the SG-CX (`EMERALD-S`), SG-HX (`DIAMOND-S`) and SH-CX
   (`GARNET-H`) commercial lines (`data/dsp_params/`), matched by model string.
+- Ethernet and Wi-Fi in one image (`common/network.yaml`): Ethernet carries the traffic while it
+  has a link, Wi-Fi takes over when it drops and hands back when it returns. The setup access
+  point stays down while Ethernet is connected.
 
 ### Changed
+- One entry and one pre-built image per dongle. The `-ethernet` entries and images and
+  `common/ethernet_fallback.yaml` are removed: a pre-built Ethernet install moves to
+  `winet-s-prebuilt` / `winet-s2-prebuilt` (its **Firmware** entity gets no further updates), a
+  site file includes `winet-s.yaml` / `winet-s2.yaml`.
+- The app version carries no `+wifi` / `+ethernet` suffix; the analytics `network` field is the
+  interface in use.
 - `docs/compatibility.md`: SG-CX, SG-HX and SH-CX carry power-stage ranges; SG-RS-L2 and
   SH-RL/MG-RL noted as shipping the newer `SungrowIAP3.0` package, not yet decodable.
 - `docs/inverter_registers.md`: an SG5.0RS with a meter on its meter port serves the meter's power

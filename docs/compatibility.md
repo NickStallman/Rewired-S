@@ -26,6 +26,8 @@ checked against the inverter's display makes it 🟢 for controls.
 | WiNet-S (V200, ESP32) | Ethernet (DP83848) | ✅ | daily use; pre-built image, runtime web login, MQTT settings, MQTT discovery and **Boot other slot** checked on it |
 | WiNet-S2 (SV300, ESP32-S3) | Wi-Fi | ✅ | daily use; pre-built captive portal and app-only package through the stock updater (`P033`, P016 path variant) 🟢 [#10](https://github.com/NickStallman/Rewired-S/issues/10) |
 | WiNet-S2 (SV300, ESP32-S3) | Ethernet (W5500) | 🟢 | link, DHCP, MQTT and cloud over the cable; reset GPIO5; MAC = base MAC + 3 [#11](https://github.com/NickStallman/Rewired-S/issues/11) |
+| WiNet-S (V200, ESP32) | Ethernet with Wi-Fi as backup | ✅ | the maintainer's SG5.0RS: failover to Wi-Fi and back, cloud and MQTT reconnect in under 10 s |
+| WiNet-S2 (SV300, ESP32-S3) | Ethernet with Wi-Fi as backup | 🟡 | not run on hardware |
 | WiNet (first generation), WiFi-S | | ❌ | different hardware |
 
 Hardware details: [WiNet-S](https://github.com/NickStallman/SG-Docs/blob/main/reference/hardware/winet-s.md),

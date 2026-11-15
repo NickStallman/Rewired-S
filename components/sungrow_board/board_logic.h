@@ -213,4 +213,39 @@ class LedLogic {
   uint32_t no_cloud_since_{0};
 };
 
+// ---- setup AP beside Ethernet ----
+//
+// The setup AP runs only while Ethernet has no link:
+// - A Wi-Fi network is stored: ESPHome starts the AP `ap_timeout` after the station lost its
+//   network. The timeout is 0 (never) while Ethernet is connected or the button flag is off.
+// - No Wi-Fi network is stored: ESPHome starts the AP at boot. Wi-Fi is switched off while
+//   Ethernet is connected and on again once Ethernet has been down for the AP timeout.
+struct ApPolicyInputs {
+  bool ap_enabled{true};      // button flag
+  bool eth_connected{false};
+  bool wifi_has_network{false};
+  bool wifi_off{false};       // Wi-Fi was switched off by this policy
+  uint32_t eth_down_ms{0};    // time since Ethernet lost its link (since boot if it never had one)
+  uint32_t ap_timeout_ms{0};  // configured ap_timeout; 0 = no AP configured
+};
+enum class ApWifi : uint8_t { KEEP, OFF, ON };
+struct ApPolicy {
+  uint32_t ap_timeout_ms;  // value for ESPHome's ap_timeout
+  ApWifi wifi;
+};
+
+inline ApPolicy ap_policy(const ApPolicyInputs &in) {
+  static constexpr uint32_t DEFAULT_REARM_MS = 60000;
+  ApPolicy out{(in.ap_enabled && !in.eth_connected) ? in.ap_timeout_ms : 0, ApWifi::KEEP};
+  if (in.eth_connected) {
+    if (!in.wifi_has_network && !in.wifi_off)
+      out.wifi = ApWifi::OFF;
+  } else if (in.wifi_off) {
+    const uint32_t rearm = in.ap_timeout_ms != 0 ? in.ap_timeout_ms : DEFAULT_REARM_MS;
+    if (in.eth_down_ms >= rearm)
+      out.wifi = ApWifi::ON;
+  }
+  return out;
+}
+
 }  // namespace esphome::sungrow_board::logic

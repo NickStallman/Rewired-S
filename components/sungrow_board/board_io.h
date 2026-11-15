@@ -49,6 +49,7 @@ class BoardIO : public Component {
   // Fallback AP on/off, persisted in ESPHome's own NVS preferences (never on the external flash).
   // "Off" sets wifi ap_timeout to 0 so ESPHome never starts the fallback AP. ESPHome can't stop an
   // AP that is already running, so if it is up we restart (the flag is saved first).
+  // The AP also stays down while Ethernet is connected (logic::ap_policy).
   void set_fallback_ap_enabled(bool enabled);
   bool fallback_ap_active() const;
   // Erase ESPHome's own NVS namespace ("esphome": Wi-Fi creds from the captive portal, restored
@@ -64,6 +65,7 @@ class BoardIO : public Component {
   void led_tick_();
   void write_(output::BinaryOutput *out, bool on, int8_t &last);
   void apply_ap_flag_();
+  void ap_policy_tick_();
 
   output::BinaryOutput *red_{nullptr}, *green_{nullptr}, *blue_{nullptr};
   int8_t red_last_{-1}, green_last_{-1}, blue_last_{-1};
@@ -86,6 +88,9 @@ class BoardIO : public Component {
 
   uint32_t ap_timeout_ms_{0};
   bool ap_enabled_{true};
+  bool wifi_off_{false};         // Wi-Fi switched off by the AP policy
+  bool eth_was_connected_{false};
+  uint32_t eth_down_since_{0};
   ESPPreferenceObject ap_pref_;
 };
 

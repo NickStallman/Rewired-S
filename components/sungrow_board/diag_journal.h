@@ -79,7 +79,8 @@ struct Heartbeat {
   uint32_t long_kick_gaps;   ///< periodic kick gaps above STALL_THRESHOLD_MS
   int8_t wifi_rssi;          ///< dBm, 0 = unknown
   uint8_t wifi_connected;
-  uint8_t reserved[2];
+  uint8_t eth_connected;
+  uint8_t reserved[1];
 };
 
 struct StallRecord {
@@ -577,9 +578,10 @@ inline std::string journal_text(const Journal &j) {
                 static_cast<unsigned>(h.heap_min), static_cast<unsigned>(h.psram_total / 1024),
                 static_cast<unsigned>(h.psram_free / 1024));
   s += buf;
-  std::snprintf(buf, sizeof(buf), "kicks %u, max kick gap %u ms, %u long gaps, wifi %s %d dBm\n",
+  std::snprintf(buf, sizeof(buf), "kicks %u, max kick gap %u ms, %u long gaps, ethernet %s, wifi %s %d dBm\n",
                 static_cast<unsigned>(h.kicks), static_cast<unsigned>(h.max_kick_gap_ms),
-                static_cast<unsigned>(h.long_kick_gaps), h.wifi_connected ? "up" : "down", h.wifi_rssi);
+                static_cast<unsigned>(h.long_kick_gaps), h.eth_connected ? "up" : "down",
+                h.wifi_connected ? "up" : "down", h.wifi_rssi);
   s += buf;
   if (j.stall.magic == STALL_MAGIC) {
     s += "stall: " + stall_text(j.stall);

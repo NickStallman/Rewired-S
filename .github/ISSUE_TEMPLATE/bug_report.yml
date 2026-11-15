@@ -20,10 +20,10 @@ body:
     attributes:
       label: Dongle
       options:
-        - WiNet-S (Wi-Fi)
-        - WiNet-S (Ethernet)
-        - WiNet-S2 (Wi-Fi)
-        - WiNet-S2 (Ethernet)
+        - WiNet-S (on Wi-Fi)
+        - WiNet-S (on Ethernet)
+        - WiNet-S2 (on Wi-Fi)
+        - WiNet-S2 (on Ethernet)
     validations:
       required: true
   - type: dropdown

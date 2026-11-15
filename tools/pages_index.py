@@ -7,12 +7,9 @@ links to the manifests the ESPHome update entity polls.
 import argparse
 
 ENTRIES = [
-    ("winet-s-prebuilt", "WiNet-S, Wi-Fi", True),
-    ("winet-s-ethernet-prebuilt", "WiNet-S, Ethernet", True),
-    ("winet-s2-prebuilt", "WiNet-S2, Wi-Fi", False),
-    ("winet-s2-ethernet-prebuilt", "WiNet-S2, Ethernet", False),
-    ("winet-s-debug", "WiNet-S debug build (Wi-Fi)", True),
-    ("winet-s-debug-ethernet", "WiNet-S debug build (Ethernet)", True),
+    ("winet-s-prebuilt", "WiNet-S", True),
+    ("winet-s2-prebuilt", "WiNet-S2", False),
+    ("winet-s-debug", "WiNet-S debug build", True),
     ("winet-s2-debug", "WiNet-S2 debug build", False),
 ]
 

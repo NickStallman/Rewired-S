@@ -24,6 +24,9 @@
 #ifdef USE_WIFI
 #include "esphome/components/wifi/wifi_component.h"
 #endif
+#if defined(USE_ESP32) && defined(USE_NETWORK)
+#include "../sungrow_board/net_active.h"
+#endif
 #ifdef USE_SUNGROW_DIAG
 #include "../sungrow_board/diag.h"
 #include "../sungrow_board/diag_journal.h"
@@ -70,11 +73,10 @@ static const char *chip_name() {
 #endif
 }
 
+// The interface carrying traffic: "ethernet", "wifi" or "none".
 static const char *network_name() {
-#if defined(USE_ETHERNET)
-  return "ethernet";
-#elif defined(USE_WIFI)
-  return "wifi";
+#if defined(USE_ESP32) && defined(USE_NETWORK)
+  return sungrow_board::active_network_name();
 #else
   return "none";
 #endif

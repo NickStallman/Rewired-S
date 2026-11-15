@@ -39,10 +39,10 @@
 #   make clean          remove the host test build dirs
 PYTHON   ?= python3
 ESPHOME  ?= .venv/bin/esphome
-ENTRIES       := winet-s.yaml winet-s-ethernet.yaml winet-s2.yaml winet-s2-ethernet.yaml
+ENTRIES       := winet-s.yaml winet-s2.yaml
 # Pre-built images: no secrets, everything provisioned at runtime (common/provisioning.yaml).
-PREBUILT_ENTRIES := winet-s-prebuilt.yaml winet-s-ethernet-prebuilt.yaml winet-s2-prebuilt.yaml winet-s2-ethernet-prebuilt.yaml
-DEBUG_ENTRIES := winet-s-debug.yaml winet-s-debug-ethernet.yaml winet-s2-debug.yaml
+PREBUILT_ENTRIES := winet-s-prebuilt.yaml winet-s2-prebuilt.yaml
+DEBUG_ENTRIES := winet-s-debug.yaml winet-s2-debug.yaml
 CONFIG_TESTS  := $(filter-out tests/config/secrets.yaml,$(wildcard tests/config/*.yaml))
 DEBUG_ENTRY ?= winet-s-debug.yaml
 SGU_BOARD   ?= s

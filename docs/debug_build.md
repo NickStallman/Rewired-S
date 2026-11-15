@@ -14,9 +14,8 @@ Background on the update channels and the package format:
 
 | Entry | Board | Contents |
 |---|---|---|
-| `winet-s-debug.yaml` | WiNet-S, Wi-Fi | the WiNet-S firmware without the iSolarCloud uplink and without register writes, plus `common/debug.yaml` |
-| `winet-s-debug-ethernet.yaml` | WiNet-S, Ethernet (DP83848) | the same on Ethernet |
-| `winet-s2-debug.yaml` | WiNet-S2, Wi-Fi | a minimal boot test: board, Wi-Fi, external-flash diagnostics, the supervisor feed, LEDs and button, flash-layout reports and the `/dump` downloads; RS485 polling, :502, the cloud and writes are left out |
+| `winet-s-debug.yaml` | WiNet-S | the WiNet-S firmware without the iSolarCloud uplink and without register writes, plus `common/debug.yaml` |
+| `winet-s2-debug.yaml` | WiNet-S2 | a minimal boot test: board, Ethernet and Wi-Fi, external-flash diagnostics, the supervisor feed, LEDs and button, flash-layout reports and the `/dump` downloads; RS485 polling, :502, the cloud and writes are left out |
 
 `common/debug.yaml` (component `sungrow_debug`) adds verbose logs, an RS485 raw-frame and decode
 trace, on-demand reads and bus scans, store and poll-plan dumps, bus and system sensors, and
@@ -45,7 +44,6 @@ Safety properties of every debug build:
 ```sh
 cp secrets.yaml.example secrets.yaml                    # Wi-Fi, API key, web login (also guards /dump)
 make compile-debug                                      # winet-s-debug.yaml
-make compile-debug DEBUG_ENTRY=winet-s-debug-ethernet.yaml
 make compile-debug DEBUG_ENTRY=winet-s2-debug.yaml
 ```
 
@@ -74,7 +72,6 @@ packages the debug image of `SGU_BOARD` (`DEBUG_APP`, the `winet-<board>-debug` 
 ```sh
 make sgu-keys                                  # once: keys/rewired-s_priv.pem + keys/rewired-s_pub.pem
 make sgu SGU_BOARD=s SGU_BUILD=992             # .esphome/build/winet-s-debug/build/firmware.ota.bin
-make sgu APP=.esphome/build/winet-s-debug-eth/build/firmware.ota.bin SGU_BOARD=s SGU_BUILD=992
 ```
 
 A self-built package must carry a build number above the installed one: releases use P99x
@@ -170,8 +167,6 @@ The WiNet-S2 is installed and updated without a serial connection.
   or package a production entry's image with `DEBUG_APP=`.
 - The stock bootloader is expected to revert an image that resets within 30 s (unconfirmed:
   check for `pending verify` at the first boot after an OTA). The way back is **Boot other slot**.
-  An image that runs but never gets a network needs the network fallback
-  (`common/ethernet_fallback.yaml`) instead.
 - The external supervisor resets the board unless it is fed; the feed starts before ESPHome's own
   setup, and every software restart and panic switches the supervisor off first.
 - After the first install, update with native OTA (`make deploy NODE=sites/<name> DEVICE=<ip>`).

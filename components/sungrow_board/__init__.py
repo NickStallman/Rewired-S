@@ -7,7 +7,7 @@
   a panic, and reports how the previous boot ended (diag.h).
 - `coredump: true` writes an IDF core dump to the `coredump` partition on a crash.
 - `network_fallback:` boots the other OTA slot when this build has never had a network
-  (net_fallback.h; the Ethernet images' way back without a UART).
+  (net_fallback.h; optional, no entry sets it).
 - `boot_slot:` the "Allow boot switch" switch (never restored) and the "Boot other slot" button
   that boots the other OTA slot (normally the stock app; docs/back_to_stock.md).
 """
@@ -194,7 +194,7 @@ BOOT_SLOT_SCHEMA = cv.Schema(
     }
 )
 
-# Network fallback (net_fallback.h, common/ethernet_fallback.yaml): an image that has never had a
+# Network fallback (net_fallback.h): an image that has never had a
 # network since it was installed boots the other OTA slot after `timeout` (sooner when the
 # Ethernet driver failed to start), provided that slot holds a Rewired-S image that is not an
 # Ethernet build (or the stock app, with allow_stock).

@@ -1,5 +1,5 @@
 #pragma once
-// Network fallback (common/ethernet_fallback.yaml): a build that has never had a network boots
+// Network fallback (sungrow_board `network_fallback:`): a build that has never had a network boots
 // the other OTA slot. Pure part, host-tested in tests/board/test_net_fallback.cpp; the glue in
 // sungrow_board.cpp reads the network state, the other slot and the NVS record.
 //  - Armed until the running build has connected once (NVS record keyed by the build id).

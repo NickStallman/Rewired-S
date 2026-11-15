@@ -33,6 +33,7 @@
 #ifdef USE_WIFI
 #include "esphome/components/wifi/wifi_component.h"
 #endif
+#include "net_active.h"
 #ifdef USE_SUNGROW_DIAG_WEB
 #include <esp_http_server.h>
 #include "esphome/components/web_server_base/web_server_base.h"
@@ -482,6 +483,9 @@ void diag_loop() {
     h.wifi_connected = wifi::global_wifi_component->is_connected() ? 1 : 0;
     h.wifi_rssi = h.wifi_connected ? static_cast<int8_t>(wifi::global_wifi_component->wifi_rssi()) : 0;
   }
+#endif
+#ifdef USE_NETWORK
+  h.eth_connected = ethernet_connected() ? 1 : 0;
 #endif
 }
 

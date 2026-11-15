@@ -15,7 +15,7 @@ Pinout and board details: [WiNet-S hardware](https://github.com/NickStallman/SG-
 - `esptool` (`pipx install esptool`) or ESP Web Tools on the
   [install page](https://nickstallman.github.io/Rewired-S/). Port names and
   drivers per operating system: [installing the tools](tools_setup.md).
-- The image: `winet-s-prebuilt-<version>.ota.bin` or `winet-s-ethernet-prebuilt-…` from the
+- The image: `winet-s-prebuilt-<version>.ota.bin` from the
   [releases](https://github.com/NickStallman/Rewired-S/releases), or your own
   `.esphome/build/<name>/build/firmware.ota.bin`.
 
@@ -80,9 +80,9 @@ does not erase the chip and does not touch the bootloader.
 
 ## 5. First boot
 
-- Pre-built image: the setup network `rewired-s-xxxxxx` appears; join it, enter your Wi-Fi, then
-  open the web UI (`admin` / `rewired-s`, change it) and set the MQTT broker.
-  Ethernet image: it takes a DHCP lease.
+- Pre-built image: with a network cable it takes a DHCP lease; without one the setup network
+  `rewired-s-xxxxxx` appears: join it and enter your Wi-Fi. Then open the web UI
+  (`admin` / `rewired-s`, change it) and set the MQTT broker.
 - Compiled image: it joins the Wi-Fi from `secrets.yaml`.
 
 A bad image shows as a boot loop on the serial console (the WiNet-S has no OTA rollback;

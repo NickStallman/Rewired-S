@@ -14,7 +14,7 @@
 #   - Cloud version: "" = detect it from the stock image left in the other OTA slot
 #     (sungrow_board), with a Settings-page override.
 # Every pre-built entry sets `prebuilt_entry` to its own file stem (winet-s-prebuilt,
-# winet-s2-ethernet-prebuilt, ...), which names the dashboard-import package and the release
+# winet-s2-prebuilt), which names the dashboard-import package and the release
 # manifest.
 substitutions:
   cloud_firmware_version: ""

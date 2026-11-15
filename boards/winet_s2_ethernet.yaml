@@ -1,5 +1,4 @@
-# Optional network package for the WiNet-S2: W5500 SPI Ethernet instead of Wi-Fi.
-# Use it in winet-s2.yaml in place of common/wifi.yaml (ESPHome can't run both).
+# Ethernet of the WiNet-S2: W5500 on SPI. Runs beside Wi-Fi (common/network.yaml).
 # Pin assignments: https://github.com/NickStallman/SG-Docs/blob/main/reference/hardware/winet-s2.md
 ethernet:
   type: W5500
@@ -11,16 +10,3 @@ ethernet:
   interrupt_pin: GPIO6
   reset_pin: GPIO5     # the IDF default, as in the stock PHY config
   clock_speed: 36MHz
-
-text_sensor:
-  - platform: ethernet_info
-    ip_address:
-      name: IP address
-
-# The app descriptor's version carries the network kind ("0.9.2+ethernet"): the boot-slot page and the
-# network fallback (common/ethernet_fallback.yaml) read it from the other OTA slot.
-esp32:
-  framework:
-    sdkconfig_options:
-      CONFIG_APP_PROJECT_VER_FROM_CONFIG: "y"
-      CONFIG_APP_PROJECT_VER: '"${project_version}+ethernet"'

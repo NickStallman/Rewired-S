@@ -1,4 +1,4 @@
-# DEBUG build package (winet-s-debug.yaml / winet-s-debug-ethernet.yaml). Guide: docs/debug_build.md.
+# DEBUG build package (winet-s-debug.yaml). Guide: docs/debug_build.md.
 #
 # What it adds on top of the normal packages (no cloud, no register writes):
 #  - logger: VERY_VERBOSE compiled in, per-tag levels (runtime-changeable), a log-level select,
