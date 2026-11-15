@@ -15,9 +15,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 PREBUILT = [
     "winet-s-prebuilt.yaml",
-    "winet-s-ethernet-prebuilt.yaml",
     "winet-s2-prebuilt.yaml",
-    "winet-s2-ethernet-prebuilt.yaml",
 ]
 INCLUDE_RE = re.compile(r"!include\s+(?:\{\s*file:\s*)?([A-Za-z0-9_./-]+\.yaml)")
 SECRET_RE = re.compile(r"!secret\b")

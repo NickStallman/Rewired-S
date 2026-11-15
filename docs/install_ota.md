@@ -20,7 +20,7 @@ in SG-Docs.
   yourself (below). The key file must keep the
   `publicKey_V<n>.pem` name: the stock updater derives the key version from it.
 - Python 3.11+ and the tools package (`pipx install
-  "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=tools"`). Per-platform
+  "git+https://github.com/NickStallman/Rewired-S@v0.9.2#subdirectory=tools"`). Per-platform
   setup (Windows, macOS, Linux) and firewall notes: [installing the tools](tools_setup.md).
 
 > [!NOTE]
@@ -96,10 +96,9 @@ On stock firmware old enough to still offer a browser upload, `rewired-s-deploy 
 | | WiNet-S2 | WiNet-S |
 |---|---|---|
 | Boot test | the stock bootloader is expected to roll an image that resets within 30 s back to the stock slot (not yet confirmed on hardware: the first boot after an OTA logs `Bootloader rollback: supported` under `safe_mode` when it works; please report that line) | no automatic rollback (the stock bootloader would undo good images too); a bad image is recovered over UART |
-| No network after boot (Ethernet images) | the **network fallback** boots the other slot after 3 min if it holds a non-Ethernet Rewired-S image (not yet seen firing on hardware), see [prebuilt.md](prebuilt.md) | the same |
 | Way back while the stock app is in the other slot | **Settings → Boot slots → Boot other slot** in the web UI | the same button |
-| Pre-built image | the `rewired-s-xxxxxx` setup network appears (Wi-Fi) or the dongle takes a DHCP lease (Ethernet) | the same |
-| Compiled image | joins the Wi-Fi from `secrets.yaml` (Ethernet: DHCP) | the same |
+| Pre-built image | with a network cable the dongle takes a DHCP lease; without one the `rewired-s-xxxxxx` setup network appears | the same |
+| Compiled image | takes a DHCP lease on Ethernet and joins the Wi-Fi from `secrets.yaml` | the same |
 
 Then: open `http://<dongle>/`, log in (pre-built: `admin` / `rewired-s`, change it on the Settings
 page), set the MQTT broker, and watch the Devices page fill up as the inverter and batteries are
@@ -151,10 +150,9 @@ that is not above the running one. `--stock-sgu` (`SGU_STOCK`) adds the stock we
 
 - Pre-built images: Home Assistant shows the **Firmware** update entity for the dongle; the
   firmware downloads the new image from the release page over HTTPS. The update lands in the other
-  slot, so it overwrites the stock app (or the Wi-Fi image) that was there. The WiNet-S2's
-  bootloader is expected to roll back an update that resets within 30 s; the Ethernet images also
-  boot the other slot when the new build never gets a network, only if the other slot holds a
-  non-Ethernet Rewired-S image. The WiNet-S has no rollback, so keep a serial adapter in reach.
+  slot, so it overwrites the stock app that was there. The WiNet-S2's
+  bootloader is expected to roll back an update that resets within 30 s. The WiNet-S has no
+  rollback, so keep a serial adapter in reach.
 - Pre-built images also take an ESPHome OTA (`esphome upload … --device <ip>`) authenticated with
   the web login password, or with the API key after Home Assistant adoption.
 - Compiled images: `esphome run <your>.yaml --device <ip>` builds and installs with a native

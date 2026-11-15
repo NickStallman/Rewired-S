@@ -33,6 +33,6 @@ body:
     id: version
     attributes:
       label: Rewired-S version and dongle
-      placeholder: "0.9.1, WiNet-S2 Wi-Fi"
+      placeholder: "0.9.2, WiNet-S2 Wi-Fi"
     validations:
       required: true

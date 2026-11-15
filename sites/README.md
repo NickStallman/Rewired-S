@@ -28,10 +28,6 @@ Build, validate and deploy it like an entry:
 make deploy NODE=sites/house DEVICE=192.0.2.10
 ```
 
-On a compiled Ethernet entry, add `fallback: !include ../common/ethernet_fallback.yaml` to the
-site's `packages:` to turn on the network fallback
-([ESPHome](../docs/esphome.md#options-worth-knowing)).
-
 A site file can also sit on top of a pre-built entry (`../winet-s2-prebuilt.yaml`): the runtime
 provisioning stays (captive portal, Settings-page login and broker, detected cloud version) and
 the substitutions only change its defaults, such as `ap_password` for the setup access point or a

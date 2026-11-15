@@ -13,8 +13,8 @@ would hold provisioned at runtime instead and stored on the dongle:
 | Cloud version | `cloud_firmware_version` substitution | read from the stock app in the other flash slot |
 | Updates | `make deploy` / native OTA | the **Firmware** update entity (release manifest) |
 
-There are four images, one per entry: `winet-s-prebuilt.yaml` (Wi-Fi), `winet-s-ethernet-prebuilt.yaml`,
-`winet-s2-prebuilt.yaml` (Wi-Fi) and `winet-s2-ethernet-prebuilt.yaml`. The entries share one
+There are two images, one per dongle: `winet-s-prebuilt.yaml` and `winet-s2-prebuilt.yaml`, each
+with Ethernet and Wi-Fi. The entries share one
 node name, `rewired-s`, and append the last three bytes of the MAC address (`rewired-s-a1b2c3`), so
 several dongles can live on one network. They are built by `common/provisioning.yaml`,
 `common/wifi_provisioned.yaml`, `common/improv_serial.yaml` and `common/mqtt_ha_provisioned.yaml`;
@@ -25,7 +25,8 @@ image follows [install_ota.md](install_ota.md) (through the stock updater) or
 
 ## First boot: the access point
 
-A Wi-Fi image with no network stored starts its own access point:
+With a network cable plugged in, the dongle takes a DHCP lease and needs no provisioning. Without
+one, a dongle with no Wi-Fi network stored starts its own access point:
 
 - name `rewired-s-xxxxxx` (the node name with the MAC suffix), password `rewired-s-setup`;
 - join it and open `http://192.168.4.1`: the captive portal lists the networks it sees, takes the
@@ -36,11 +37,12 @@ A Wi-Fi image with no network stored starts its own access point:
 The password of the access point is the `ap_password` substitution of `common/wifi_provisioned.yaml`;
 a site file that includes a prebuilt entry can change it (`tests/config/prebuilt-site-example.yaml`).
 
-On the WiNet-S Wi-Fi image the same credentials can be given over the UART console pads with
+On the WiNet-S image the same credentials can be given over the UART console pads with
 [Improv Serial](https://www.improv-wifi.com/serial/): the ESPHome dashboard and the ESP Web Tools
 install page offer it right after a serial flash.
 
-Ethernet images need no provisioning: they come up on DHCP.
+The access point is off while Ethernet is connected. To add Wi-Fi as a backup on a wired dongle,
+unplug the cable: the access point appears after a minute.
 
 ## Finding the dongle and logging in
 
@@ -132,12 +134,9 @@ remembered across restarts; *Send diagnostics* keeps working either way.
   you change it; the native OTA port shares that password.
 - **MQTT password in NVS.** The broker password is stored in the dongle's NVS in the clear (these
   dongles have no flash encryption). Use a broker account that can only do what the dongle needs.
-- **Rollback and the network fallback.** WiNet-S: no rollback, recover over UART
+- **Rollback.** WiNet-S: no rollback, recover over UART
   ([install_serial.md](install_serial.md)). WiNet-S2: rollback expected, unconfirmed; use **Boot
-  other slot**. The Ethernet images' network fallback (`common/ethernet_fallback.yaml`; not yet
-  seen firing on hardware) boots the other slot when a new build never gets a network. The
-  fallback only boots a non-Ethernet Rewired-S image; with the stock app in the other slot it
-  stays idle. Details: [limitations.md](limitations.md#hardware).
+  other slot**. Details: [limitations.md](limitations.md#hardware).
 - **A second update overwrites the stock app.** The other slot holds the stock app only until the
   next update lands in it. The detected cloud version is kept from the first boot. The way back to
   stock after that: the extracted stock app over ESPHome OTA (unverified) or, on the WiNet-S,

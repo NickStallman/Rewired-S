@@ -106,7 +106,7 @@ class SungrowBoard : public Component {
 #ifdef USE_SWITCH
   void set_boot_switch(switch_::Switch *s) { this->boot_switch_ = s; }
 #endif
-  // ---- network fallback (net_fallback.h, common/ethernet_fallback.yaml) ----
+  // ---- network fallback (net_fallback.h) ----
   void set_network_fallback(uint32_t timeout_ms, uint32_t phy_failed_timeout_ms, bool allow_stock) {
     this->net_fallback_cfg_.timeout_ms = timeout_ms;
     this->net_fallback_cfg_.phy_failed_timeout_ms = phy_failed_timeout_ms;

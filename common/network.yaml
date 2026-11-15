@@ -1,0 +1,20 @@
+# Ethernet and Wi-Fi in one image: Ethernet carries the traffic while it has a link, Wi-Fi takes
+# over when it drops and hands back when it returns (ESPHome moves the default route). The setup
+# AP stays down while Ethernet is connected (sungrow_board io, common/board_io.yaml).
+network:
+  priority: [ethernet, wifi]
+
+text_sensor:
+  # Address of the interface carrying the traffic, published when it changes.
+  - platform: template
+    name: IP address
+    icon: mdi:ip-network
+    entity_category: diagnostic
+    update_interval: 10s
+    lambda: |-
+      static std::string last = "-";
+      std::string ip = esphome::sungrow_board::active_ipv4_text();
+      if (ip == last)
+        return {};
+      last = ip;
+      return ip;

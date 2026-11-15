@@ -43,3 +43,28 @@ models:
              SH5T_V12, SH6T_V12, SH8T_V12, SH10T_V12, SH12T_V12, SH15T_V12, SH20T_V12, SH25T_V12]
     dev_codes:
       SH15T: 3621           # 0x0E25
+  - key: SG_CX
+    name: SG-CX
+    family: string
+    firmware: EMERALD-S_03011.01.51
+    csv: emeralds.csv
+    models: [SG15CX-P2-LV, SG20CX-P2-LV, SG25CX-P2, SG25CX-P2-LV, SG30CX-P2, SG30CX-P2-CN,
+             SG33CX-P2, SG33CX-P2-CN, SG36CX, SG36CX-P2-CN, SG40CX, SG40CX-P2, SG40CX-P2-CN,
+             SG50CX-P2, SG50CX-P2-CN, SG50CX-P2H-CN, SG75CX-P2, SG99CX-P2-CN,
+             SG110CX-P2, SG110CX-P2-CN, SG110CX-P2H-CN, SG125CX-P2]
+    dev_codes: {}
+  - key: SG_HX
+    name: SG-HX
+    family: string
+    firmware: DIAMOND-S_03011.01.42
+    csv: diamonds.csv
+    models: [SG125HX, SG125HX-JP, SG225HX, SG250HX, SG250HX-IN, SG250HX-IN-20, SG250HX-US,
+             SG320HX, SG350HX, SG350HX-US]
+    dev_codes: {}
+  - key: SH_CX
+    name: SH-CX
+    family: hybrid
+    firmware: GARNET-H_03011.01.16
+    csv: garneth.csv
+    models: [SH50CX, SH80CX, SH100CX, SH110CX, SH125CX]
+    dev_codes: {}

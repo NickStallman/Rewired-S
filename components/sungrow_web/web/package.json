@@ -1,6 +1,6 @@
 {
   "name": "rewired-s-web",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "private": true,
   "description": "On-device TypeScript SPA shell for the Sungrow WiNet dongle (served by the sungrow_web ESPHome component).",
   "type": "module",

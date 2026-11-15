@@ -61,6 +61,8 @@ More screenshots: [devices](docs/images/devices.jpg), [installer settings](docs/
 | WiNet-S2 (SV300) | ESP32-S3, 8 MB PSRAM | Wi-Fi | ✅; pre-built image and updater install 🟢 |
 | WiNet-S2 (SV300) | ESP32-S3, 8 MB PSRAM | Ethernet (W5500) | 🟢 |
 
+Each image carries Ethernet and Wi-Fi: Ethernet is used while it has a link, Wi-Fi is the backup.
+
 Legend and evidence: [compatibility chart](docs/compatibility.md).
 
 Inverters and batteries: every inverter the WiNet-S supports works, because the firmware polls
@@ -79,13 +81,12 @@ the way back.
 
 1. Download your entry's `.zip` package and `publicKey_V1.pem` from the
    [latest release](https://github.com/NickStallman/Rewired-S/releases) into an empty folder.
-   Entries: `winet-s-prebuilt`, `winet-s-ethernet-prebuilt`, `winet-s2-prebuilt`,
-   `winet-s2-ethernet-prebuilt`.
+   Entries: `winet-s-prebuilt`, `winet-s2-prebuilt`.
 2. On a computer on the same network, install the tools with [pipx](https://pipx.pypa.io/)
    (Python 3.11+), import the key and serve the package:
 
    ```sh
-   pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=tools"
+   pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.2#subdirectory=tools"
    rewired-s-deploy import-key --host <dongle-ip> --pubkey <folder>/publicKey_V1.pem
    rewired-s-iconfig-server --dist <folder>
    ```
@@ -93,8 +94,8 @@ the way back.
 3. From a browser **on that computer**, log in to the dongle's stock web UI as `admin` and open
    **System → System maintenance → System update → iConfig update package**. Start it and wait
    two to three minutes; the dongle reboots into Rewired-S.
-4. Wi-Fi images: join the `rewired-s-xxxxxx` network (password `rewired-s-setup`) and enter your
-   Wi-Fi. Ethernet images take a DHCP lease.
+4. With a network cable the dongle takes a DHCP lease. Without one, join the `rewired-s-xxxxxx`
+   network (password `rewired-s-setup`) and enter your Wi-Fi.
 5. Open `http://<dongle>/` (`admin` / `rewired-s`), set the MQTT broker and a new password on
    the Settings page. Home Assistant discovers the inverter, batteries and meter.
 

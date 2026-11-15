@@ -1,5 +1,5 @@
 # The install tools as a pip package, so nobody needs the repository to install Rewired-S:
-#   pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=tools"
+#   pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.2#subdirectory=tools"
 # The scripts stay flat files in tools/ (the Makefile, tests and CI run them by path); this file
 # only lists the user-facing ones. The version must match common/base.yaml (tests/test_version.py).
 [build-system]
@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rewired-s-tools"
-version = "0.9.1"
+version = "0.9.2"
 description = "Install and package tools for Rewired-S, the open-source firmware for the Sungrow WiNet-S and WiNet-S2"
 readme = {text = "Console commands: rewired-s-deploy (stock web UI: status, import-key, upload), rewired-s-iconfig-server (serves a package to the dongle), rewired-s-sgu (inspect, extract, verify, build, sign .sgu packages), rewired-s-package-sgu, rewired-s-flash-backup, rewired-s-read-identity. Documentation: https://github.com/NickStallman/Rewired-S", content-type = "text/plain"}
 requires-python = ">=3.11"

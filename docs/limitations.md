@@ -15,9 +15,8 @@ are not confirmed on hardware.
 - The WiNet-S RS485 driver-enable pin (GPIO12) is also the flash-voltage strap; whether the
   transceiver pulls it at reset is not verified.
 - Whether the WiNet-S2's stock bootloader really rolls back an image that resets within 30 s
-  is not confirmed on hardware (ESPHome cannot read that bootloader's descriptor); the pre-built
-  Ethernet images carry a network fallback (opt-in in compiled entries; not yet seen firing on
-  hardware), the Wi-Fi images rely on **Boot other slot**.
+  is not confirmed on hardware (ESPHome cannot read that bootloader's descriptor); the way back
+  is **Boot other slot**.
 - The timeout of the WiNet-S2 external supervisor is not known. A supervisor reset clears RTC
   memory, so the reset journal of such a boot is lost.
 - On a brownout the firmware does not switch the WiNet-S2 supervisor off.
@@ -245,10 +244,14 @@ are not confirmed on hardware.
   value is remembered from then on, and the Settings page takes an override.
 - Improv over serial exists on the WiNet-S image only (the WiNet-S2 has no reachable UART);
   there is no Improv over Bluetooth, which the WiNet-S has no spare RAM for.
-- The four images are Wi-Fi or Ethernet, not both.
+- Ethernet beside Wi-Fi is run on a WiNet-S only (failover and failback checked); not yet on a
+  WiNet-S2. The access point of a dongle with no Wi-Fi network stored switching off while
+  Ethernet is connected is not run on hardware.
+- A setup access point that started while no interface was connected stays up until the next
+  restart.
 - The WiNet-S has no OTA rollback, so a failed update from the **Firmware** entity is recovered
   over UART.
-- Not yet run on hardware: the network fallback firing, back-to-stock route 2, the pre-built
+- Not yet run on hardware: the optional network fallback firing, back-to-stock route 2, the pre-built
   images' adoption key flow.
 
 ## Features deliberately not provided

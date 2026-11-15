@@ -27,9 +27,9 @@ SAFETY
     else the stock bootloader reverts to the stock app in the other OTA slot.
 
 Installed from the tools package this is the `rewired-s-deploy` command (same arguments).
-Build the inputs first (Ethernet dongle shown):
-    .venv/bin/esphome compile winet-s-debug-ethernet.yaml
-    make sgu APP=.esphome/build/winet-s-debug-eth/build/firmware.ota.bin
+Build the inputs first:
+    .venv/bin/esphome compile winet-s-debug.yaml
+    make sgu APP=.esphome/build/winet-s-debug/build/firmware.ota.bin
   -> dist/WINET-SV200.001.00.P901.sgu + .bin + publicKey_V1.pem
 """
 import argparse

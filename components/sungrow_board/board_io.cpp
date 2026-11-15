@@ -18,6 +18,7 @@
 #ifdef USE_WIFI
 #include "esphome/components/wifi/wifi_component.h"
 #endif
+#include "net_active.h"
 
 namespace esphome::sungrow_board {
 
@@ -25,6 +26,7 @@ static const char *const TAG = "sungrow_board.io";
 
 static constexpr uint32_t BUTTON_POLL_MS = 50;  // stock 50 ms esp_timer
 static constexpr uint32_t LED_TICK_MS = 100;    // stock: every 2nd tick
+static constexpr uint32_t AP_POLICY_MS = 1000;
 
 void BoardIO::add_hold_mark(uint32_t ms) {
   if (this->n_marks_ < 4)
@@ -37,6 +39,9 @@ void BoardIO::setup() {
   if (this->ap_pref_.load(&stored))
     this->ap_enabled_ = stored;
   this->apply_ap_flag_();
+#if defined(USE_WIFI) && defined(USE_WIFI_AP) && defined(USE_ETHERNET)
+  this->set_interval("ap_policy", AP_POLICY_MS, [this]() { this->ap_policy_tick_(); });
+#endif
 
   if (this->button_ != nullptr) {
     this->decoder_.set_hold_marks(this->marks_[0], this->marks_[1], this->marks_[2], this->marks_[3]);
@@ -134,7 +139,42 @@ void BoardIO::apply_ap_flag_() {
   if (wifi::global_wifi_component == nullptr)
     return;
   // ap_timeout 0 = ESPHome never starts the fallback AP (wifi_component.cpp check_connecting_finished).
-  wifi::global_wifi_component->set_ap_timeout(this->ap_enabled_ ? this->ap_timeout_ms_ : 0);
+  logic::ApPolicyInputs in;
+  in.ap_enabled = this->ap_enabled_;
+  in.eth_connected = ethernet_connected();
+  in.ap_timeout_ms = this->ap_timeout_ms_;
+  wifi::global_wifi_component->set_ap_timeout(logic::ap_policy(in).ap_timeout_ms);
+#endif
+}
+
+void BoardIO::ap_policy_tick_() {
+#if defined(USE_WIFI) && defined(USE_WIFI_AP)
+  auto *wifi = wifi::global_wifi_component;
+  if (wifi == nullptr)
+    return;
+  const uint32_t now = millis();
+  logic::ApPolicyInputs in;
+  in.ap_enabled = this->ap_enabled_;
+  in.eth_connected = ethernet_connected();
+  if (in.eth_connected != this->eth_was_connected_) {
+    this->eth_was_connected_ = in.eth_connected;
+    this->eth_down_since_ = now;
+  }
+  in.wifi_has_network = wifi->has_sta();
+  in.wifi_off = this->wifi_off_;
+  in.eth_down_ms = in.eth_connected ? 0 : now - this->eth_down_since_;
+  in.ap_timeout_ms = this->ap_timeout_ms_;
+  const logic::ApPolicy p = logic::ap_policy(in);
+  wifi->set_ap_timeout(p.ap_timeout_ms);
+  if (p.wifi == logic::ApWifi::OFF) {
+    ESP_LOGI(TAG, "Ethernet connected and no Wi-Fi network stored: Wi-Fi (setup AP) off");
+    wifi->disable();
+    this->wifi_off_ = true;
+  } else if (p.wifi == logic::ApWifi::ON) {
+    ESP_LOGI(TAG, "Ethernet down: Wi-Fi (setup AP) on");
+    wifi->enable();
+    this->wifi_off_ = false;
+  }
 #endif
 }
 

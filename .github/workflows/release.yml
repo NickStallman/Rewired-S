@@ -24,11 +24,8 @@ jobs:
       matrix:
         entry:
           - winet-s-prebuilt
-          - winet-s-ethernet-prebuilt
           - winet-s2-prebuilt
-          - winet-s2-ethernet-prebuilt
           - winet-s-debug
-          - winet-s-debug-ethernet
           - winet-s2-debug
     steps:
       - uses: actions/checkout@v4
@@ -95,7 +92,7 @@ jobs:
           umask 077
           printf '%s' "$SGU_SIGNING_KEY" > /tmp/release_key.pem
           BUILD=$(python3 -I tools/sgu_build_number.py "${{ steps.meta.outputs.version }}")
-          for entry in winet-s-prebuilt winet-s-ethernet-prebuilt winet-s2-prebuilt winet-s2-ethernet-prebuilt; do
+          for entry in winet-s-prebuilt winet-s2-prebuilt; do
             board=s; case "$entry" in winet-s2*) board=s2;; esac
             python3 -I tools/package_sgu.py --app "release/image-$entry/$entry.ota.bin" --board "$board" \
               --build "$BUILD" --key /tmp/release_key.pem --pubkey tools/release_key_pub.pem \

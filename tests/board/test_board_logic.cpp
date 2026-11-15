@@ -217,7 +217,45 @@ static void test_leds() {
   CHECK(toggles == 10);
 }
 
+static void test_ap_policy() {
+  ApPolicyInputs in;
+  in.ap_timeout_ms = 60000;
+  in.wifi_has_network = true;
+  // No Ethernet link: the configured timeout applies; the button flag turns it off.
+  CHECK(ap_policy(in).ap_timeout_ms == 60000);
+  CHECK(ap_policy(in).wifi == ApWifi::KEEP);
+  in.ap_enabled = false;
+  CHECK(ap_policy(in).ap_timeout_ms == 0);
+  in.ap_enabled = true;
+  // Ethernet connected: no timed AP, Wi-Fi station left alone.
+  in.eth_connected = true;
+  CHECK(ap_policy(in).ap_timeout_ms == 0);
+  CHECK(ap_policy(in).wifi == ApWifi::KEEP);
+
+  // No Wi-Fi network stored: Wi-Fi goes off while Ethernet is connected, once.
+  in.wifi_has_network = false;
+  CHECK(ap_policy(in).wifi == ApWifi::OFF);
+  in.wifi_off = true;
+  CHECK(ap_policy(in).wifi == ApWifi::KEEP);
+  // Ethernet down: back on after the AP timeout.
+  in.eth_connected = false;
+  in.eth_down_ms = 59999;
+  CHECK(ap_policy(in).wifi == ApWifi::KEEP);
+  in.eth_down_ms = 60000;
+  CHECK(ap_policy(in).wifi == ApWifi::ON);
+  // No AP timeout configured: 60 s.
+  in.ap_timeout_ms = 0;
+  in.eth_down_ms = 59999;
+  CHECK(ap_policy(in).wifi == ApWifi::KEEP);
+  in.eth_down_ms = 60000;
+  CHECK(ap_policy(in).wifi == ApWifi::ON);
+  // Wi-Fi not switched off by the policy is never switched on by it.
+  in.wifi_off = false;
+  CHECK(ap_policy(in).wifi == ApWifi::KEEP);
+}
+
 int main() {
+  test_ap_policy();
   test_clicks();
   test_long_press();
   test_idle_precondition();

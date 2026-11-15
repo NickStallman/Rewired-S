@@ -22,7 +22,7 @@ image ([ESPHome](esphome.md)).
 commands on your path. The same line works on every platform:
 
 ```sh
-pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=tools"
+pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.2#subdirectory=tools"
 ```
 
 `pipx install` from a `git+` URL needs `git`. Without it, use the wheel (below).
@@ -33,7 +33,7 @@ pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=
    PATH**) and `git` from <https://git-scm.com/download/win>.
 2. In **PowerShell** or `cmd`: `py -m pip install --user pipx`, then `py -m pipx ensurepath`, and
    open a new window.
-3. `pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=tools"`.
+3. `pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.2#subdirectory=tools"`.
 4. The first run of `rewired-s-iconfig-server` asks Windows Defender Firewall whether Python may
    accept connections: allow it on **private** networks, or the dongle cannot reach port 20001.
    Open the dongle's web UI in a browser **on this computer**: the dongle contacts the address of
@@ -47,7 +47,7 @@ pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=
 
 1. `brew install pipx` and `pipx ensurepath` (Homebrew), or Python from
    <https://www.python.org/downloads/macos/> and `python3 -m pip install --user pipx`.
-2. `pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=tools"`.
+2. `pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.2#subdirectory=tools"`.
 3. macOS asks once whether Python may accept incoming connections; allow it. Your address is
    under *System Settings → Network* or `ipconfig getifaddr en0` (Wi-Fi) / `en1`.
 4. Serial flashing: `pipx install esptool`; the adapter shows up as `/dev/cu.usbserial-XXXX` or
@@ -58,7 +58,7 @@ pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=
 
 1. `sudo apt install pipx git` (Debian, Ubuntu) or your distribution's equivalent, then
    `pipx ensurepath`.
-2. `pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=tools"`.
+2. `pipx install "git+https://github.com/NickStallman/Rewired-S@v0.9.2#subdirectory=tools"`.
 3. If a firewall is active (`ufw`, `firewalld`), open TCP 20001 for the LAN. Your address:
    `ip -4 addr`.
 4. Serial flashing: `pipx install esptool`; the adapter is `/dev/ttyUSB0` or `/dev/ttyACM0`. Add
@@ -70,13 +70,13 @@ A plain virtual environment works the same way; the commands are then under `.ve
 (`.venv\Scripts\` on Windows) or on the path while the environment is active:
 
 ```sh
-python3 -m venv .venv && .venv/bin/pip install "git+https://github.com/NickStallman/Rewired-S@v0.9.1#subdirectory=tools"
+python3 -m venv .venv && .venv/bin/pip install "git+https://github.com/NickStallman/Rewired-S@v0.9.2#subdirectory=tools"
 .venv/bin/rewired-s-deploy status --host 192.0.2.50
 ```
 
 Without `git`, install the wheel from the
 [release page](https://github.com/NickStallman/Rewired-S/releases):
-`pip install <URL of rewired_s_tools-0.9.1-py3-none-any.whl>` (or `pipx install` with the same
+`pip install <URL of rewired_s_tools-0.9.2-py3-none-any.whl>` (or `pipx install` with the same
 URL).
 
 ## In a repository checkout

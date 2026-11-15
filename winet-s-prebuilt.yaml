@@ -1,4 +1,4 @@
-# WiNet-S (V200, ESP32), Wi-Fi.
+# WiNet-S (V200, ESP32), Ethernet and Wi-Fi.
 # Pre-built image (docs/prebuilt.md): the production package set of the compiled entry, with
 # everything a user would otherwise put in secrets.yaml or a site file provisioned at runtime:
 # Wi-Fi from the captive portal or Improv over the UART console, the web login and the MQTT broker
@@ -14,7 +14,10 @@ packages:
   board: !include boards/winet_s.yaml
   base: !include common/base.yaml
   provisioning: !include common/provisioning.yaml
-  network: !include common/wifi_provisioned.yaml
+  # Network: Ethernet preferred, Wi-Fi with a fallback AP as backup (common/network.yaml).
+  ethernet: !include boards/winet_s_ethernet.yaml
+  wifi: !include common/wifi_provisioned.yaml
+  network: !include common/network.yaml
   # Improv Wi-Fi over the UART0 console pads (the serial route of the first install).
   improv: !include common/improv_serial.yaml
   board_io: !include common/board_io.yaml
