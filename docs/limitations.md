@@ -146,6 +146,15 @@ are not confirmed on hardware.
 - Differs from the stock dongle: a server switch that changes only the TLS flag is ignored; an
   unconfirmed server switch keeps the new server when the remote-control mask differs from the
   default.
+- A meter on the inverter's meter port is not a device of the dongle: its values reach the cloud
+  with the inverter's device, the meter's active power as cloud point 8018. The stock dongle
+  reports it the same way; a meter is never discovered as a device of its own
+  ([SG-Docs meters](https://github.com/NickStallman/SG-Docs/blob/main/reference/devices/meters.md)).
+- The grid-side points of the inverter's cloud table stay empty: the stock point table reads the
+  signal ids `0x20A0`, `0x20A1`, `0x20A2`, `0x20A4`, `0x20A6`, `0x20A8`, `0x20AA` and `0x20AC`
+  (cloud points 7590-7595, 7597 and 7598 for a string inverter, 18111-18116, 18118 and 18119 for
+  a hybrid), which no register map produces; the maps carry `0x20A3`, `0x20A5`, `0x20A7`, `0x20A9` and `0x20AB` instead. What the
+  cloud shows for those points is unknown.
 - The identity file is chosen by the first plausible serial number, and at most its first 1 MB is
   parsed.
 - Moving an external flash between dongle models loses the identity, because the identity file

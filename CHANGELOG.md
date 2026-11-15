@@ -14,8 +14,12 @@ All notable changes to Rewired-S are recorded here. The format follows
 ### Changed
 - `docs/compatibility.md`: SG-CX, SG-HX and SH-CX carry power-stage ranges; SG-RS-L2 and
   SH-RL/MG-RL noted as shipping the newer `SungrowIAP3.0` package, not yet decodable.
+- `docs/inverter_registers.md`: an SG5.0RS with a meter on its meter port serves the meter's power
+  block (5601-5608).
 
 ### Fixed
+- The grid meter's active power (5601) reaches iSolarCloud for a string inverter, as cloud point
+  8018 (#15).
 - Analytics `modbus_burst`: a device's timeout/exception counters resetting (on reconnect) no
   longer underflows the 60-second delta into a spurious ~4.29-billion "failed reads" report.
 

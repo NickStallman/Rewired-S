@@ -292,7 +292,7 @@ void SignalStore::run_derived_(uint8_t device, const RegisterTable &table, uint8
   if (table.family == Family::INVERTER) {
     // Recompute only what the block touched (cheap scan over the block's rows).
     bool mppt = false, yield = false, yield_2024 = false, grid = false, hybrid = false;
-    bool output_type = false, flow = false, state = false;
+    bool output_type = false, flow = false, state = false, meter = false;
     for (uint16_t i = 0; i < table.count; i++) {
       const RegisterRow &r = table.rows[i];
       if (r.fn != fn || r.regaddr < start || r.regaddr >= end)
@@ -302,6 +302,7 @@ void SignalStore::run_derived_(uint8_t device, const RegisterTable &table, uint8
       yield_2024 |= r.sigid == SIG_YIELD_TOTAL_ALT;
       grid |= r.sigid == SIG_EXPORT_POWER_SIGNED;
       hybrid |= is_hybrid_cloud_input(r.sigid);
+      meter |= r.sigid == SIG_METER_ACTIVE_POWER || r.sigid == SIG_METER_ACTIVE_POWER_SG;
       output_type |= r.sigid == SIG_OUTPUT_TYPE;
       flow |= r.sigid == SIG_POWER_FLOW_STATUS;
       state |= r.sigid == SIG_DEVICE_STATE;
@@ -318,6 +319,10 @@ void SignalStore::run_derived_(uint8_t device, const RegisterTable &table, uint8
       update_total_yield(*this, device, yield_2024);
     if (grid)
       update_grid_power(*this, device);
+    // The grid meter's power for the cloud, every family; the hybrid hook below overwrites it
+    // with the source stock reads there (0x230C on the EMS firmware line).
+    if (meter)
+      update_meter_cloud(*this, device);
     if (hybrid && inverter_model_family(this->dev_type(device)) == ModelFamily::HYBRID)
       update_hybrid_cloud(*this, device);
   }

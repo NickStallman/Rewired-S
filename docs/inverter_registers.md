@@ -174,7 +174,7 @@ here serves them.
 | Daily / Total AC input energy (`daily_ac_input_energy`, `total_ac_input_energy`) | 5679 / 5680 | ✓ | not served | energy taken in through the AC port (charging from the grid) |
 | Daily / Total PV export energy (`daily_pv_export_energy`, `total_pv_export_energy`) | 5663 / 5664 | ✓ | not served | |
 | Daily / Total direct energy consumption (`daily_direct_consumption_energy`, `total_direct_consumption_energy`) | 5617 / 5619 | ✓ | not served | PV energy used directly by the loads |
-| Total export energy / Total import energy (`total_export_energy`, `total_import_energy`) | 5611 / 5615 | ✓ | not served (no meter) | measured by the meter |
+| Total export energy / Total import energy (`total_export_energy`, `total_import_energy`) | 5611 / 5615 | ✓ | not served without a meter | measured by the meter |
 | Daily export / import energy | 5609 / 5613 | not served by SH10RS firmware SUNSTONE-H_01011.02.69 | not served | |
 | Battery charge/discharge counters | 5666–5672, 13041 | ✓ | — | see [`battery_sbr.md`](battery_sbr.md) §4 |
 | Total on-grid operating time (`total_running_time`) | 5230 u32 | not served | ✓ | h |
@@ -328,9 +328,9 @@ The other 24 codes name third-party batteries; see `tools/gen_tables.py` `BATTER
 | Yield | PV yield (5660/5661), AC output/input energy | daily/monthly/yearly/total yield (5223–5228) |
 | Operating time | not served | total (5230) and daily (5240) |
 | Battery, backup port, power-flow flags | yes | no |
-| Meter | yes (import/export totals, phase values) | none: meter rows absent |
+| Meter | yes (import/export totals, phase values) | the meter's power and phase powers (5601-5608) with a meter on the inverter's meter port; absent without one |
 | DRM state | served by the inverter, but gated off for the dongle while no DRM mode is asserted | served (255 when DRM is disabled, in an unsupported country, or idle) |
 | Reactive power mode | not served | served |
 | Active power limit setpoint | not served | served |
 | Phase B/C, string currents, MPPT 5–20 | absent | absent |
-| Daily import/export energy | not served (5609/5613) | no meter |
+| Daily import/export energy | not served (5609/5613) | not served without a meter |
