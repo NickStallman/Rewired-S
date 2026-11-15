@@ -120,6 +120,13 @@ std::string power_flow_text(uint16_t flags);
 void update_power_flow(SignalStore &store, uint8_t device);
 /// True if `sigid` is an input of update_hybrid_cloud().
 bool is_hybrid_cloud_input(uint16_t sigid);
+/// The grid meter's active power as the cloud point tables want it (s32, W, + import /
+/// - export): SIG_CLOUD_METER_POWER = SIG_METER_ACTIVE_POWER (private map 5601), or
+/// SIG_METER_ACTIVE_POWER_SG (SG public map 5083) when the private row is absent; cleared
+/// when neither is valid. Every inverter family needs it: the hybrid cloud table sends it as
+/// point 18038, the string-inverter table as point 8018 (the grid meter's power).
+static constexpr uint16_t SIG_CLOUD_METER_POWER = 0x2326;
+void update_meter_cloud(SignalStore &store, uint8_t device);
 /// Bitfield descriptor of (table, parent sigid), nullptr if none (generated kBitfields).
 const BitfieldDesc *find_bitfield(uint8_t table_id, uint16_t parent_sigid);
 

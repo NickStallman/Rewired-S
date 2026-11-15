@@ -897,6 +897,35 @@ TEST(meter_rows_absent_without_meter) {
   CHECK(std::fabs(st.get_number(0, 0x20A5) - 50.01) < 1e-4);
 }
 
+// The grid meter's power for the cloud: 0x2326 (the meter's active power) is derived for every
+// inverter family, so the string-inverter cloud table sends the grid power (point 8018). A
+// hybrid fills the same signal from its own source (0x230C on the EMS firmware line).
+TEST(meter_active_power_for_the_cloud) {
+  const RegisterTable &p3 = get_table(TableId::INV_PROTO3);
+  const uint16_t mp = row_addr(p3, SIG_METER_ACTIVE_POWER);
+  CHECK_EQ(mp, 5601);
+  uint8_t p[4] = {0xF3, 0xCE, 0xFF, 0xFF};  // -3122 W, s32 low word first
+  SignalStore st;
+  st.set_dev_type(0, 21);  // string inverter (SG5.0RS)
+  st.ingest_block(0, p3, 4, mp, p, 2);
+  uint64_t v = 0;
+  CHECK(st.get_bits(0, SIG_CLOUD_METER_POWER, &v) && v == 0xFFFFF3CEu);
+  CHECK(std::fabs(st.get_number(0, SIG_CLOUD_METER_POWER) + 3122) < 1e-6);
+  // A meterless inverter: the meter row is absent (capability 2.9 clear), so the cloud point
+  // stays empty instead of reporting 0 W.
+  SignalStore s2;
+  s2.set_dev_type(0, 21);
+  s2.ingest_block(0, p3, 4, mp, p, 2, LW, true);  // no capability bitmap -> every bit clear
+  CHECK(!s2.is_valid(0, SIG_METER_ACTIVE_POWER));
+  CHECK(!s2.is_valid(0, SIG_CLOUD_METER_POWER));
+  // A hybrid gets the signal as well (its own hook keeps the last word).
+  SignalStore s35;
+  s35.set_dev_type(0, 35);
+  s35.ingest_block(0, p3, 4, mp, p, 2);
+  CHECK(s35.is_valid(0, SIG_CLOUD_METER_POWER));
+  CHECK(std::fabs(s35.get_number(0, SIG_CLOUD_METER_POWER) + 3122) < 1e-6);
+}
+
 TEST(power_flow_text_from_flags) {
   CHECK(power_flow_text(43) == "PV generating, Battery charging, Load consuming, Importing from grid");
   CHECK(power_flow_text(25) == "PV generating, Load consuming, Exporting to grid");

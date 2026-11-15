@@ -415,6 +415,16 @@ bool is_hybrid_cloud_input(uint16_t sigid) {
   return false;
 }
 
+// The grid meter's active power for the cloud: the private map's 5601, or the SG public map's
+// 5083 when the private row is absent (a protocol-1/4 string inverter). Cleared when the
+// inverter serves no meter, so the cloud sees no grid power.
+void update_meter_cloud(SignalStore &st, uint8_t dev) {
+  if (st.is_valid(dev, SIG_METER_ACTIVE_POWER))
+    copy_raw(st, dev, SIG_METER_ACTIVE_POWER, SIG_CLOUD_METER_POWER, TYPE_S32, 4);
+  else
+    copy_raw(st, dev, SIG_METER_ACTIVE_POWER_SG, SIG_CLOUD_METER_POWER, TYPE_S32, 4);
+}
+
 void update_hybrid_cloud(SignalStore &st, uint8_t dev) {
   uint64_t fe = 0, fw = 0;
   const bool bit22 = st.get_bits(dev, 0x2173, &fe) && (fe & (1u << 22)) != 0;

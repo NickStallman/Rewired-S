@@ -5,6 +5,15 @@ All notable changes to Rewired-S are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- `docs/inverter_registers.md`: an SG5.0RS with a meter on its meter port serves the meter's power
+  block (5601-5608); the model comparison said the meter rows are always absent.
+
+### Fixed
+- The grid meter's active power reaches iSolarCloud for a string inverter: the meter's power
+  (5601, an SG with a meter on the inverter's meter port) is sent as cloud point 8018, the
+  grid-meter point of the string-inverter table (#15).
+
 ## [0.9.1] - 2026-11-07
 
 Feedback round after the first public release: the SH15T (SH-T line) verified on hardware,

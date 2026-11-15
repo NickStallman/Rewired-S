@@ -74,7 +74,7 @@ native-API packages keep them). Model names are the strings the inverter reports
 
 | Device | Status | Evidence |
 |---|---|---|
-| DTSU666 on the inverter's meter port (grid power, import, export, phases through the inverter's meter block) | ✅ | the maintainer's SH10RS, daily use; the SH15T's Sungrow 3-phase meter 🟢 [#9](https://github.com/NickStallman/Rewired-S/issues/9) |
+| DTSU666 on the inverter's meter port (grid power, import, export, phases through the inverter's meter block) | ✅ | the maintainer's SH10RS, daily use; the SH15T's Sungrow 3-phase meter 🟢 [#9](https://github.com/NickStallman/Rewired-S/issues/9); an SG5.0RS with the meter on its port 🟢 [#15](https://github.com/NickStallman/Rewired-S/issues/15) |
 | A meter answering as its own device on the dongle's RS485 (DTSU666, DTSD1352, S100) | ⚪ | |
 | EV charger (AC) | ⚪ | |
 | Energy Bridge | ⚪ | |

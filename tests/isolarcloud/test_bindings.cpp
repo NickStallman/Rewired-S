@@ -305,6 +305,40 @@ TEST(telemetry_master_devices_and_formatter) {
   CHECK(f.rundata(devs[1], &src, "t").find("58601") == std::string::npos);
 }
 
+// A string inverter with a meter on its meter port: the inverter serves the meter's active
+// power (5601) and the cloud point table sends it as point 8018 (the grid meter's power).
+TEST(string_inverter_meter_power_reaches_the_cloud) {
+  dm::SignalStore store;
+  mb::ModbusMaster master;
+  master.set_store(&store);
+  mb::DeviceConfig inv;
+  inv.index = 0;
+  inv.address = 1;
+  inv.table = &dm::get_table(dm::TableId::INV_PROTO3);
+  inv.dev_type = 21;  // SG5.0RS: residential string inverter
+  master.add_device(inv);
+  master.start();
+  StoreTelemetrySource src(&store);
+  src.set_master(&master);
+  std::vector<TelemetryDevice> devs;
+  src.list_devices(devs);
+  CHECK_EQ(devs.size(), 1u);
+  CHECK_EQ(devs[0].table_type, 0x15);  // string inverter table
+  CHECK_EQ(devs[0].dev_type, 1);       // ... is cloud devType 1
+
+  // The meter's active power, 5601, -3122 W (s32 low word first).
+  uint8_t mp[4] = {0xF3, 0xCE, 0xFF, 0xFF};
+  store.ingest_block(0, *inv.table, 4, 5601, mp, 2, dm::WordOrder::LOW_WORD_FIRST);
+  BusinessFormatter f;
+  std::string j = f.rundata(devs[0], &src, "20261018120000");
+  CHECK(j.find("\"8018\":\"-3122\"") != std::string::npos);
+  // Without a meter the inverter serves no meter power (the sentinel): the grid point stays
+  // empty instead of reporting 0 W.
+  uint8_t none[4] = {0xFF, 0xFF, 0x7F, 0xFF};  // 0x7FFFFFFF: the s32 sentinel, not served
+  store.ingest_block(0, *inv.table, 4, 5601, none, 2, dm::WordOrder::LOW_WORD_FIRST);
+  CHECK(f.rundata(devs[0], &src, "t").find("8018") == std::string::npos);
+}
+
 // ---------------------------------------------------------------------------------------------
 TEST(getparam_reader) {
   struct Pending {
